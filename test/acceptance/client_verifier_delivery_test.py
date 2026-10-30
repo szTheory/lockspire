@@ -477,12 +477,15 @@ class BoundedInputAndNestedFieldContracts(unittest.TestCase):
 
 class ComposedMatrixContracts(unittest.TestCase):
     def _pair_roots(self, parent: Path) -> tuple[Path, Path, str, tuple[str, str, str]]:
-        from verifier_owner_fixture import context_for_template, write_context, retained_lock_context
+        from verifier_owner_fixture import (context_for_template, write_context, retained_lock_context,
+                                            retained_workflow_context)
         source = ROOT / "test/fixtures/verifier-matrix-26"
         runner = json.loads((source / "core/locked-builtin/receipt.json").read_text())["runner"]
         candidate = json.loads((source / "core/locked-builtin/receipt.json").read_text())["candidate"]
         owner = (candidate["source_revision"], candidate["archive_sha256"], candidate["tree_sha256"])
-        context = context_for_template(json.loads((source / "core/locked-builtin/receipt.json").read_text()))
+        with retained_workflow_context(parent) as selection:
+            context = context_for_template(json.loads((source / "core/locked-builtin/receipt.json").read_text()),
+                                           selection_root=selection)
         roots = []
         for pair in ("locked", "floor"):
             root = parent / pair
@@ -500,7 +503,8 @@ class ComposedMatrixContracts(unittest.TestCase):
                         observation["query_operation_event_count"] = 0
                 path.write_text(json.dumps(raw))
             context_env = write_context(root, context)
-            with retained_lock_context(parent), patch.dict(os.environ, context_env), redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+            with retained_lock_context(parent), retained_workflow_context(parent), \
+                    patch.dict(os.environ, context_env), redirect_stdout(StringIO()), redirect_stderr(StringIO()):
                 result = clean_room_verifier_upgrade.main([
                     "--pair", pair, "--store", "all", "--group", "all",
                     "--validate-receipts", str(root),

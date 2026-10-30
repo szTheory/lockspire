@@ -1,0 +1,695 @@
+{
+  "accepted_main": false,
+  "actual_helper_attempt5": {
+    "accepted_main": false,
+    "attempt_dir": "/private/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-v148-main-acceptance-c9_pn6_4/acceptance-attempt-5",
+    "database_started": true,
+    "failure_class": "DeliveryError",
+    "finished_at": "2026-10-30T16:53:25.709905+00:00",
+    "helper_process_closed": true,
+    "main_sha": "7afd18e6b6678576aa52acfc00e32cdbeb958760",
+    "postgres_data_retained": true,
+    "postgres_pid": 36453,
+    "postgres_port": 59444,
+    "postgres_socket_dir": "/private/tmp/lv148-pg-xwopm79m",
+    "private_lab": "/private/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-v148-main-acceptance-c9_pn6_4",
+    "private_postgres_closed": true,
+    "protected_root_tar_unchanged": true,
+    "reason": "authoritative hosted observation is unavailable",
+    "schema": "lockspire-v148-main-acceptance-execution-v1",
+    "started_at": "2026-10-30T16:45:19.609822+00:00",
+    "status": "failed"
+  },
+  "actual_helper_events": [
+    {
+      "exunit_counts": [
+        {
+          "failures": 0,
+          "properties": 0,
+          "stdout_bytes": 305,
+          "stdout_sha256": "aebcd78129f7b9aa7980a0b84904727b0273c551e2b69bfb18b411b51c7bddb6",
+          "tests": 15
+        },
+        {
+          "failures": 0,
+          "properties": 2,
+          "stdout_bytes": 598166,
+          "stdout_sha256": "bd568e9000e83d0117cb50b26affc1c8af1aea6a21f955c39a57a6e8ca86c60f",
+          "tests": 2187
+        },
+        {
+          "failures": 0,
+          "properties": 0,
+          "stdout_bytes": 124674,
+          "stdout_sha256": "046883d181a2067e6a185598d166179fe79b955582fbd958750449864bf6a930",
+          "tests": 261
+        }
+      ],
+      "postgres_stopped": true,
+      "stage": "source_gate_complete_private_postgres_stopped",
+      "time": "2026-10-30T16:53:18.026737+00:00"
+    },
+    {
+      "exit_code": 0,
+      "stage": "exact_main_helper_finished",
+      "stderr_bytes": 0,
+      "stdout_bytes": 4579,
+      "stdout_sha256": "f99015c776a54bbb3c39d2701c264d5a4de5659fbb10d54d595623d22d29b16e",
+      "time": "2026-10-30T16:53:19.158737+00:00"
+    },
+    {
+      "failure_class": "DeliveryError",
+      "reason": "authoritative hosted observation is unavailable",
+      "stage": "acceptance_failed",
+      "time": "2026-10-30T16:53:25.708019+00:00"
+    }
+  ],
+  "actual_helper_snapshots": {
+    "178-POSTMERGE-ATTEMPT5-HELPER-RECEIPT.json": "f99015c776a54bbb3c39d2701c264d5a4de5659fbb10d54d595623d22d29b16e",
+    "178-POSTMERGE-ATTEMPT5-OWNED-SOURCE-MANIFEST.json": "47406de0066cf2082c5f5fb3d58d86e9ae45346f6641c5c70a4e0c272f197c97"
+  },
+  "anonymous_api_revalidation": {
+    "database_started": false,
+    "failure_class": "DeliveryError",
+    "hosted_calls": [
+      {
+        "bytes": 16999,
+        "endpoint": "repos/szTheory/lockspire/commits/5e524fd34919f38988e6142aaf1da0e5bff54a98/pulls?per_page=100",
+        "sha256": "0477622c729bc8b9589c655d31e03ade6b93c1c4ef099d64b73a73dca2232e5f",
+        "status": "success"
+      },
+      {
+        "bytes": 18135,
+        "endpoint": "repos/szTheory/lockspire/pulls/144",
+        "sha256": "f123125c414b3258e658f7635f1227b2b606116498aea626854fffa6e11c5bdb",
+        "status": "success"
+      },
+      {
+        "bytes": 334,
+        "endpoint": "repos/szTheory/lockspire/git/ref/heads/main",
+        "sha256": "d2c8bfb463ffb3edb1f56fcc8aab9cb5be1a1b0ae59375fe2568345945610978",
+        "status": "success"
+      },
+      {
+        "bytes": 77407,
+        "endpoint": "repos/szTheory/lockspire/contents/scripts/maintainer/repo_hygiene_check.sh?ref=7afd18e6b6678576aa52acfc00e32cdbeb958760",
+        "sha256": "4d7122e1a3874dd2950ed47b842a847af70a69fb0f8662e151d225a8c74d42f5",
+        "status": "success"
+      },
+      {
+        "bytes": 1856,
+        "endpoint": "repos/szTheory/lockspire/contents/.planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-INTEGRATION-AUTHORIZATION.json?ref=7afd18e6b6678576aa52acfc00e32cdbeb958760",
+        "sha256": "58db9657ce317456313cd490980be4967737b5b221df4ec563f7720741f6cffb",
+        "status": "success"
+      },
+      {
+        "bytes": 12173,
+        "endpoint": "repos/szTheory/lockspire/actions/runs/41088094026/attempts/1",
+        "sha256": "b674bb74bac548a1c6ddcbf68b31814e7f9b332a2a7274fe6cd56a54e1a6a1af",
+        "status": "success"
+      },
+      {
+        "bytes": 445,
+        "endpoint": "repos/szTheory/lockspire/actions/workflows/ci.yml",
+        "sha256": "d07b8fd865a63038767b31e999b134f576bf932d8e758a46f9a5c5125001dc36",
+        "status": "success"
+      },
+      {
+        "bytes": 26935,
+        "endpoint": "repos/szTheory/lockspire/actions/runs/41088094026/attempts/1/jobs?per_page=100",
+        "sha256": "2f695dca9ee6d06e9b67a70852da70c4a9c7785e19db6c30e4b75d5255f376f3",
+        "status": "success"
+      },
+      {
+        "bytes": 12183,
+        "endpoint": "repos/szTheory/lockspire/actions/runs/41088094056/attempts/1",
+        "sha256": "5f9864dcc402ab4fd0a3b350f59e8d5bb9eb3c769e02ecad2e8b585be19b7e4c",
+        "status": "success"
+      },
+      {
+        "bytes": 465,
+        "endpoint": "repos/szTheory/lockspire/actions/workflows/release.yml",
+        "sha256": "b1f9216aefd2fa311e2e6900a44f1aa9465bfc53996da7692d1a4a1fce60ff89",
+        "status": "success"
+      },
+      {
+        "bytes": 6516,
+        "endpoint": "repos/szTheory/lockspire/actions/runs/41088094056/attempts/1/jobs?per_page=100",
+        "sha256": "9e2fd6a4ff0811e1d5d90d26d70bd5e4d0900d52e29ac91995ef0f718082b507",
+        "status": "success"
+      },
+      {
+        "bytes": 12135,
+        "endpoint": "repos/szTheory/lockspire/actions/runs/40954208717/attempts/2",
+        "sha256": "4d199fa4dc5d2dac0d03d399190eb47442816503813383455b210b420717f1f2",
+        "status": "success"
+      },
+      {
+        "bytes": 21692,
+        "endpoint": "repos/szTheory/lockspire/pulls/141",
+        "sha256": "6252e57fad5ec58bc05ce367ff98d3b7216d80037cde847e43d463c3a81452b5",
+        "status": "success"
+      },
+      {
+        "bytes": 27194,
+        "endpoint": "repos/szTheory/lockspire/actions/runs/40954208717/attempts/2/jobs?per_page=100",
+        "sha256": "04028c973905cd7a1f542975d5b9130bdc5fa356bfd96b674b47925df7195bb1",
+        "status": "success"
+      },
+      {
+        "endpoint": "repos/szTheory/lockspire/actions/jobs/123736062766/logs",
+        "failure_class": "DeliveryError",
+        "status": "failed"
+      }
+    ],
+    "main_sha": "7afd18e6b6678576aa52acfc00e32cdbeb958760",
+    "original_helper_receipt_preserved": true,
+    "reason": "authoritative hosted observation is unavailable",
+    "schema": "lockspire-v148-handoff-revalidation-v1",
+    "source_gate_rerun": false,
+    "status": "failed"
+  },
+  "authenticated_owner_revalidation": {
+    "database_started": false,
+    "failure_class": "OwnerError",
+    "hosted_calls": [
+      {
+        "bytes": 16999,
+        "endpoint": "repos/szTheory/lockspire/commits/5e524fd34919f38988e6142aaf1da0e5bff54a98/pulls?per_page=100",
+        "sha256": "0477622c729bc8b9589c655d31e03ade6b93c1c4ef099d64b73a73dca2232e5f",
+        "status": "success"
+      },
+      {
+        "bytes": 18135,
+        "endpoint": "repos/szTheory/lockspire/pulls/144",
+        "sha256": "f123125c414b3258e658f7635f1227b2b606116498aea626854fffa6e11c5bdb",
+        "status": "success"
+      },
+      {
+        "bytes": 334,
+        "endpoint": "repos/szTheory/lockspire/git/ref/heads/main",
+        "sha256": "d2c8bfb463ffb3edb1f56fcc8aab9cb5be1a1b0ae59375fe2568345945610978",
+        "status": "success"
+      },
+      {
+        "bytes": 77407,
+        "endpoint": "repos/szTheory/lockspire/contents/scripts/maintainer/repo_hygiene_check.sh?ref=7afd18e6b6678576aa52acfc00e32cdbeb958760",
+        "sha256": "4d7122e1a3874dd2950ed47b842a847af70a69fb0f8662e151d225a8c74d42f5",
+        "status": "success"
+      },
+      {
+        "bytes": 1856,
+        "endpoint": "repos/szTheory/lockspire/contents/.planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-INTEGRATION-AUTHORIZATION.json?ref=7afd18e6b6678576aa52acfc00e32cdbeb958760",
+        "sha256": "58db9657ce317456313cd490980be4967737b5b221df4ec563f7720741f6cffb",
+        "status": "success"
+      },
+      {
+        "bytes": 12173,
+        "endpoint": "repos/szTheory/lockspire/actions/runs/41088094026/attempts/1",
+        "sha256": "b674bb74bac548a1c6ddcbf68b31814e7f9b332a2a7274fe6cd56a54e1a6a1af",
+        "status": "success"
+      },
+      {
+        "bytes": 445,
+        "endpoint": "repos/szTheory/lockspire/actions/workflows/ci.yml",
+        "sha256": "d07b8fd865a63038767b31e999b134f576bf932d8e758a46f9a5c5125001dc36",
+        "status": "success"
+      },
+      {
+        "bytes": 26935,
+        "endpoint": "repos/szTheory/lockspire/actions/runs/41088094026/attempts/1/jobs?per_page=100",
+        "sha256": "2f695dca9ee6d06e9b67a70852da70c4a9c7785e19db6c30e4b75d5255f376f3",
+        "status": "success"
+      },
+      {
+        "bytes": 12183,
+        "endpoint": "repos/szTheory/lockspire/actions/runs/41088094056/attempts/1",
+        "sha256": "5f9864dcc402ab4fd0a3b350f59e8d5bb9eb3c769e02ecad2e8b585be19b7e4c",
+        "status": "success"
+      },
+      {
+        "bytes": 465,
+        "endpoint": "repos/szTheory/lockspire/actions/workflows/release.yml",
+        "sha256": "b1f9216aefd2fa311e2e6900a44f1aa9465bfc53996da7692d1a4a1fce60ff89",
+        "status": "success"
+      },
+      {
+        "bytes": 6516,
+        "endpoint": "repos/szTheory/lockspire/actions/runs/41088094056/attempts/1/jobs?per_page=100",
+        "sha256": "9e2fd6a4ff0811e1d5d90d26d70bd5e4d0900d52e29ac91995ef0f718082b507",
+        "status": "success"
+      },
+      {
+        "bytes": 12135,
+        "endpoint": "repos/szTheory/lockspire/actions/runs/40954208717/attempts/2",
+        "sha256": "4d199fa4dc5d2dac0d03d399190eb47442816503813383455b210b420717f1f2",
+        "status": "success"
+      },
+      {
+        "bytes": 21692,
+        "endpoint": "repos/szTheory/lockspire/pulls/141",
+        "sha256": "6252e57fad5ec58bc05ce367ff98d3b7216d80037cde847e43d463c3a81452b5",
+        "status": "success"
+      },
+      {
+        "bytes": 27194,
+        "endpoint": "repos/szTheory/lockspire/actions/runs/40954208717/attempts/2/jobs?per_page=100",
+        "sha256": "04028c973905cd7a1f542975d5b9130bdc5fa356bfd96b674b47925df7195bb1",
+        "status": "success"
+      },
+      {
+        "bytes": 1052962,
+        "endpoint": "repos/szTheory/lockspire/actions/jobs/123736062766/logs",
+        "sha256": "c2758ea7a14c73a9ab5f4abde73d1e1d12f72a3e81ac67d156cff2f539a9d6b6",
+        "status": "success"
+      },
+      {
+        "bytes": 20581,
+        "endpoint": "repos/szTheory/lockspire/actions/jobs/123736063134/logs",
+        "sha256": "144252a759fac4f4d0aaebaae902f71d124f50adf96819871317e0b69a561c21",
+        "status": "success"
+      },
+      {
+        "bytes": 1147326,
+        "endpoint": "repos/szTheory/lockspire/actions/jobs/123736063167/logs",
+        "sha256": "2c57e99c4caac3d912159d145abc10ee4c66a0cc76e3c2a22dbcacebde4c6831",
+        "status": "success"
+      },
+      {
+        "bytes": 23841,
+        "endpoint": "repos/szTheory/lockspire/actions/jobs/123736063322/logs",
+        "sha256": "0264338a86ef9432fdf2e6a6d7c9aed468d23e05e41c29b5ced1a5fe072d1dab",
+        "status": "success"
+      },
+      {
+        "bytes": 388510,
+        "endpoint": "repos/szTheory/lockspire/actions/jobs/123736063538/logs",
+        "sha256": "ab83d3eb512a2734bab299797cc4e34bf824a39f9b72a6779dea72b29e389a9c",
+        "status": "success"
+      },
+      {
+        "bytes": 139233,
+        "endpoint": "repos/szTheory/lockspire/actions/jobs/123736063582/logs",
+        "sha256": "102c074a24dfe887112797d263753300bdb7c7e47efcf34d19164243be780473",
+        "status": "success"
+      },
+      {
+        "bytes": 86604,
+        "endpoint": "repos/szTheory/lockspire/actions/jobs/123750899349/logs",
+        "sha256": "358fef0934d07571ee0dd0bd10243ca2afc8293d069af6e3920e479ccc27008a",
+        "status": "success"
+      },
+      {
+        "bytes": 2631,
+        "endpoint": "repos/szTheory/lockspire/git/commits/3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+        "sha256": "743e981db4c360507ff08b46318275895f032067bf6325b20defdbbbf25f5ec8",
+        "status": "success"
+      },
+      {
+        "bytes": 12135,
+        "endpoint": "repos/szTheory/lockspire/actions/runs/40954208717/attempts/2",
+        "sha256": "4d199fa4dc5d2dac0d03d399190eb47442816503813383455b210b420717f1f2",
+        "status": "success"
+      },
+      {
+        "bytes": 21692,
+        "endpoint": "repos/szTheory/lockspire/pulls/141",
+        "sha256": "6252e57fad5ec58bc05ce367ff98d3b7216d80037cde847e43d463c3a81452b5",
+        "status": "success"
+      },
+      {
+        "bytes": 27194,
+        "endpoint": "repos/szTheory/lockspire/actions/runs/40954208717/attempts/2/jobs?per_page=100",
+        "sha256": "04028c973905cd7a1f542975d5b9130bdc5fa356bfd96b674b47925df7195bb1",
+        "status": "success"
+      },
+      {
+        "bytes": 1052962,
+        "endpoint": "repos/szTheory/lockspire/actions/jobs/123736062766/logs",
+        "sha256": "c2758ea7a14c73a9ab5f4abde73d1e1d12f72a3e81ac67d156cff2f539a9d6b6",
+        "status": "success"
+      },
+      {
+        "bytes": 20581,
+        "endpoint": "repos/szTheory/lockspire/actions/jobs/123736063134/logs",
+        "sha256": "144252a759fac4f4d0aaebaae902f71d124f50adf96819871317e0b69a561c21",
+        "status": "success"
+      },
+      {
+        "bytes": 1147326,
+        "endpoint": "repos/szTheory/lockspire/actions/jobs/123736063167/logs",
+        "sha256": "2c57e99c4caac3d912159d145abc10ee4c66a0cc76e3c2a22dbcacebde4c6831",
+        "status": "success"
+      },
+      {
+        "bytes": 23841,
+        "endpoint": "repos/szTheory/lockspire/actions/jobs/123736063322/logs",
+        "sha256": "0264338a86ef9432fdf2e6a6d7c9aed468d23e05e41c29b5ced1a5fe072d1dab",
+        "status": "success"
+      },
+      {
+        "bytes": 388510,
+        "endpoint": "repos/szTheory/lockspire/actions/jobs/123736063538/logs",
+        "sha256": "ab83d3eb512a2734bab299797cc4e34bf824a39f9b72a6779dea72b29e389a9c",
+        "status": "success"
+      },
+      {
+        "bytes": 139233,
+        "endpoint": "repos/szTheory/lockspire/actions/jobs/123736063582/logs",
+        "sha256": "102c074a24dfe887112797d263753300bdb7c7e47efcf34d19164243be780473",
+        "status": "success"
+      },
+      {
+        "bytes": 86604,
+        "endpoint": "repos/szTheory/lockspire/actions/jobs/123750899349/logs",
+        "sha256": "358fef0934d07571ee0dd0bd10243ca2afc8293d069af6e3920e479ccc27008a",
+        "status": "success"
+      },
+      {
+        "bytes": 2631,
+        "endpoint": "repos/szTheory/lockspire/git/commits/3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+        "sha256": "743e981db4c360507ff08b46318275895f032067bf6325b20defdbbbf25f5ec8",
+        "status": "success"
+      }
+    ],
+    "main_sha": "7afd18e6b6678576aa52acfc00e32cdbeb958760",
+    "original_helper_receipt_preserved": true,
+    "reason": "receipt runtime authority differs from selected observed profile",
+    "schema": "lockspire-v148-handoff-revalidation-v1",
+    "source_gate_rerun": false,
+    "status": "failed",
+    "traceback": [
+      {
+        "file": "lockspire_v148_revalidate_handoff.py",
+        "function": "<module>",
+        "line": 18
+      },
+      {
+        "file": "verifier_delivery.py",
+        "function": "_check_handoff",
+        "line": 1710
+      },
+      {
+        "file": "verifier_delivery.py",
+        "function": "_check_candidate",
+        "line": 1464
+      },
+      {
+        "file": "verifier_delivery.py",
+        "function": "_check_source",
+        "line": 990
+      },
+      {
+        "file": "verifier_delivery.py",
+        "function": "_check_package",
+        "line": 763
+      },
+      {
+        "file": "verifier_delivery.py",
+        "function": "compose_pair_indexes",
+        "line": 462
+      },
+      {
+        "file": "verifier_receipt_owner.py",
+        "function": "validate_document",
+        "line": 143
+      }
+    ]
+  },
+  "candidate_sha": "75de906c2571dcc1913520bb46e9d494ed492c96",
+  "canonical_handoff": "pending; no canonical MAIN receipt",
+  "debt": "PARTIAL/Nyquistfalse and original failed attempts, unknown assertions and advisory classifications remain retained.",
+  "environment_fix": {
+    "cause": "Private HOME prevented GitHub CLI from using the existing maintainer keychain. Public reads succeeded but old job-log download returned403.",
+    "resolution": "A private gh-only wrapper restores original HOME solely for gh; builders retain isolated HOME/MIX_HOME/HEX_HOME. No credentials copied.",
+    "wrapper_sha256": "91e768377ada3b045cc778ac68d4badc92e4bf67cc5c35fe861a9ee0333fe716"
+  },
+  "existing_authorization_unchanged": {
+    "authorized_at": "2026-10-30T15:27:24Z",
+    "authorized_by": "repository maintainer (explicit user approval)",
+    "candidate_sha": "5e524fd34919f38988e6142aaf1da0e5bff54a98",
+    "schema": "lockspire-phase178-integration-authorization-v1",
+    "status": "authorized"
+  },
+  "final_full_gate": {
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "test/acceptance",
+      "-p",
+      "*_test.py"
+    ],
+    "diagnostics": "raw output retained only in memory",
+    "elapsed_seconds": 178.51460862497333,
+    "exception_classes": [],
+    "exit_code": 0,
+    "failed_test_ids": [],
+    "name": "workflow-owner-full-final-epoch",
+    "result": [
+      "OK"
+    ],
+    "schema": "lockspire-v148-native-python-gate-v1",
+    "source_hashes": {
+      "scripts/acceptance/clean_room/verifier_delivery.py": "38c9c0fc7974e087d83d406401664fadc80ea1c7652d2d9feba00ccc45232df6",
+      "test/acceptance/client_verifier_delivery_chain_test.py": "06228b3e5004da1ca638079d68806ac279172a302dcf6e6bb2b2540467771cac",
+      "test/acceptance/client_verifier_delivery_test.py": "26b48a666ab6fb7063756ee9285c32c20dab89205a7934cb82eedef1f80258d8",
+      "test/acceptance/client_verifier_receipts_test.py": "edb23240f2d2ab089c982418fb5ecfcb4a149821694d8099729384882efb6e66",
+      "test/acceptance/verifier_owner_fixture.py": "e0bf362657559fdae90f212ff211701b5f3fc2b368e5cea9a221af4c7cc6bab3"
+    },
+    "source_hashes_before": {
+      "scripts/acceptance/clean_room/verifier_delivery.py": "38c9c0fc7974e087d83d406401664fadc80ea1c7652d2d9feba00ccc45232df6",
+      "test/acceptance/client_verifier_delivery_chain_test.py": "06228b3e5004da1ca638079d68806ac279172a302dcf6e6bb2b2540467771cac",
+      "test/acceptance/client_verifier_delivery_test.py": "26b48a666ab6fb7063756ee9285c32c20dab89205a7934cb82eedef1f80258d8",
+      "test/acceptance/client_verifier_receipts_test.py": "edb23240f2d2ab089c982418fb5ecfcb4a149821694d8099729384882efb6e66",
+      "test/acceptance/verifier_owner_fixture.py": "e0bf362657559fdae90f212ff211701b5f3fc2b368e5cea9a221af4c7cc6bab3"
+    },
+    "source_unchanged": true,
+    "stderr_bytes": 10187,
+    "stderr_sha256": "7d0b93093fec7688d4ea61c64617988ad10607312a1523c1d6497258c97aadf5",
+    "stdout_bytes": 6746,
+    "stdout_sha256": "4e05b45a1e1d4f20be0cf26a8d83396f206301a7df3bf9f2db6ba461645effaa",
+    "tests": [
+      "301"
+    ]
+  },
+  "fixture_repair": "Synthetic template contexts now select their pinned immutable workflow epoch for CLI, composition and upload, without changing retained receipts.",
+  "focused_gate": {
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "client_verifier_delivery_test",
+      "client_verifier_delivery_chain_test"
+    ],
+    "diagnostics": "raw output retained only in memory",
+    "elapsed_seconds": 47.9630340419244,
+    "exception_classes": [],
+    "exit_code": 0,
+    "name": "workflow-owner-components",
+    "result": [
+      "OK"
+    ],
+    "schema": "lockspire-v148-native-python-gate-v1",
+    "source_hashes": {
+      "scripts/acceptance/clean_room/verifier_delivery.py": "38c9c0fc7974e087d83d406401664fadc80ea1c7652d2d9feba00ccc45232df6",
+      "test/acceptance/client_verifier_delivery_chain_test.py": "06228b3e5004da1ca638079d68806ac279172a302dcf6e6bb2b2540467771cac"
+    },
+    "stderr_bytes": 136,
+    "stderr_sha256": "d671ed1f0035e8e4c6a16d17c2f93b592bb81c881d8de78915b001090a80e6e7",
+    "stdout_bytes": 2452,
+    "stdout_sha256": "e026ba2ae6750528024fa8b63a5b0f9c2fe1a4babd0a80dac31f0cc1829e6ff2",
+    "tests": [
+      "36"
+    ]
+  },
+  "hygiene": {
+    "block": 0,
+    "exit_code": 0,
+    "mode": "--ci --skip-mix-ci",
+    "pass": 18,
+    "stdout_sha256": "cb6123ad052c52b10bef62260b6a97cf590d0fe8f81947891af821a8f7301768",
+    "warn": 0
+  },
+  "integration_authorized_for_this_source": false,
+  "intermediate_full_gates": [
+    {
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "test/acceptance",
+        "-p",
+        "*_test.py"
+      ],
+      "diagnostics": "raw output retained only in memory",
+      "elapsed_seconds": 149.71785920800176,
+      "exception_classes": [
+        "OwnerError"
+      ],
+      "exit_code": 1,
+      "name": "workflow-owner-full",
+      "result": [
+        "FAILED (errors=4)"
+      ],
+      "schema": "lockspire-v148-native-python-gate-v1",
+      "source_hashes": {
+        "scripts/acceptance/clean_room/verifier_delivery.py": "38c9c0fc7974e087d83d406401664fadc80ea1c7652d2d9feba00ccc45232df6",
+        "test/acceptance/client_verifier_delivery_chain_test.py": "e1ced2eb58eca24c5f8df0ecc2ed71fc7388f6baaf83c2e1fcbff82c52c1f61c"
+      },
+      "stderr_bytes": 17688,
+      "stderr_sha256": "d08c5c65720e86c3237b4c14a390622933762cab58d5dcdba2bd462b1c0cfdae",
+      "stdout_bytes": 6742,
+      "stdout_sha256": "11c6600509692fa64b78b7547bad805ae4786084ee876c07a514fca1754d78d6",
+      "tests": [
+        "301"
+      ]
+    },
+    {
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "test/acceptance",
+        "-p",
+        "*_test.py"
+      ],
+      "diagnostics": "raw output retained only in memory",
+      "elapsed_seconds": 153.2826047920389,
+      "exception_classes": [
+        "AssertionError"
+      ],
+      "exit_code": 1,
+      "failed_test_ids": [
+        [
+          "test_pair_cli_projects_exact_required_cells_for_each_dependency_pair",
+          "client_verifier_receipts_test.CompleteMatrixContracts.test_pair_cli_projects_exact_required_cells_for_each_dependency_pair"
+        ]
+      ],
+      "name": "workflow-owner-full-final",
+      "result": [
+        "FAILED (failures=1)"
+      ],
+      "schema": "lockspire-v148-native-python-gate-v1",
+      "source_hashes": {
+        "scripts/acceptance/clean_room/verifier_delivery.py": "38c9c0fc7974e087d83d406401664fadc80ea1c7652d2d9feba00ccc45232df6",
+        "test/acceptance/client_verifier_delivery_chain_test.py": "06228b3e5004da1ca638079d68806ac279172a302dcf6e6bb2b2540467771cac",
+        "test/acceptance/client_verifier_delivery_test.py": "26b48a666ab6fb7063756ee9285c32c20dab89205a7934cb82eedef1f80258d8",
+        "test/acceptance/verifier_owner_fixture.py": "e0bf362657559fdae90f212ff211701b5f3fc2b368e5cea9a221af4c7cc6bab3"
+      },
+      "source_hashes_before": {
+        "scripts/acceptance/clean_room/verifier_delivery.py": "38c9c0fc7974e087d83d406401664fadc80ea1c7652d2d9feba00ccc45232df6",
+        "test/acceptance/client_verifier_delivery_chain_test.py": "06228b3e5004da1ca638079d68806ac279172a302dcf6e6bb2b2540467771cac",
+        "test/acceptance/client_verifier_delivery_test.py": "26b48a666ab6fb7063756ee9285c32c20dab89205a7934cb82eedef1f80258d8",
+        "test/acceptance/verifier_owner_fixture.py": "e0bf362657559fdae90f212ff211701b5f3fc2b368e5cea9a221af4c7cc6bab3"
+      },
+      "source_unchanged": true,
+      "stderr_bytes": 10840,
+      "stderr_sha256": "61b8d9421fa6da6722f7bc3413b389544c68349c834678093982c30b25383834",
+      "stdout_bytes": 6746,
+      "stdout_sha256": "ba78f086e1ebe2b3bc8d5b4081a00776bdb04a38f430cd06c2c66b42578d3111",
+      "tests": [
+        "301"
+      ]
+    }
+  ],
+  "native_provision": {
+    "accepted_main": false,
+    "application_started": false,
+    "covered_input_count": 1079,
+    "database_started": false,
+    "finished_at": "2026-10-30T17:20:24.213096+00:00",
+    "package_archive_equal_historical": true,
+    "package_tree_equal_historical": true,
+    "pins": {
+      "expected_archive_sha256": "eea947dd6a734b60bd502b4d202ecc9cfa7cc7adbdf05bf21d30fa7830f9209c",
+      "expected_candidate_source": "75de906c2571dcc1913520bb46e9d494ed492c96",
+      "expected_manifest_sha256": "1f5b3b2aad7b0f953069d9de4defb2a3d6a07dbd449690bc9d90c0a20d273405",
+      "expected_runner": "75de906c2571dcc1913520bb46e9d494ed492c96",
+      "expected_tree_sha256": "01285ffcc1ef607ebefe39ff02bbf08f50bb0ac44127cef1cd05dbc324bce10b"
+    },
+    "private_root": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-v148-owner-provision-6p_1oubw",
+    "private_source_clean_after": true,
+    "protected_root_tar_unchanged": true,
+    "schema": "lockspire-v148-owner-fix-native-provision-v1",
+    "source_revision": "75de906c2571dcc1913520bb46e9d494ed492c96",
+    "started_at": "2026-10-30T17:20:16.005004+00:00",
+    "status": "passed"
+  },
+  "owned_private_postgres_closed": true,
+  "private_data_retained": true,
+  "protected_root_tar_sha256": "5626784a5699cd17cce2236e3c828ac149af2f8ef901ccfd1b7fcda6145ee9be",
+  "real_retained_evidence_probe": {
+    "accepted_main": false,
+    "actual_helper_receipt_preserved": true,
+    "application_or_database_started": false,
+    "classification": "unintegrated_checker_probe_only",
+    "main_receipt_revision": "7afd18e6b6678576aa52acfc00e32cdbeb958760",
+    "root_handoff_changed": false,
+    "schema": "lockspire-v148-prepared-owner-fix-live-probe-v1",
+    "status": "passed",
+    "validator_result_for_previously_emitted_receipt": {
+      "accepted_main": true,
+      "helper_sha256": "f99015c776a54bbb3c39d2701c264d5a4de5659fbb10d54d595623d22d29b16e",
+      "main_sha": "7afd18e6b6678576aa52acfc00e32cdbeb958760"
+    }
+  },
+  "red_regression": {
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "client_verifier_delivery_chain_test.ActualEndToEndDelivery.test_actual_squash_chain_with_full_closure_and_authoritative_boundaries"
+    ],
+    "diagnostics": "raw output retained only in memory",
+    "elapsed_seconds": 23.78161987499334,
+    "exception_classes": [
+      "OwnerError"
+    ],
+    "exit_code": 1,
+    "name": "workflow-owner-red",
+    "result": [
+      "FAILED (errors=1)"
+    ],
+    "schema": "lockspire-v148-native-python-gate-v1",
+    "source_hashes": {
+      "scripts/acceptance/clean_room/verifier_delivery.py": "0a34659ffabbe26b65108fbd071b95ca63d4de56538d18245116e89ef5ef61c8",
+      "test/acceptance/client_verifier_delivery_chain_test.py": "0808eba64f1face850a65fefe6b314d63e62bf4a66c40d4680cb6218aaad516d"
+    },
+    "stderr_bytes": 3304,
+    "stderr_sha256": "f2f6b7c36f8a85db5eec3a82d00803b5b4ff18399273d9326913f646437ef557",
+    "stdout_bytes": 1022,
+    "stdout_sha256": "2cd73bd25cfe604c29af0acc4317148b8667ee1c2ab8d347a41ab155889f9fc4",
+    "tests": [
+      "1"
+    ]
+  },
+  "retained_candidate_copy": {
+    "all_source_and_destination_digests_verified": true,
+    "application_or_database_started": false,
+    "archive_sha256": "eea947dd6a734b60bd502b4d202ecc9cfa7cc7adbdf05bf21d30fa7830f9209c",
+    "files": 389,
+    "inventory_sha256": "30b0ded21c81ad28755426a20821ccb4068039e4e1b010ff1669fd4ccc6e800c",
+    "reason": "Initial private-lab preparation omitted the frozen candidate archive/tree required for historical handoff revalidation.",
+    "schema": "lockspire-v148-retained-candidate-lab-copy-v1",
+    "source_modified": false,
+    "tree_sha256": "01285ffcc1ef607ebefe39ff02bbf08f50bb0ac44127cef1cd05dbc324bce10b"
+  },
+  "review": "Only delivery owner selection changes in production tooling. Runner is independently supplied and full-hex validated; git show supplies immutable workflow bytes; unchanged owner schema/runtime/version/package/observation checks validate a private snapshot. Tests reject current-workflow digest substitution, forged runtime/runner and missing/invalid revisions. Library/protocol/runtime security defaults unchanged.",
+  "root_cause": "Delivery owner validation selected current workflow bytes for historical receipts. Independently authenticated original runner workflow hashes match retained owners; current provisioning workflow hash differs.",
+  "schema": "lockspire-v148-historical-workflow-owner-debug-v1",
+  "source_hashes": {
+    "scripts/acceptance/clean_room/verifier_delivery.py": "38c9c0fc7974e087d83d406401664fadc80ea1c7652d2d9feba00ccc45232df6",
+    "test/acceptance/client_verifier_delivery_chain_test.py": "06228b3e5004da1ca638079d68806ac279172a302dcf6e6bb2b2540467771cac",
+    "test/acceptance/client_verifier_delivery_test.py": "26b48a666ab6fb7063756ee9285c32c20dab89205a7934cb82eedef1f80258d8",
+    "test/acceptance/client_verifier_receipts_test.py": "edb23240f2d2ab089c982418fb5ecfcb4a149821694d8099729384882efb6e66",
+    "test/acceptance/verifier_owner_fixture.py": "e0bf362657559fdae90f212ff211701b5f3fc2b368e5cea9a221af4c7cc6bab3"
+  },
+  "status": "verified_local_only"
+}

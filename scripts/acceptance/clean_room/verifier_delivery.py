@@ -433,6 +433,27 @@ def _receipt_path(root: Path, relative: Any) -> Path:
     return path
 
 
+def _owner_at_runner(document: dict[str, Any], *, runner: str, **claims: Any):
+    """Select runtime authority from the caller's authenticated execution commit.
+
+    A historical receipt must retain its original workflow digest, even when
+    main has newer CI tooling. The working tree remains a separate source gate.
+    """
+    if not isinstance(runner, str) or not REVISION.fullmatch(runner):
+        raise DeliveryError("receipt owner runner revision is invalid")
+    result = subprocess.run(("git", "show", f"{runner}:.github/workflows/ci.yml"), cwd=ROOT,
+                            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                            stderr=subprocess.DEVNULL, check=False, timeout=10)
+    if result.returncode:
+        raise DeliveryError("receipt owner workflow source is unavailable")
+    with tempfile.TemporaryDirectory(prefix="lockspire-owner-selection-") as temporary:
+        selection = Path(temporary)
+        workflow = selection / ".github/workflows/ci.yml"
+        workflow.parent.mkdir(parents=True)
+        workflow.write_bytes(result.stdout)
+        return validate_owner_document(document, root=selection, runner=runner, **claims)
+
+
 def compose_pair_indexes(
     locked_root: Path, floor_root: Path, *, expected_runner: str,
     expected_candidate: tuple[str, str, str], expected_candidate_proof: str | None = None,
@@ -459,7 +480,7 @@ def compose_pair_indexes(
         context_path = _receipt_path(root, "receipt-owner.json")
         if sha256(context_path) != index.get("receipt_owner_sha256"):
             raise DeliveryError("package receipt owner context differs from its pre-copy pin")
-        receipt_owner = validate_owner_document(_read_json(context_path, "receipt owner context"), root=ROOT,
+        receipt_owner = _owner_at_runner(_read_json(context_path, "receipt owner context"),
             package_version=expected_version, runner=expected_runner, candidate=expected_candidate,
             proof=expected_candidate_proof, profile="local-current")
         if (index.get("schema") != "lockspire-installed-verifier-pair-v1"
@@ -1314,7 +1335,7 @@ def _uploaded_owner(archive: zipfile.ZipFile, prefix: str, *, runner: str,
         _verify_owner_source(owner, extracted)
         version = __import__("package_input").package_version(extracted)
     authority = json.loads(archive.read(prefix + "candidate/receipt-owner.json"), object_pairs_hook=_unique_object)
-    return validate_owner_document(authority, root=ROOT, package_version=version,
+    return _owner_at_runner(authority, package_version=version,
                                    runner=runner, candidate=candidate, proof=proof, profile=profile)
 
 
