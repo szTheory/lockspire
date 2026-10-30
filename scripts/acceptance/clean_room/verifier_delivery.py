@@ -343,7 +343,7 @@ def validate_frozen_manifest(phase_dir: Path, *, expected_runner: str,
     if _git("rev-parse", f"{runner}^{{tree}}") != manifest.get("runner_tree"):
         raise DeliveryError("frozen runner tree does not match its commit")
     actual_head = _git("rev-parse", "HEAD")
-    if actual_head != runner and not _reviewed_revision_is_ancestor(runner, actual_head):
+    if actual_head != runner and not _reviewed_revision_is_integrated(runner, actual_head):
         raise DeliveryError("executed checkout is unrelated to the independently pinned runner")
     rows = manifest.get("covered_inputs")
     expected_paths = list(covered_inputs(runner))
@@ -556,6 +556,50 @@ def _reviewed_revision_is_ancestor(reviewed: str, expected: str) -> bool:
                             stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                             stderr=subprocess.DEVNULL, check=False, timeout=20)
     return result.returncode == 0
+
+
+def _reviewed_revision_is_integrated(reviewed: str, expected: str) -> bool:
+    """Prove ancestry or an authoritative, tree-identical squash into main.
+
+    Keep original tested/reviewed commit identities. Equal selected bytes alone
+    do not prove integration: the squash bridge must belong to a merged PR in
+    origin, and its final head must contain the reviewed revision.
+    """
+    if not REVISION.fullmatch(reviewed) or not REVISION.fullmatch(expected):
+        return False
+    if _reviewed_revision_is_ancestor(reviewed, expected):
+        return True
+    repo = _github_repository()
+    observed = _github_json(f"repos/{repo}/commits/{reviewed}/pulls?per_page=100",
+                            list_key="pull_requests")
+    pulls = observed["pull_requests"]
+    # A full page is ambiguous without pagination. Never infer provenance from
+    # an incomplete association list or a similarly named branch/repository.
+    if len(pulls) >= 100:
+        raise DeliveryError("squash pull request association is incomplete")
+    for row in pulls:
+        number = row.get("number") if isinstance(row, dict) else None
+        if type(number) is not int or number <= 0:
+            raise DeliveryError("squash pull request association is malformed")
+        pull = _github_json(f"repos/{repo}/pulls/{number}")
+        head = pull.get("head", {})
+        base = pull.get("base", {})
+        head_sha = head.get("sha") if isinstance(head, dict) else None
+        merged_sha = pull.get("merge_commit_sha")
+        if (pull.get("number") != number or pull.get("merged") is not True
+                or pull.get("state") != "closed" or not pull.get("merged_at")
+                or not isinstance(merged_sha, str) or not REVISION.fullmatch(merged_sha)
+                or not isinstance(base, dict) or base.get("ref") != "main"
+                or not isinstance(base.get("repo"), dict)
+                or base["repo"].get("full_name") != repo
+                or not isinstance(head_sha, str) or not REVISION.fullmatch(head_sha)):
+            continue
+        if (_reviewed_revision_is_ancestor(reviewed, head_sha)
+                and _reviewed_revision_is_ancestor(merged_sha, expected)
+                and _git("rev-parse", f"{head_sha}^{{tree}}")
+                    == _git("rev-parse", f"{merged_sha}^{{tree}}")):
+            return True
+    return False
 
 
 def _metadata_only_difference(older: str, newer: str) -> bool:
@@ -1115,7 +1159,7 @@ def _observe_candidate_identity(candidate: dict[str, Any], observation: dict[str
         raise DeliveryError("candidate checkout differs from authoritative Git commit relation")
 
 
-def _github_json(endpoint: str) -> dict[str, Any]:
+def _github_json(endpoint: str, *, list_key: str | None = None) -> dict[str, Any]:
     result = subprocess.run(("gh", "api", endpoint), cwd=ROOT, stdin=subprocess.DEVNULL,
                             stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                             check=False, timeout=30)
@@ -1125,6 +1169,10 @@ def _github_json(endpoint: str) -> dict[str, Any]:
         value = json.loads(result.stdout, object_pairs_hook=_unique_object)
     except (UnicodeError, ValueError):
         raise DeliveryError("authoritative hosted observation is malformed") from None
+    if list_key is not None:
+        if not isinstance(value, list):
+            raise DeliveryError("authoritative hosted observation is malformed")
+        return {list_key: value}
     if not isinstance(value, dict):
         raise DeliveryError("authoritative hosted observation is malformed")
     return value
@@ -1564,7 +1612,7 @@ def _check_handoff(phase_dir: Path) -> dict[str, Any]:
             or auth_record.get("schema") != "lockspire-phase178-integration-authorization-v1"
             or auth_record.get("status") != "authorized"
             or not isinstance(auth_record.get("candidate_sha"), str) or not REVISION.fullmatch(auth_record["candidate_sha"])
-            or not _reviewed_revision_is_ancestor(auth_record["candidate_sha"], main_sha)
+            or not _reviewed_revision_is_integrated(auth_record["candidate_sha"], main_sha)
             or not _metadata_only_difference(auth_record["candidate_sha"], main_sha)
             or auth_record.get("authorized_by") != authorization["authorized_by"]
             or auth_record.get("authorized_at") != authorization["authorized_at"]):
@@ -1591,10 +1639,7 @@ def _check_handoff(phase_dir: Path) -> dict[str, Any]:
         raise DeliveryError("supplemental non-certifying evidence classification changed")
     candidate = _check_candidate_identity(phase_dir)
     _check_candidate(phase_dir)
-    ancestor = subprocess.run(("git", "merge-base", "--is-ancestor", candidate["reviewed_head_sha"], main_sha),
-                              cwd=ROOT, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL, check=False, timeout=20)
-    if ancestor.returncode:
+    if not _reviewed_revision_is_integrated(candidate["reviewed_head_sha"], main_sha):
         raise DeliveryError("accepted main does not contain the reviewed candidate")
     return {"accepted_main": True, "main_sha": main_sha, "helper_sha256": handoff["main_acceptance_sha256"]}
 
@@ -1628,7 +1673,7 @@ def integration_authorization(expected_runner: str) -> dict[str, Any]:
     if (set(record) != {"schema", "status", "candidate_sha", "authorized_by", "authorized_at"}
             or record.get("schema") != "lockspire-phase178-integration-authorization-v1"
             or record.get("status") != "authorized" or not isinstance(source, str) or not REVISION.fullmatch(source)
-            or not _reviewed_revision_is_ancestor(source, expected_runner)
+            or not _reviewed_revision_is_integrated(source, expected_runner)
             or not _metadata_only_difference(source, expected_runner)
             or not isinstance(record.get("authorized_by"), str) or not 3 <= len(record["authorized_by"]) <= 120
             or not isinstance(record.get("authorized_at"), str)

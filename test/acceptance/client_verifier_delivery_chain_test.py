@@ -106,6 +106,120 @@ class ReviewedCandidateHistory(unittest.TestCase):
                                  "required source history should make the same selector pass")
 
 
+class SquashIntegrationHistory(unittest.TestCase):
+    """Real Git identities; only the external GitHub responses are fixtures."""
+
+    git = ReviewedCandidateHistory.git
+
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory(prefix="lockspire-squash-history-")
+        self.addCleanup(self.temporary.cleanup)
+        self.repo = Path(self.temporary.name)
+        self.git(self.repo, "init", "-q", "--initial-branch=main")
+        self.git(self.repo, "config", "user.name", "Squash Fixture")
+        self.git(self.repo, "config", "user.email", "fixture@example.invalid")
+        self.git(self.repo, "remote", "add", "origin", "https://github.com/fixture/repo.git")
+        (self.repo / "mix.exs").write_text("baseline\n")
+        self.git(self.repo, "add", "mix.exs")
+        self.git(self.repo, "commit", "-qm", "base")
+        self.base = self.git(self.repo, "rev-parse", "HEAD")
+        (self.repo / "mix.exs").write_text("reviewed implementation\n")
+        self.git(self.repo, "commit", "-qam", "reviewed implementation")
+        self.reviewed = self.git(self.repo, "rev-parse", "HEAD")
+        metadata = self.repo / ".planning/observation.json"
+        metadata.parent.mkdir()
+        metadata.write_text("{}\n")
+        self.git(self.repo, "add", ".planning/observation.json")
+        self.git(self.repo, "commit", "-qm", "final evidence metadata")
+        self.head = self.git(self.repo, "rev-parse", "HEAD")
+        tree = self.git(self.repo, "rev-parse", "HEAD^{tree}")
+        self.squash = self.git(self.repo, "commit-tree", tree, "-p", self.base, "-m", "squash")
+        self.pull = {"number": 7, "merged": True, "state": "closed",
+                     "merged_at": "2026-10-30T01:41:21Z", "merge_commit_sha": self.squash,
+                     "head": {"sha": self.head},
+                     "base": {"ref": "main", "repo": {"full_name": "fixture/repo"}}}
+        self.api = {f"repos/fixture/repo/commits/{sha}/pulls?per_page=100": [{"number": 7}]
+                    for sha in (self.reviewed, self.head)}
+        self.api["repos/fixture/repo/pulls/7"] = self.pull
+        real_run = subprocess.run
+
+        def observe(command, **kwargs):
+            if tuple(command[:2]) == ("gh", "api"):
+                value = self.api.get(command[2])
+                return subprocess.CompletedProcess(command, int(value is None), json.dumps(value).encode(), b"")
+            return real_run(command, **kwargs)
+
+        self.enterContext(patch.object(delivery, "ROOT", self.repo))
+        self.enterContext(patch.object(subprocess, "run", side_effect=observe))
+
+    def test_squash_keeps_original_identity_and_requires_authoritative_integration(self):
+        self.assertFalse(delivery._reviewed_revision_is_ancestor(self.reviewed, self.squash))
+        self.assertTrue(delivery._metadata_only_difference(self.reviewed, self.squash))
+        self.assertTrue(delivery._reviewed_revision_is_integrated(self.reviewed, self.squash))
+        self.assertTrue(delivery._reviewed_revision_is_integrated(self.head, self.squash))
+        self.api.clear()
+        with self.assertRaises(delivery.DeliveryError):
+            delivery._reviewed_revision_is_integrated(self.reviewed, self.squash)
+        # Ordinary ancestry remains local and does not require a GitHub call.
+        self.assertTrue(delivery._reviewed_revision_is_integrated(self.reviewed, self.head))
+
+    def test_squash_rejects_wrong_pr_merge_repository_branch_and_head(self):
+        mutations = (
+            {"merged": False}, {"state": "open"}, {"merged_at": None}, {"number": 8},
+            {"merge_commit_sha": self.head}, {"head": {"sha": self.base}},
+            {"head": {"sha": "f" * 40}},
+            {"base": {"ref": "other", "repo": {"full_name": "fixture/repo"}}},
+            {"base": {"ref": "main", "repo": {"full_name": "other/repo"}}},
+            # The reviewed commit has identical selected bytes but differs in
+            # the final evidence tree: selected-byte equality is insufficient.
+            {"head": {"sha": self.reviewed}},
+        )
+        for mutation in mutations:
+            with self.subTest(fields=tuple(mutation)):
+                self.api["repos/fixture/repo/pulls/7"] = {**self.pull, **mutation}
+                try:
+                    accepted = delivery._reviewed_revision_is_integrated(self.reviewed, self.squash)
+                except delivery.DeliveryError:
+                    accepted = False
+                self.assertFalse(accepted)
+
+    def test_squash_rejects_changed_source_and_incomplete_associations(self):
+        endpoint = f"repos/fixture/repo/commits/{self.reviewed}/pulls?per_page=100"
+        for value in ({}, [{}], [{"number": True}], [{"number": 7}] * 100, []):
+            with self.subTest(response_type=type(value).__name__, size=len(value)):
+                self.api[endpoint] = value
+                try:
+                    accepted = delivery._reviewed_revision_is_integrated(self.reviewed, self.squash)
+                except delivery.DeliveryError:
+                    accepted = False
+                self.assertFalse(accepted)
+        self.api[endpoint] = [{"number": 7}]
+        (self.repo / "mix.exs").write_text("unreviewed implementation\n")
+        self.git(self.repo, "commit", "-qam", "changed source")
+        changed = self.git(self.repo, "rev-parse", "HEAD")
+        self.api[f"repos/fixture/repo/commits/{changed}/pulls?per_page=100"] = [{"number": 7}]
+        self.assertFalse(delivery._reviewed_revision_is_integrated(changed, self.squash))
+
+    def test_squash_bridge_survives_later_commits_without_claiming_byte_equality(self):
+        self.git(self.repo, "checkout", "--detach", "-q", self.squash)
+        (self.repo / "mix.exs").write_text("later implementation\n")
+        self.git(self.repo, "commit", "-qam", "later source")
+        later = self.git(self.repo, "rev-parse", "HEAD")
+        self.assertTrue(delivery._reviewed_revision_is_integrated(self.reviewed, later))
+        self.assertFalse(delivery._metadata_only_difference(self.reviewed, later))
+
+    def test_integration_authorization_accepts_squash_without_rewriting_candidate(self):
+        phase = self.repo / ".planning/phases" / delivery.PHASE_NAME
+        phase.mkdir(parents=True)
+        path = phase / "178-INTEGRATION-AUTHORIZATION.json"
+        record = {"schema": "lockspire-phase178-integration-authorization-v1", "status": "authorized",
+                  "candidate_sha": self.reviewed, "authorized_by": "synthetic-fixture-only",
+                  "authorized_at": "2026-10-30T01:40:00Z"}
+        path.write_text(json.dumps(record))
+        self.assertEqual(delivery.integration_authorization(self.squash)["status"], "authorized")
+        self.assertEqual(json.loads(path.read_bytes()), record)
+
+
 class ExternalBoundaries:
     """Only OS/build/database/GitHub seams; real producers remain in control."""
     def __init__(self, repo):
@@ -435,6 +549,10 @@ class ActualEndToEndDelivery(unittest.TestCase):
         self.boundary.api[f"{base}/actions/workflows/{workflow}/runs?branch=main&event=push&head_sha={sha}&per_page=100"] = {"workflow_runs": [run]}
         return run, jobs
 
+    def test_actual_squash_chain_with_full_closure_and_authoritative_boundaries(self):
+        self.squash_integration = True
+        self.test_one_actual_chain_with_full_closure_and_authoritative_boundaries()
+
     def test_one_actual_chain_with_full_closure_and_authoritative_boundaries(self):
         from contextlib import ExitStack
         import base64
@@ -622,6 +740,18 @@ class ActualEndToEndDelivery(unittest.TestCase):
             self.git(repo, "add", "-f", "--", str(phase.relative_to(repo)))
             self.git(repo, "commit", "-qm", "preserve candidate evidence metadata")
             main_sha = self.git(repo, "rev-parse", "HEAD")
+            if getattr(self, "squash_integration", False):
+                final_head = main_sha
+                main_sha = self.git(repo, "commit-tree", self.git(repo, "rev-parse", "HEAD^{tree}"),
+                                    "-p", frozen_revision, "-m", "squash reviewed candidate")
+                self.git(repo, "checkout", "--detach", "-q", main_sha)
+                self.assertFalse(delivery._reviewed_revision_is_ancestor(head, main_sha))
+                for reviewed in (tested, head):
+                    self.boundary.api[f"repos/fixture/repo/commits/{reviewed}/pulls?per_page=100"] = [{"number": 7}]
+                self.boundary.api["repos/fixture/repo/pulls/7"] = {
+                    "number": 7, "merged": True, "state": "closed", "merged_at": "2026-10-30T01:41:21Z",
+                    "merge_commit_sha": main_sha, "head": {"sha": final_head},
+                    "base": {"ref": "main", "repo": {"full_name": "fixture/repo"}}}
             self.git(repo, "update-ref", "refs/heads/main", main_sha)
             self.git(repo, "update-ref", "refs/remotes/origin/main", main_sha)
             self.boundary.api["repos/fixture/repo/git/ref/heads/main"] = {"ref": "refs/heads/main", "object": {"sha": main_sha}}
