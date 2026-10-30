@@ -1,6 +1,6 @@
 # Postmerge checker correction — ready for integration approval
 
-Status: **proposed; no remote changes performed**.
+Status: **approved by the user on 2026-10-30 at the recorded 13:08:31 UTC observation; remote execution follows**.
 
 Source: `9ffe69f122f9a1d2fd3821ee0bf0bcbf5635094a` on local branch `fix/v148-squash-acceptance`, based on squash main `b55eaafc6b01273aad6b72dc6d6301c76cf7fd4f`. Later proposal/evidence commits retain identical selected source bytes. The current canonical authorization record and main-acceptance receipt are absent.
 

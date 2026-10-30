@@ -1,0 +1,17 @@
+{
+  "approved_actions": [
+    "non-force branch push",
+    "create correction PR",
+    "record actual authorization custody",
+    "merge after all required CI passes",
+    "synchronize main",
+    "run fresh exact-main acceptance"
+  ],
+  "observed_at": "2026-10-30T13:08:31Z",
+  "proposal_head": "f2b8f421",
+  "publication_authorized": false,
+  "schema": "lockspire-v148-postmerge-integration-approval-v1",
+  "source_revision": "9ffe69f122f9a1d2fd3821ee0bf0bcbf5635094a",
+  "ui_implementation_authorized": false,
+  "user_response": "Yeah, go for it. I don't really know what the integration proposal is. I guess you're saying just pushing it, authorization. Yeah, that's fine. You can do it."
+}

@@ -1,5 +1,5 @@
 ---
-status: awaiting_integration
+status: integrating
 trigger: "v1.48 postmerge acceptance after PR 141 squash"
 created: 2026-10-30
 updated: 2026-10-30
@@ -18,7 +18,7 @@ reproduction: Compare reviewed head 4a90525ccef493fc486e2950eecaeff703c88473 wit
 hypothesis: Ancestry-only provenance conflates commit identity with integration of identical reviewed source.
 test: Real Git squash fixtures plus authoritative PR metadata, including negative mutations.
 expecting: An authenticated merged PR with an identical full tree provides a narrow squash bridge; changed/unrelated source fails.
-next_action: Review source9ffe69f1 on fix/v148-squash-acceptance and 178-POSTMERGE-INTEGRATION-PROPOSAL.md; authorize its remote integration plus committed authorization custody, then run fresh exact-main acceptance on the merged SHA.
+next_action: Execute the approved non-force push and correction PR, require green CI before merge, then synchronize main and run fresh exact-main acceptance.
 
 ## Evidence
 
