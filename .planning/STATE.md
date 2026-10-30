@@ -6,7 +6,7 @@ current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
 current_plan: 12
 status: verifying
-stopped_at: fixture timing correction verified locally; new source integration approval needed; exact-main acceptance held
+stopped_at: additional fixture correction approved; integration and exact-main acceptance in progress
 last_updated: "2026-10-30"
 last_activity: 2026-10-30
 last_activity_desc: Debug v1.48 postmerge acceptance; preserve historical evidence and PARTIAL coverage debt
@@ -31,7 +31,7 @@ The first complete fresh owned contributor gate passed architecture, fast, and i
 
 The full unmodified owned source diagnostic passed; its database cleanup and original private PostgreSQL closure were confirmed. It did not reproduce the failure and cannot grant accepted-main status. A controlled three-second first workflow response independently demonstrated a two-second fixture deadline defect: main advancement is masked by polling timeout, and run replacement can pass on the wrong rejection reason. The original failed attempt's exact assertion remains unknown.
 
-A test-only correction is committed locally at `5e524fd34919f38988e6142aaf1da0e5bff54a98` on `fix/v148-polling-fixtures`. The complete rejection contract passed with deliberate delays within its existing180second bound; formatting/whitespace checks passed. Production helper/library code is unchanged. Main/origin/main remain at the merged correction revision; root HEAD now names this new local candidate. The previous approval covered one push/PR/merge for an exact candidate and is consumed; the existing canonical authorization is unchanged. Review [the additional fixture correction proposal](phases/178-packaged-upgrade-proof-delivery-handoff/178-POSTMERGE-FIXTURE-TIMING-PROPOSAL.md) before any new push or repointing authorization.
+A test-only correction is committed locally at `5e524fd34919f38988e6142aaf1da0e5bff54a98` on `fix/v148-polling-fixtures`. The complete rejection contract passed with deliberate delays within its existing180second bound; formatting/whitespace checks passed. Production helper/library code is unchanged. Main/origin/main remain at the merged correction revision; root HEAD now names this new local candidate. The user approved [the additional fixture correction proposal](phases/178-packaged-upgrade-proof-delivery-handoff/178-POSTMERGE-FIXTURE-TIMING-PROPOSAL.md) on2026-10-30 (observed15:27:24UTC): one non-force push/PR/conditional merge, truthful exact-source authorization, then fresh exact-main acceptance. The prior authorization bytes are retained separately; canonical authorization now names the approved fixture candidate.
 
 The active execution checkpoint is `/private/tmp/lockspire-v148-postmerge-progress.json`. All original processes are closed, private data and failed attempts retained, protected package unchanged, and accepted-main receipt absent. Preserve the safety stop until the correction is authorized, integrated, and accepted by the actual helper.
 Next: finish exact-main acceptance and validate the actual handoff. Milestone archiving and UI-quality milestone setup follow acceptance; existing PARTIAL coverage debt and UI decision boundaries remain. No UI implementation has started.

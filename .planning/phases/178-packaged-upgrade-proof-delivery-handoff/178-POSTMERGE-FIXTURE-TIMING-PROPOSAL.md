@@ -1,6 +1,6 @@
 # Acceptance fixture timing correction — ready for approval
 
-Status: verified locally; no push or PR for this correction. Exact-main acceptance remains held.
+Status: approved by the user; approval observed 2026-10-30 at 15:27:24 UTC. Record authorization, push the exact correction, merge only after CI, then run actual exact-main acceptance.
 
 Candidate: `5e524fd34919f38988e6142aaf1da0e5bff54a98` on `fix/v148-polling-fixtures`, based on merged main `3f64e1c6c1af19f0e5f074aff326fa04f7f6b642`. Production helper and library code are unchanged. Only `test/support/lockspire/release_proof/package_assertions.ex` changes.
 

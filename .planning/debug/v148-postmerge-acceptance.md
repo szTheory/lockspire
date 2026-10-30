@@ -18,7 +18,7 @@ reproduction: Compare reviewed head 4a90525ccef493fc486e2950eecaeff703c88473 wit
 hypothesis: Controlled delay confirms that two-second race-fixture budgets can prevent the intended second observation; original intermittent assertion remains unknown.
 test: Old-budget delay experiments timeout; the full corrected rejection contract passes with deliberate three-second delays and unchanged outer timeout. Unmodified full diagnostic also passed, separately.
 expecting: Review the concrete test-only correction before granting a new exact-source integration authorization; actual main receipt remains required afterward.
-next_action: Await approval of 178-POSTMERGE-FIXTURE-TIMING-PROPOSAL.md for local candidate `5e524fd34919f38988e6142aaf1da0e5bff54a98`. Do not repoint prior authorization, push this correction, or waive held acceptance without it. All owned processes closed/data retained.
+next_action: User approved fixture candidate and conditional integration at observed15:27:24UTC. Push, verify every canonical hosted job, merge exact head, synchronize main, then run fresh actual helper and validate emitted handoff. Preserve previous attempts and data.
 
 ## Evidence
 
@@ -94,3 +94,5 @@ files_changed: scripts/acceptance/clean_room/verifier_delivery.py; test/acceptan
 ## Controlled fixture timing defect and verified correction
 
 A three-second first fake workflow response makes both old two-second fixtures expire before their second observation. Main advancement then rejects at workflow evidence rather than acceptance identity; run replacement's broad label previously accepted timeout as success. With a3600second helper budget, both reach their intended identity check. The prepared correction retains the existing180second outer test limit, injects that delay, and strengthens replacement-message assertion. The complete corrected contract passed in122seconds; formatting/whitespace checks passed. This independently demonstrates a fixture defect but does not recover the original failed assertion. Evidence and proposal are linked from STATE; local source commit is recorded in the proposal. No new remote operation is authorized or executed. Main acceptance remains held.
+
+User approved the concrete additional correction proposal on2026-10-30; approval observed15:27:24UTC. The canonical authorization names5e524; prior9ffe authorization retained in178-SQUASH-CORRECTION-INTEGRATION-AUTHORIZATION.json. No receipt is granted by this authorization.
