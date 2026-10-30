@@ -69,6 +69,18 @@ class VerifierCiWrapperContracts(unittest.TestCase):
                 f"{pair} proof must retain the independently provisioned manifest digest",
             )
 
+    def test_postmerge_jobs_build_their_exact_checkout_instead_of_reusing_historical_source(self) -> None:
+        workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+        steps = workflow.split("- name: Provision authenticated verifier candidate inputs")[1:]
+        self.assertEqual(len(steps), 2)
+        for body in steps:
+            step = body.split("\n      - name:", 1)[0]
+            self.assertIn('EXPECTED_RUNNER_REVISION: ${{ github.sha }}', step)
+            self.assertIn('--expected-runner "$EXPECTED_RUNNER_REVISION"', step)
+            self.assertIn('--expected-candidate-source "$EXPECTED_RUNNER_REVISION"', step)
+            self.assertNotIn('--reviewed-candidate-source', step)
+            self.assertIn('--manifest-path .artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json', step)
+
     def test_wrapper_is_an_executable_maintained_entrypoint(self) -> None:
         self.assertTrue(WRAPPER.is_file(), "pair proof wrapper must exist")
         self.assertTrue(os.access(WRAPPER, os.X_OK), "pair proof wrapper must be executable")

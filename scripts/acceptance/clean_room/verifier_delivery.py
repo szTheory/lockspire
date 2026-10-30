@@ -321,7 +321,8 @@ def create_frozen_manifest(
 def validate_frozen_manifest(phase_dir: Path, *, expected_runner: str,
                              expected_candidate_source: str, expected_archive_sha256: str,
                              expected_tree_sha256: str, expected_manifest_sha256: str,
-                             manifest_path: Path | None = None) -> dict[str, Any]:
+                             manifest_path: Path | None = None,
+                             _historical_checkout: str | None = None) -> dict[str, Any]:
     verify_phase175_frozen_inputs()
     selected_manifest = os.environ.get("LOCKSPIRE_FROZEN_INPUTS")
     manifest_path = _safe_manifest_path(
@@ -342,21 +343,23 @@ def validate_frozen_manifest(phase_dir: Path, *, expected_runner: str,
         raise DeliveryError("frozen runner differs from its independent caller pin")
     if _git("rev-parse", f"{runner}^{{tree}}") != manifest.get("runner_tree"):
         raise DeliveryError("frozen runner tree does not match its commit")
-    actual_head = _git("rev-parse", "HEAD")
-    if actual_head != runner and not _reviewed_revision_is_ancestor(runner, actual_head):
+    actual_head = _historical_checkout or _git("rev-parse", "HEAD")
+    if actual_head != runner and not _reviewed_revision_is_integrated(runner, actual_head):
         raise DeliveryError("executed checkout is unrelated to the independently pinned runner")
     rows = manifest.get("covered_inputs")
     expected_paths = list(covered_inputs(runner))
     if manifest.get("closure_rule") != CLOSURE_RULE or covered_inputs(actual_head) != tuple(expected_paths):
         raise DeliveryError("frozen input closure rule or tracked path set changed")
-    _selected_worktree(tuple(expected_paths))
+    if _historical_checkout is None:
+        _selected_worktree(tuple(expected_paths))
     runner_hashes = committed_hashes(ROOT, runner, PLANNING_INPUTS)
     head_hashes = committed_hashes(ROOT, actual_head, PLANNING_INPUTS)
     if not isinstance(rows, list) or [row.get("path") for row in rows if isinstance(row, dict)] != expected_paths:
         raise DeliveryError("frozen input path set differs from the bounded contract")
     for row in rows:
-        path = _safe_repo_file(row["path"])
-        if not isinstance(row.get("sha256"), str) or sha256(path) != row["sha256"]:
+        if (not isinstance(row.get("sha256"), str) or not SHA.fullmatch(row["sha256"])
+                or (_historical_checkout is None
+                    and sha256(_safe_repo_file(row["path"])) != row["sha256"])):
             raise DeliveryError("covered input bytes changed after freeze")
         if (runner_hashes.get(row["path"]) != row["sha256"] or head_hashes.get(row["path"]) != row["sha256"]):
             raise DeliveryError("frozen input bytes are not owned by the tested runner commit")
@@ -558,6 +561,50 @@ def _reviewed_revision_is_ancestor(reviewed: str, expected: str) -> bool:
     return result.returncode == 0
 
 
+def _reviewed_revision_is_integrated(reviewed: str, expected: str) -> bool:
+    """Prove ancestry or an authoritative, tree-identical squash into main.
+
+    Keep original tested/reviewed commit identities. Equal selected bytes alone
+    do not prove integration: the squash bridge must belong to a merged PR in
+    origin, and its final head must contain the reviewed revision.
+    """
+    if not REVISION.fullmatch(reviewed) or not REVISION.fullmatch(expected):
+        return False
+    if _reviewed_revision_is_ancestor(reviewed, expected):
+        return True
+    repo = _github_repository()
+    observed = _github_json(f"repos/{repo}/commits/{reviewed}/pulls?per_page=100",
+                            list_key="pull_requests")
+    pulls = observed["pull_requests"]
+    # A full page is ambiguous without pagination. Never infer provenance from
+    # an incomplete association list or a similarly named branch/repository.
+    if len(pulls) >= 100:
+        raise DeliveryError("squash pull request association is incomplete")
+    for row in pulls:
+        number = row.get("number") if isinstance(row, dict) else None
+        if type(number) is not int or number <= 0:
+            raise DeliveryError("squash pull request association is malformed")
+        pull = _github_json(f"repos/{repo}/pulls/{number}")
+        head = pull.get("head", {})
+        base = pull.get("base", {})
+        head_sha = head.get("sha") if isinstance(head, dict) else None
+        merged_sha = pull.get("merge_commit_sha")
+        if (pull.get("number") != number or pull.get("merged") is not True
+                or pull.get("state") != "closed" or not pull.get("merged_at")
+                or not isinstance(merged_sha, str) or not REVISION.fullmatch(merged_sha)
+                or not isinstance(base, dict) or base.get("ref") != "main"
+                or not isinstance(base.get("repo"), dict)
+                or base["repo"].get("full_name") != repo
+                or not isinstance(head_sha, str) or not REVISION.fullmatch(head_sha)):
+            continue
+        if (_reviewed_revision_is_ancestor(reviewed, head_sha)
+                and _reviewed_revision_is_ancestor(merged_sha, expected)
+                and _git("rev-parse", f"{head_sha}^{{tree}}")
+                    == _git("rev-parse", f"{merged_sha}^{{tree}}")):
+            return True
+    return False
+
+
 def _metadata_only_difference(older: str, newer: str) -> bool:
     # Evidence and review records may advance HEAD. Applicability depends on
     # every selected byte, including newly tracked dependencies, not filenames
@@ -705,8 +752,9 @@ def _check_frozen(phase_dir: Path, pins: dict[str, str]) -> dict[str, Any]:
 
 
 def _check_package(phase_dir: Path, locked_root: Path, floor_root: Path,
-                   pins: dict[str, str], *, executed_runner: str | None = None) -> dict[str, Any]:
-    frozen = validate_frozen_manifest(phase_dir, **pins)
+                  pins: dict[str, str], *, executed_runner: str | None = None,
+                  _historical_checkout: str | None = None) -> dict[str, Any]:
+    frozen = validate_frozen_manifest(phase_dir, **pins, _historical_checkout=_historical_checkout)
     owner = frozen["candidate_owner"]
     runner = executed_runner or _git("rev-parse", "HEAD")
     if (not _reviewed_revision_is_ancestor(frozen["runner_revision"], runner)
@@ -893,8 +941,8 @@ def record_source_acceptance(
 
 
 def _check_source(phase_dir: Path, locked_root: Path, floor_root: Path,
-                  pins: dict[str, str]) -> dict[str, Any]:
-    frozen = validate_frozen_manifest(phase_dir, **pins)
+                  pins: dict[str, str], *, _historical_checkout: str | None = None) -> dict[str, Any]:
+    frozen = validate_frozen_manifest(phase_dir, **pins, _historical_checkout=_historical_checkout)
     record = _read_json(phase_dir / "178-SOURCE-ACCEPTANCE.json", "source acceptance record")
     if record.get("schema") != "lockspire-phase178-source-acceptance-v1":
         raise DeliveryError("source acceptance record schema is invalid")
@@ -939,7 +987,8 @@ def _check_source(phase_dir: Path, locked_root: Path, floor_root: Path,
             {field: stage[field] for field in ("tests", "failures", "properties", "stdout_bytes", "stdout_sha256")}
             for stage in stages] != guard_ci["exunit_counts"]:
         raise DeliveryError("source acceptance CI stage results differ from the live owned guard capture")
-    if _check_package(phase_dir, locked_root, floor_root, pins, executed_runner=tested_runner)["executed_receipt_count"] != record.get("package_receipt_count"):
+    if _check_package(phase_dir, locked_root, floor_root, pins, executed_runner=tested_runner,
+                      _historical_checkout=_historical_checkout)["executed_receipt_count"] != record.get("package_receipt_count"):
         raise DeliveryError("source acceptance package proof is absent or changed")
     if sha256(phase_dir / "178-PACKAGE-ACCEPTANCE.md") != record.get("package_acceptance_sha256"):
         raise DeliveryError("source acceptance package report bytes changed")
@@ -1097,13 +1146,16 @@ def _observe_candidate_identity(candidate: dict[str, Any], observation: dict[str
     if candidate["event"] == "pull_request":
         number = observation["pull_request_number"]
         matches = [row for row in run.get("pull_requests", []) if isinstance(row, dict) and row.get("number") == number]
-        if (len(matches) != 1 or matches[0].get("head", {}).get("sha") != candidate["reviewed_head_sha"]
+        if run.get("pull_requests") == []:
+            _observe_closed_candidate(candidate, observation, repository, endpoint)
+        elif (len(matches) != 1 or matches[0].get("head", {}).get("sha") != candidate["reviewed_head_sha"]
                 or matches[0].get("base", {}).get("sha") != observation["pull_request_base_sha"]
                 or run.get("head_sha") not in {candidate["reviewed_head_sha"], candidate["executed_checkout_sha"]}):
             raise DeliveryError("candidate PR head or base differs from authoritative run association")
-        ref = _github_json(f"repos/{repository}/git/ref/pull/{number}/merge")
-        if ref.get("ref") != observation["checkout_ref"] or ref.get("object", {}).get("sha") != candidate["executed_checkout_sha"]:
-            raise DeliveryError("candidate merge checkout differs from authoritative PR ref")
+        else:
+            ref = _github_json(f"repos/{repository}/git/ref/pull/{number}/merge")
+            if ref.get("ref") != observation["checkout_ref"] or ref.get("object", {}).get("sha") != candidate["executed_checkout_sha"]:
+                raise DeliveryError("candidate merge checkout differs from authoritative PR ref")
     elif (run.get("head_sha") != candidate["executed_checkout_sha"]
           or observation.get("pull_request_number") is not None or observation.get("pull_request_base_sha") is not None
           or observation.get("checkout_ref") != f"refs/heads/{run.get('head_branch')}"):
@@ -1115,16 +1167,76 @@ def _observe_candidate_identity(candidate: dict[str, Any], observation: dict[str
         raise DeliveryError("candidate checkout differs from authoritative Git commit relation")
 
 
-def _github_json(endpoint: str) -> dict[str, Any]:
-    result = subprocess.run(("gh", "api", endpoint), cwd=ROOT, stdin=subprocess.DEVNULL,
-                            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+def _observe_closed_candidate(candidate: dict[str, Any], observation: dict[str, Any],
+                              repository: str, endpoint: str) -> None:
+    """Recover immutable checkout ownership after GitHub removes PR run refs."""
+    number = observation["pull_request_number"]
+    pull = _github_json(f"repos/{repository}/pulls/{number}")
+    head = pull.get("head", {}).get("sha")
+    merged = pull.get("merge_commit_sha")
+    if (pull.get("number") != number or pull.get("merged") is not True
+            or pull.get("state") != "closed" or not pull.get("merged_at")
+            or pull.get("base", {}).get("ref") != "main"
+            or pull.get("base", {}).get("repo", {}).get("full_name") != repository
+            or pull.get("base", {}).get("sha") != observation["pull_request_base_sha"]
+            or observation["workflow_head_sha"] not in {candidate["reviewed_head_sha"], candidate["executed_checkout_sha"]}
+            or not isinstance(head, str) or not REVISION.fullmatch(head)
+            or not isinstance(merged, str) or not REVISION.fullmatch(merged)
+            or not _reviewed_revision_is_ancestor(candidate["reviewed_head_sha"], head)
+            or not _metadata_only_difference(candidate["reviewed_head_sha"], head)
+            or _git("rev-parse", f"{head}^{{tree}}") != _git("rev-parse", f"{merged}^{{tree}}")):
+        raise DeliveryError("closed candidate PR does not preserve the reviewed source")
+    response = _github_json(endpoint + "/jobs?per_page=100")
+    jobs = response.get("jobs")
+    if (not isinstance(jobs, list) or response.get("total_count") != len(CANONICAL_CI_JOBS)
+            or len(jobs) != len(CANONICAL_CI_JOBS)
+            or {row.get("name") for row in jobs if isinstance(row, dict)} != set(CANONICAL_CI_JOBS)):
+        raise DeliveryError("closed candidate checkout job graph is incomplete")
+    seen: set[int] = set()
+    for job in jobs:
+        identifier = job.get("id")
+        if (type(identifier) is not int or identifier <= 0 or identifier in seen
+                or job.get("run_id") != int(candidate["run_id"])
+                or job.get("run_attempt") != candidate["run_attempt"]
+                or job.get("head_sha") != observation["workflow_head_sha"]
+                or job.get("status") != "completed" or job.get("conclusion") != "success"):
+            raise DeliveryError("closed candidate checkout job ownership differs")
+        seen.add(identifier)
+        log = _github_bytes(f"repos/{repository}/actions/jobs/{identifier}/logs")
+        # Only the checkout action's own git-log command and its next SHA line
+        # establish GITHUB_SHA. Raw job output is never rendered or persisted.
+        matches = re.findall(
+            rb"(?m)^\S+ \[command\]\S*/git log -1 --format=%H\r?\n\S+ ([0-9a-f]{40,64})\r?$", log)
+        if matches != [candidate["executed_checkout_sha"].encode("ascii")]:
+            raise DeliveryError("closed candidate checkout differs from authoritative job log")
+
+
+def _github_bytes(endpoint: str) -> bytes:
+    command = ("gh", "api", endpoint)
+    result = subprocess.run(command, cwd=ROOT, stdin=subprocess.DEVNULL,
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                             check=False, timeout=30)
-    if result.returncode:
+    if (result.returncode and endpoint.endswith("/logs")
+            and b"the response contains terminal escape sequences" in result.stderr):
+        # Newer gh versions protect terminal output even when captured. This
+        # retry still captures bytes privately; no log is sent to a terminal.
+        result = subprocess.run((*command, "--allow-escape-sequences"), cwd=ROOT,
+                                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, check=False, timeout=30)
+    if result.returncode or len(result.stdout) > 64 * 1024 * 1024:
         raise DeliveryError("authoritative hosted observation is unavailable")
+    return result.stdout
+
+
+def _github_json(endpoint: str, *, list_key: str | None = None) -> dict[str, Any]:
     try:
-        value = json.loads(result.stdout, object_pairs_hook=_unique_object)
+        value = json.loads(_github_bytes(endpoint), object_pairs_hook=_unique_object)
     except (UnicodeError, ValueError):
         raise DeliveryError("authoritative hosted observation is malformed") from None
+    if list_key is not None:
+        if not isinstance(value, list):
+            raise DeliveryError("authoritative hosted observation is malformed")
+        return {list_key: value}
     if not isinstance(value, dict):
         raise DeliveryError("authoritative hosted observation is malformed")
     return value
@@ -1331,7 +1443,7 @@ def _artifact_zip_pair(path: Path, *, pair: str, runner: str,
         raise DeliveryError("downloaded candidate artifact bytes are invalid") from None
 
 
-def _check_candidate(phase_dir: Path) -> dict[str, Any]:
+def _check_candidate(phase_dir: Path, *, historical: bool = False) -> dict[str, Any]:
     identity = _check_candidate_identity(phase_dir)
     source_record = _read_json(phase_dir / "178-SOURCE-ACCEPTANCE.json", "source acceptance record")
     source_pins = {
@@ -1346,7 +1458,11 @@ def _check_candidate(phase_dir: Path) -> dict[str, Any]:
             or any(not isinstance(source_pins[key], str) for key in (
                 "expected_archive_sha256", "expected_tree_sha256", "expected_manifest_sha256"))):
         raise DeliveryError("candidate source acceptance lacks independently frozen source pins")
-    _check_source(phase_dir, ARTIFACT_DEFAULT / "final-locked", ARTIFACT_DEFAULT / "final-floor", source_pins)
+    # Handoff revalidates historical candidate evidence at its authenticated
+    # checkout. The main helper separately proves today's actual source. Live
+    # producer/check commands retain the working-tree freeze requirement.
+    _check_source(phase_dir, ARTIFACT_DEFAULT / "final-locked", ARTIFACT_DEFAULT / "final-floor", source_pins,
+                  _historical_checkout=identity["executed_checkout_sha"] if historical else None)
     gates = _read_json(phase_dir / "178-CANDIDATE-GATES.json", "candidate hosted gates")
     gate_fields = {"schema", "workflow_path", "event", "run_id", "run_attempt",
                    "executed_checkout_sha", "runner_sha", "package_source_sha",
@@ -1456,7 +1572,8 @@ def _check_candidate(phase_dir: Path) -> dict[str, Any]:
             or artifact_results.get("floor") != {"receipts": 12, "cases": 31}):
         raise DeliveryError("candidate uploaded package artifacts do not contain the exact raw matrix partitions")
     return {"jobs": len(jobs), "run_id": identity["run_id"],
-            "run_attempt": identity["run_attempt"], "artifacts": artifact_results}
+            "run_attempt": identity["run_attempt"], "artifacts": artifact_results,
+            "validation_scope": "historical_candidate" if historical else "current_checkout"}
 
 
 def _check_handoff(phase_dir: Path) -> dict[str, Any]:
@@ -1564,7 +1681,7 @@ def _check_handoff(phase_dir: Path) -> dict[str, Any]:
             or auth_record.get("schema") != "lockspire-phase178-integration-authorization-v1"
             or auth_record.get("status") != "authorized"
             or not isinstance(auth_record.get("candidate_sha"), str) or not REVISION.fullmatch(auth_record["candidate_sha"])
-            or not _reviewed_revision_is_ancestor(auth_record["candidate_sha"], main_sha)
+            or not _reviewed_revision_is_integrated(auth_record["candidate_sha"], main_sha)
             or not _metadata_only_difference(auth_record["candidate_sha"], main_sha)
             or auth_record.get("authorized_by") != authorization["authorized_by"]
             or auth_record.get("authorized_at") != authorization["authorized_at"]):
@@ -1590,11 +1707,8 @@ def _check_handoff(phase_dir: Path) -> dict[str, Any]:
     if supplemental != {"classification": "supplemental_non_certifying", "required_gate": False}:
         raise DeliveryError("supplemental non-certifying evidence classification changed")
     candidate = _check_candidate_identity(phase_dir)
-    _check_candidate(phase_dir)
-    ancestor = subprocess.run(("git", "merge-base", "--is-ancestor", candidate["reviewed_head_sha"], main_sha),
-                              cwd=ROOT, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL, check=False, timeout=20)
-    if ancestor.returncode:
+    _check_candidate(phase_dir, historical=True)
+    if not _reviewed_revision_is_integrated(candidate["reviewed_head_sha"], main_sha):
         raise DeliveryError("accepted main does not contain the reviewed candidate")
     return {"accepted_main": True, "main_sha": main_sha, "helper_sha256": handoff["main_acceptance_sha256"]}
 
@@ -1628,7 +1742,7 @@ def integration_authorization(expected_runner: str) -> dict[str, Any]:
     if (set(record) != {"schema", "status", "candidate_sha", "authorized_by", "authorized_at"}
             or record.get("schema") != "lockspire-phase178-integration-authorization-v1"
             or record.get("status") != "authorized" or not isinstance(source, str) or not REVISION.fullmatch(source)
-            or not _reviewed_revision_is_ancestor(source, expected_runner)
+            or not _reviewed_revision_is_integrated(source, expected_runner)
             or not _metadata_only_difference(source, expected_runner)
             or not isinstance(record.get("authorized_by"), str) or not 3 <= len(record["authorized_by"]) <= 120
             or not isinstance(record.get("authorized_at"), str)

@@ -28,12 +28,15 @@ EPOCH_LOCK_PATHS = {
 @lru_cache(maxsize=1)
 def _epoch_lock_bytes():
     from package_input import bounded_run
-    for descendant in (PUBLISHED_TEMPLATE_DESCENDANT, "HEAD"):
-        relation = bounded_run(("git", "merge-base", "--is-ancestor", TEMPLATE_SOURCE_REVISION, descendant),
-                               cwd=ROOT, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE, timeout=15)
-        if relation.returncode:
-            raise AssertionError("pinned fixture epoch requires published branch history")
+    # These synthetic templates belong to their immutable published epoch,
+    # independently of today's checkout. A squash removes HEAD ancestry but
+    # does not change the pinned objects or their lock-byte identities.
+    relation = bounded_run(("git", "merge-base", "--is-ancestor", TEMPLATE_SOURCE_REVISION,
+                            PUBLISHED_TEMPLATE_DESCENDANT),
+                           cwd=ROOT, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE, timeout=15)
+    if relation.returncode:
+        raise AssertionError("pinned fixture epoch requires published branch history")
     rows = {}
     for pair, relative in EPOCH_LOCK_PATHS.items():
         result = bounded_run(("git", "show", f"{TEMPLATE_SOURCE_REVISION}:{relative}"), cwd=ROOT,

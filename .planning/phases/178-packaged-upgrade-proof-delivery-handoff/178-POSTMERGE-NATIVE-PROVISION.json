@@ -1,0 +1,26 @@
+{
+  "accepted_main": false,
+  "application_started": false,
+  "covered_input_count": 1079,
+  "database_started": false,
+  "exit_code": 0,
+  "finished_at": "2026-10-30T12:41:05.591353+00:00",
+  "manifest_sha256": "6b09fa64483b620d1e00e76168f89c0a3370f4398023559d1e5cd258cbaab9a0",
+  "package_archive_equal_historical": true,
+  "package_tree_equal_historical": true,
+  "pins": {
+    "expected_archive_sha256": "eea947dd6a734b60bd502b4d202ecc9cfa7cc7adbdf05bf21d30fa7830f9209c",
+    "expected_candidate_source": "9ffe69f122f9a1d2fd3821ee0bf0bcbf5635094a",
+    "expected_manifest_sha256": "6b09fa64483b620d1e00e76168f89c0a3370f4398023559d1e5cd258cbaab9a0",
+    "expected_runner": "9ffe69f122f9a1d2fd3821ee0bf0bcbf5635094a",
+    "expected_tree_sha256": "01285ffcc1ef607ebefe39ff02bbf08f50bb0ac44127cef1cd05dbc324bce10b"
+  },
+  "private_source_clean_after": true,
+  "protected_package_unchanged": true,
+  "retained_private_root": "/private/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-v148-postmerge-provision-otwwxup9",
+  "runtime_acceptance": false,
+  "schema": "lockspire-v148-postmerge-native-provision-v1",
+  "source_revision": "9ffe69f122f9a1d2fd3821ee0bf0bcbf5635094a",
+  "started_at": "2026-10-30T12:40:57.504313+00:00",
+  "status": "passed"
+}
