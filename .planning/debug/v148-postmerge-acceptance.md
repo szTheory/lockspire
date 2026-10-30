@@ -18,7 +18,7 @@ reproduction: Compare reviewed head 4a90525ccef493fc486e2950eecaeff703c88473 wit
 hypothesis: Confirmed: owner validation used today's workflow digest for historical execution authority.
 test: Red full-squash/CI-change regression reproduced OwnerError; final full native301suite, both chains, tampering negatives, real retained-evidence probe and native exact-source provisioning now pass. Synthetic fixtures use their pinned workflow epoch.
 expecting: Integrate the verified correction before any new accepted-main claim. All original receipts/owners remain unchanged.
-next_action: Await the concrete additional integration authority in178-POSTMERGE-OWNER-BINDING-PROPOSAL.md for candidate `75de906c2571dcc1913520bb46e9d494ed492c96`. Prior exact-source PR approval is consumed; canonical authorization unchanged, canonical handoff pending. All owned helper/database groups closed and data retained.
+next_action: User approved owner-binding candidate75de906c and conditional integration at observed17:28:54UTC. Push, verify all hosted jobs, merge exact head, synchronize main, then fresh actual helper and complete handoff validation. Preserve prior receipts and failures; no further confirmation required within this scope.
 
 ## Evidence
 

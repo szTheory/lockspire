@@ -1,6 +1,6 @@
 # Historical workflow-owner correction — ready for integration approval
 
-Status: verified locally; no push or PR for this correction. Canonical accepted-main handoff remains pending.
+Status: approved by the user; approval observed2026-10-30 at17:28:54UTC. Record exact-source authorization, push the approved correction, merge only after CI, then run fresh exact-main acceptance. Canonical handoff remains pending.
 
 Candidate: `75de906c2571dcc1913520bb46e9d494ed492c96` on `fix/v148-historical-workflow-owners`, based on authoritative main `7afd18e6b6678576aa52acfc00e32cdbeb958760`. Later evidence/approval commits must preserve these selected source bytes.
 

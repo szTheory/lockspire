@@ -6,7 +6,7 @@ current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
 current_plan: 12
 status: verifying
-stopped_at: historical owner-binding correction verified locally; additional exact-source integration approval needed
+stopped_at: owner-binding correction approved; conditional integration and fresh exact-main acceptance in progress
 last_updated: "2026-10-30"
 last_activity: 2026-10-30
 last_activity_desc: Debug v1.48 postmerge acceptance; preserve historical evidence and PARTIAL coverage debt
@@ -35,9 +35,9 @@ Private-lab preparation initially prevented keychain access by changing HOME and
 
 The remaining authoritative failure was historical owner selection against current CI bytes. The local review branch `fix/v148-historical-workflow-owners` now holds correction `75de906c2571dcc1913520bb46e9d494ed492c96`; local main/origin/main remain7afd18e6. The correction selects workflow bytes from the independently authenticated runner for local and uploaded owner validation. The final full native Python suite passed301tests with all five source files unchanged; both complete handoff chains and adversarial owner checks passed. A local unintegrated probe passed the real retained-evidence chain and actual helper receipt. Native exact-source provisioning passed1079inputs, unchanged package bytes, and clean source afterward; hygiene/whitespace passed. Intermediate fixture failures and preparation failures remain recorded.
 
-The concrete [owner-binding integration proposal](phases/178-packaged-upgrade-proof-delivery-handoff/178-POSTMERGE-OWNER-BINDING-PROPOSAL.md) is ready. No new push/PR occurred. Prior approval covered one exact-candidate PR and is consumed; canonical authorization still names5e524. Canonical handoff remains pending and canonical MAIN receipt absent. Attempt5's real helper receipt/source capture are separately named snapshots; never reuse them as proof of a later main revision.
+The concrete [owner-binding integration proposal](phases/178-packaged-upgrade-proof-delivery-handoff/178-POSTMERGE-OWNER-BINDING-PROPOSAL.md) is ready. The user approved this concrete additional integration on2026-10-30, observed17:28:54UTC: one non-force push/PR/conditional merge, exact-source authorization, and fresh acceptance. Canonical authorization now names75de906c; previous5e524 authorization is retained separately. No additional confirmation is needed within that scope. Canonical handoff remains pending and canonical MAIN receipt absent. Attempt5's real helper receipt/source capture are separately named snapshots; never reuse them as proof of a later main revision.
 
-The execution checkpoint is `/private/tmp/lockspire-v148-postmerge-progress.json`. All owned helper/database groups are closed, data and earlier failures retained, protected root tar unchanged, and no release published. Next: approve this concrete additional integration, then run its own CI and fresh exact-main helper/handoff. Milestone archiving and UI work remain pending; PARTIAL debt is unchanged. Preserve frozen source-input paths during later milestone closure.
+The execution checkpoint is `/private/tmp/lockspire-v148-postmerge-progress.json`. All owned helper/database groups are closed, data and earlier failures retained, protected root tar unchanged, and no release published. Next: push this approved correction, finish its own CI/conditional merge, then fresh exact-main helper/handoff. Milestone archiving and UI work remain pending; PARTIAL debt is unchanged. Preserve frozen source-input paths during later milestone closure.
 
 ## Earlier postmerge debug checkpoint — 2026-10-30
 
