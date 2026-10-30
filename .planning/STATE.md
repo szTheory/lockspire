@@ -6,10 +6,10 @@ current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
 current_plan: 12
 status: verifying
-stopped_at: receipt-path correction prepared; awaiting one additional metadata-push approval
+stopped_at: extra metadata push explicitly approved; final CI, conditional merge and main acceptance in progress
 last_updated: "2026-10-30"
 last_activity: 2026-10-30
-last_activity_desc: Canonical receipt-output collision resolved locally; isolated acceptance environment prepared; extra metadata push awaiting owner approval
+last_activity_desc: Owner explicitly approved the extra metadata push and continued integration/acceptance/archive sequence
 state_head: fb76ffbe
 progress:
   total_phases: 4
@@ -351,3 +351,7 @@ The original approval specified one metadata push and that push was used. A conc
 [Fresh isolated acceptance preparation](milestones/v1.48-CLOSEOUT-MAIN-PREPARATION.json) records `/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-v148-closeout-main-fv0fir96`. Historical evidence was copied byte-for-byte; no database/application started and no credentials were copied. Its Git origin is canonical GitHub. Continue using confirmed private Hex2.6.0/Elixir1.19.5/OTP28.5 and the existing GET-only keychain-scoped wrapper. The old accepted lab remains unchanged.
 
 Read-only watcher exec session44984 still observes CI41126719241 on the previous remote head; its result is separate from any later final-head run. Its private progress is `/private/tmp/lockspire-v148-final-pr-watch.json`. No live local test/database process remains. The user acts next on the extra-push question; the agent is waiting on that decision. Milestone remains open; no merge/tag/archive/publication or UI implementation occurred.
+
+## Additional metadata push authorized — 2026-10-30
+
+The owner answered “yes” and reaffirmed “i approve”, observed at2026-10-30T21:11:06Z, authorizing the prepared receipt-path metadata correction, one additional non-force push, restarted final CI and the already-approved protected merge/new-main-acceptance/archive sequence. The previous extra-push waiting instructions are superseded. Selected implementation remains exactly `fb76ffbe`. The agent acts next; no further acknowledgment is required within this scope unless a new material decision or failed safety gate requires input.

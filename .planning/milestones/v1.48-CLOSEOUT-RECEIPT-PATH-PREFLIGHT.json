@@ -1,11 +1,13 @@
 {
   "schema": "lockspire-v148-fresh-receipt-path-preflight-v1",
-  "status": "prepared_local_only",
+  "status": "additional_metadata_push_authorized",
   "source_changed": false,
   "prior_main": "dc3969302152028e2132759eb9edf5a7d260ac39",
   "canonical_outputs_absent": true,
   "historical_records_preserved": true,
   "reason": "run_main_source_gate publishes its generated capture with O_EXCL; retaining the prior tracked capture at its output path would refuse fresh acceptance after the actual contributor gate. Move prior generated metadata to its already preserved history, keep pending handoff truthful, and refresh the report link/fingerprint. No source-code or validator bypass.",
-  "additional_remote_push_authorized": false,
-  "next_action": "Owner approval for one extra metadata-only non-force push, cancelling/superseding the incomplete metadata CI run; then normal approved sequence."
+  "additional_remote_push_authorized": true,
+  "next_action": "Make the approved additional non-force metadata push; require final-head CI before protected merge, fresh main acceptance and archive.",
+  "authorized_at": "2026-10-30T21:11:06Z",
+  "approval": "Owner replied yes and explicitly reaffirmed i approve for the extra metadata-only non-force push and continued approved sequence."
 }
