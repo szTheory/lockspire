@@ -24,7 +24,7 @@ sys.path.insert(0, str(HERE.parent))
 
 from package_input import PackageInputError, package_tree_digest, sha256, unpack_hex_tarball  # noqa: E402
 from build_provider import PROOF_PAIR_LOCKS  # noqa: E402
-from verifier_input_closure import RULE as CLOSURE_RULE, tracked_inputs, assert_worktree_selection, committed_hashes  # noqa: E402
+from verifier_input_closure import RULE as CLOSURE_RULE, FROZEN_PHASE177_VERIFICATION, tracked_inputs, assert_worktree_selection, committed_hashes  # noqa: E402
 from verifier_receipt_owner import capture as capture_owner, validate_document as validate_owner_document, selected_owner, OwnerError  # noqa: E402
 from verifier_receipts import (  # noqa: E402
     REQUIRED_MATRIX, ReceiptError, _unique_object, expected_case_ids, validate_complete_matrix,
@@ -69,7 +69,7 @@ PLANNING_INPUTS = (
     '.planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-RESEARCH.md',
     '.planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-PATTERNS.md',
     '.planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-VALIDATION.md',
-    '.planning/phases/177-safe-verifier-maintenance-recovery/177-VERIFICATION.md',
+    FROZEN_PHASE177_VERIFICATION,
     '.planning/phases/177-safe-verifier-maintenance-recovery/177-SECURITY.md',
     '.planning/phases/177-safe-verifier-maintenance-recovery/177-SOURCE-ACCEPTANCE.json',
     '.planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-FINAL-SOURCE.json',
