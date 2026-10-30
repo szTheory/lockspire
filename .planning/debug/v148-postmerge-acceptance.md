@@ -15,10 +15,10 @@ reproduction: Compare reviewed head 4a90525ccef493fc486e2950eecaeff703c88473 wit
 
 ## Current Focus
 
-hypothesis: Controlled delay confirms that two-second race-fixture budgets can prevent the intended second observation; original intermittent assertion remains unknown.
-test: Old-budget delay experiments timeout; the full corrected rejection contract passes with deliberate three-second delays and unchanged outer timeout. Unmodified full diagnostic also passed, separately.
-expecting: Review the concrete test-only correction before granting a new exact-source integration authorization; actual main receipt remains required afterward.
-next_action: User approved fixture candidate and conditional integration at observed15:27:24UTC. Push, verify every canonical hosted job, merge exact head, synchronize main, then run fresh actual helper and validate emitted handoff. Preserve previous attempts and data.
+hypothesis: Confirmed: owner validation used today's workflow digest for historical execution authority.
+test: Red full-squash/CI-change regression reproduced OwnerError; final full native301suite, both chains, tampering negatives, real retained-evidence probe and native exact-source provisioning now pass. Synthetic fixtures use their pinned workflow epoch.
+expecting: Integrate the verified correction before any new accepted-main claim. All original receipts/owners remain unchanged.
+next_action: Await the concrete additional integration authority in178-POSTMERGE-OWNER-BINDING-PROPOSAL.md for candidate `75de906c2571dcc1913520bb46e9d494ed492c96`. Prior exact-source PR approval is consumed; canonical authorization unchanged, canonical handoff pending. All owned helper/database groups closed and data retained.
 
 ## Evidence
 
@@ -96,3 +96,17 @@ files_changed: scripts/acceptance/clean_room/verifier_delivery.py; test/acceptan
 A three-second first fake workflow response makes both old two-second fixtures expire before their second observation. Main advancement then rejects at workflow evidence rather than acceptance identity; run replacement's broad label previously accepted timeout as success. With a3600second helper budget, both reach their intended identity check. The prepared correction retains the existing180second outer test limit, injects that delay, and strengthens replacement-message assertion. The complete corrected contract passed in122seconds; formatting/whitespace checks passed. This independently demonstrates a fixture defect but does not recover the original failed assertion. Evidence and proposal are linked from STATE; local source commit is recorded in the proposal. No new remote operation is authorized or executed. Main acceptance remains held.
 
 User approved the concrete additional correction proposal on2026-10-30; approval observed15:27:24UTC. The canonical authorization names5e524; prior9ffe authorization retained in178-SQUASH-CORRECTION-INTEGRATION-AUTHORIZATION.json. No receipt is granted by this authorization.
+
+## Actual helper success and remaining historical owner failure
+
+Main7afd18e6 passed CI41088094026 all seven jobs and no-publish Release41088094056. Attempt5's actual helper exited0 and emitted receiptf99015c776a54bbb3c39d2701c264d5a4de5659fbb10d54d595623d22d29b16e after fresh15/2187+2properties/261 source tests, zero failures. Original groups closed, private data retained, protected root tar unchanged. No accepted root handoff yet.
+
+Initial handoff API403 was isolated HOME preventing existing keychain access (public API reads worked); a GitHub-only wrapper restores original HOME for gh alone. A second failure exposed omitted retained ci-candidate archive/tree, copied389files with every frozen digest verified. Neither requires source changes, test reruns, or new database execution; all failed records retained.
+
+Authenticated complete-input validation now reaches compose_pair_indexes / validate_document and rejects the historical owner against current workflow digest841697... instead of originalab64ee...; its owner digest matches original Git source exactly. This is a remaining historical/current-source conflation, independently reproduced by controlled workflow-change regression. Preparing a narrow correction; no historical bytes restamped and no further remote operation performed.
+
+## Verified remaining owner-binding correction
+
+The full squash-chain CI-change regression reproduced OwnerError before the fix. Delivery owner validation now selects committed workflow bytes from the independently authenticated runner and uses a private snapshot with the unchanged owner validator. Both local composition/upload paths bind original workflow digests, package/version/runtime/observation identities, and profiles. Adversarial source/digest/runtime/runner substitutions fail closed. Synthetic template CLI/composition/upload contexts explicitly retain their immutable workflow epoch; no retained evidence rewritten.
+
+Final full native301suite passed with all five source hashes unchanged, both full chains passed, real retained-evidence/actual helper probe passed as unintegrated local evidence, native provisioning1079inputs passed with identical package archive/tree and clean source, hygiene18/0/0 and whitespace passed. Intermediate full-suite fixture failures remain recorded. Candidate/proposal/evidence are linked from STATE. No new remote action or authorization repointing occurred; canonical handoff remains pending and MAINreceipt absent. Original actual helper receipt/source capture are preserved under explicit attempt5 snapshot names. All original helper/database groups closed, data retained, protected package unchanged. Additional exact-source integration authority is the remaining boundary.

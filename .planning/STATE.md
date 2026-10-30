@@ -6,11 +6,11 @@ current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
 current_plan: 12
 status: verifying
-stopped_at: additional fixture correction approved; integration and exact-main acceptance in progress
+stopped_at: historical owner-binding correction verified locally; additional exact-source integration approval needed
 last_updated: "2026-10-30"
 last_activity: 2026-10-30
 last_activity_desc: Debug v1.48 postmerge acceptance; preserve historical evidence and PARTIAL coverage debt
-state_head: 3f64e1c6
+state_head: 75de906c
 progress:
   total_phases: 4
   completed_phases: 4
@@ -23,18 +23,21 @@ progress:
 
 ## Current acceptance checkpoint — 2026-10-30
 
-Read [working preferences](WORKING-PREFERENCES.md) before OpenGSD planning, execution, review, or user-facing updates. These are the user's explicit communication and workflow corrections.
+Read [working preferences](WORKING-PREFERENCES.md), including the user's latest instruction to continue authorized work until a real decision or phase/milestone boundary.
 
-The user authorized the correction and conditional integration. PR [#143](https://github.com/szTheory/lockspire/pull/143) passed every canonical premerge CI job and merged. HEAD/main/origin/main are synchronized at `3f64e1c6c1af19f0e5f074aff326fa04f7f6b642`. Postmerge CI [41068236671](https://github.com/szTheory/lockspire/actions/runs/41068236671) passed all seven canonical jobs; Release [41068236662](https://github.com/szTheory/lockspire/actions/runs/41068236662) passed with publication jobs skipped.
+Both checker corrections are merged. PR [#143](https://github.com/szTheory/lockspire/pull/143) corrected squash/historical provenance; PR [#144](https://github.com/szTheory/lockspire/pull/144) corrected a rejection-fixture timing defect after controlled delay reproduced it. All seven canonical premerge jobs and Dependency Review passed for the exact approved second head. After that merge, HEAD/main/origin/main were synchronized at `7afd18e6b6678576aa52acfc00e32cdbeb958760`; its full tree equals reviewed head `e6e999e44a8c942934339ceff62fdd18883fc010`.
 
-The first complete fresh owned contributor gate passed architecture, fast, and integration suites; database cleanup and private PostgreSQL closure were confirmed. Its acceptance helper stopped on workflow-evidence lookup while CI was running. Once hosted CI completed, the next exact-main helper attempt failed one local test: `test/lockspire/release/repository_hygiene_contract_test.exs:188`, the acceptance helper's rejection-path contract. That attempt stopped, its database was independently cleaned, and private PostgreSQL closed. No accepted-main receipt exists.
+Postmerge CI [41088094026](https://github.com/szTheory/lockspire/actions/runs/41088094026) passed all seven canonical jobs. Release [41088094056](https://github.com/szTheory/lockspire/actions/runs/41088094056) succeeded without publication. The user explicitly approved the additional fixture correction and its conditional integration/fresh acceptance; canonical authorization names source `5e524fd34919f38988e6142aaf1da0e5bff54a98`, with prior authorization retained separately. No further user input is needed within this work.
 
-The full unmodified owned source diagnostic passed; its database cleanup and original private PostgreSQL closure were confirmed. It did not reproduce the failure and cannot grant accepted-main status. A controlled three-second first workflow response independently demonstrated a two-second fixture deadline defect: main advancement is masked by polling timeout, and run replacement can pass on the wrong rejection reason. The original failed attempt's exact assertion remains unknown.
+The actual exact-main helper completed successfully on merged source, including the complete fresh owned local gate and its emitted real receipt. Its private database was independently cleaned, original helper/database groups closed, protected package unchanged, and private data retained. Full accepted handoff validation remains held; no canonical main receipt is copied to this repository yet.
 
-A test-only correction is committed locally at `5e524fd34919f38988e6142aaf1da0e5bff54a98` on `fix/v148-polling-fixtures`. The complete rejection contract passed with deliberate delays within its existing180second bound; formatting/whitespace checks passed. Production helper/library code is unchanged. Main/origin/main remain at the merged correction revision; root HEAD now names this new local candidate. The user approved [the additional fixture correction proposal](phases/178-packaged-upgrade-proof-delivery-handoff/178-POSTMERGE-FIXTURE-TIMING-PROPOSAL.md) on2026-10-30 (observed15:27:24UTC): one non-force push/PR/conditional merge, truthful exact-source authorization, then fresh exact-main acceptance. The prior authorization bytes are retained separately; canonical authorization now names the approved fixture candidate.
+Private-lab preparation initially prevented keychain access by changing HOME and omitted the retained candidate archive/tree. GitHub-only credential context is now scoped to the existing keychain without copying credentials; retained package files were copied with all digests verified. Both failures remain recorded.
 
-The active execution checkpoint is `/private/tmp/lockspire-v148-postmerge-progress.json`. All original processes are closed, private data and failed attempts retained, protected package unchanged, and accepted-main receipt absent. Preserve the safety stop until the correction is authorized, integrated, and accepted by the actual helper.
-Next: finish exact-main acceptance and validate the actual handoff. Milestone archiving and UI-quality milestone setup follow acceptance; existing PARTIAL coverage debt and UI decision boundaries remain. No UI implementation has started.
+The remaining authoritative failure was historical owner selection against current CI bytes. The local review branch `fix/v148-historical-workflow-owners` now holds correction `75de906c2571dcc1913520bb46e9d494ed492c96`; local main/origin/main remain7afd18e6. The correction selects workflow bytes from the independently authenticated runner for local and uploaded owner validation. The final full native Python suite passed301tests with all five source files unchanged; both complete handoff chains and adversarial owner checks passed. A local unintegrated probe passed the real retained-evidence chain and actual helper receipt. Native exact-source provisioning passed1079inputs, unchanged package bytes, and clean source afterward; hygiene/whitespace passed. Intermediate fixture failures and preparation failures remain recorded.
+
+The concrete [owner-binding integration proposal](phases/178-packaged-upgrade-proof-delivery-handoff/178-POSTMERGE-OWNER-BINDING-PROPOSAL.md) is ready. No new push/PR occurred. Prior approval covered one exact-candidate PR and is consumed; canonical authorization still names5e524. Canonical handoff remains pending and canonical MAIN receipt absent. Attempt5's real helper receipt/source capture are separately named snapshots; never reuse them as proof of a later main revision.
+
+The execution checkpoint is `/private/tmp/lockspire-v148-postmerge-progress.json`. All owned helper/database groups are closed, data and earlier failures retained, protected root tar unchanged, and no release published. Next: approve this concrete additional integration, then run its own CI and fresh exact-main helper/handoff. Milestone archiving and UI work remain pending; PARTIAL debt is unchanged. Preserve frozen source-input paths during later milestone closure.
 
 ## Earlier postmerge debug checkpoint — 2026-10-30
 
