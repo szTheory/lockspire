@@ -1,0 +1,19 @@
+{
+  "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 ERL_FLAGS='+S 4' PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=test/acceptance python3 -m unittest client_verifier_session_authority_test client_verifier_wrapper_lifecycle_test client_verifier_wrapper_paths_test client_verifier_process_supervision_test client_verifier_recovery_test client_verifier_rollout_test client_verifier_endpoints_test",
+  "exitCode": 0,
+  "executedTests": 64,
+  "elapsedSeconds": 69.421,
+  "stdoutBytes": 0,
+  "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderrBytes": 243,
+  "stderrSha256": "3c076dd9c042fb960b4fb12910b26fe5de26df6bc19a5181ff2586c07cec3b7a",
+  "testedOwnedSourceSha256": {
+    "scripts/acceptance/clean_room/package_input.py": "9025d50be9046e354d87fcd0d7b611123c1868d316f31a672ad0685715647879",
+    "scripts/ci/run_verifier_upgrade_proof.sh": "e2202eef3ed137720578656a7c7fd57c251b5fd15734efc748638eb6298ba742",
+    "test/acceptance/client_verifier_session_authority_test.py": "b09556537145aa5cb1d9162664fc6a9694a866595ca2abe96a52f6cd488cd3f0",
+    "test/acceptance/client_verifier_wrapper_lifecycle_test.py": "820566f07e29b4db8bd4342818e5ab20945a3929f142e101aa0be53ec1fd521d",
+    "test/acceptance/client_verifier_wrapper_paths_test.py": "123004e8b2ff3fc53981a3bd9fc270484f848f5256534a10ac151c7f02def38f"
+  },
+  "ownedSourceUnchangedDuringChecker": true,
+  "scope": "Actual wrapper authority/delayed cleanup/parent-gone/pending/denial/PID reuse guards + actual frozen consumer paths and four existing adjacent suites; no DB/package producer/canonical CI/freeze/remote. Unknown checker output remains memory-only."
+}

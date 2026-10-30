@@ -1,0 +1,147 @@
+{
+  "candidate": {
+    "archive_sha256": "8be113c5d8cd630ee9fefba3494aac2c236350589a5cd9e7c98600a11a8d1e91",
+    "kind": "checkout",
+    "runner_revision": "2da528fba3ca894cda4e5776b47eb6ccaf12f93c",
+    "source_proof": "11296b52dc5b478d8a6a640d952c34c38295c602412d9fd8392776407e2ddef1",
+    "source_revision": "2da528fba3ca894cda4e5776b47eb6ccaf12f93c",
+    "tree_sha256": "2af2082226f0be0e47b1f761cb4e98dd526effc0f93800fbacacce1f3a46b243",
+    "version": "1.6.1"
+  },
+  "executed_count": 9,
+  "host": {
+    "compiled_candidate_sha256": "5c8b65003043f62bec0270b735023b80da3d0a956b2d2f189f948a91bb3f1a9e",
+    "live_view": "1.1.28",
+    "lock_sha256": "74212156d931add8c5acae6ad67928d08951a6c698cc6f29fec88992af38a954",
+    "phoenix": "1.8.5",
+    "resolved_dependency_verified": true,
+    "vendor_tree_sha256": "2af2082226f0be0e47b1f761cb4e98dd526effc0f93800fbacacce1f3a46b243"
+  },
+  "observations": {
+    "VPROOF-02-HTTP-BASIC-CONTROL": {
+      "assertion_audience": "http://127.0.0.1:53592/lockspire",
+      "assertion_passed": true,
+      "configured_issuer": "http://127.0.0.1:53592/lockspire",
+      "discovered_issuer": "http://127.0.0.1:53592/lockspire",
+      "executed": true,
+      "fresh_jti": true,
+      "http_status": 200,
+      "outcome": "pass",
+      "rejected_audience_uri": "http://127.0.0.1:53592/lockspire/wrong"
+    },
+    "VPROOF-02-HTTP-CIBA-JWT": {
+      "assertion_audience": "http://127.0.0.1:53592/lockspire",
+      "assertion_passed": true,
+      "configured_issuer": "http://127.0.0.1:53592/lockspire",
+      "discovered_issuer": "http://127.0.0.1:53592/lockspire",
+      "executed": true,
+      "fresh_jti": true,
+      "http_status": 200,
+      "outcome": "pass",
+      "rejected_audience_uri": "http://127.0.0.1:53592/lockspire/wrong"
+    },
+    "VPROOF-02-HTTP-DEVICE-JWT": {
+      "assertion_audience": "http://127.0.0.1:53592/lockspire",
+      "assertion_passed": true,
+      "configured_issuer": "http://127.0.0.1:53592/lockspire",
+      "discovered_issuer": "http://127.0.0.1:53592/lockspire",
+      "executed": true,
+      "fresh_jti": true,
+      "http_status": 200,
+      "outcome": "pass",
+      "rejected_audience_uri": "http://127.0.0.1:53592/lockspire/wrong"
+    },
+    "VPROOF-02-HTTP-INTROSPECTION-JWT": {
+      "assertion_audience": "http://127.0.0.1:53592/lockspire",
+      "assertion_passed": true,
+      "configured_issuer": "http://127.0.0.1:53592/lockspire",
+      "discovered_issuer": "http://127.0.0.1:53592/lockspire",
+      "executed": true,
+      "fresh_jti": true,
+      "http_status": 200,
+      "outcome": "pass",
+      "rejected_audience_uri": "http://127.0.0.1:53592/lockspire/wrong"
+    },
+    "VPROOF-02-HTTP-JWT-NEGATIVE-CONTROLS": {
+      "assertion_audience": "http://127.0.0.1:53592/lockspire",
+      "assertion_passed": true,
+      "configured_issuer": "http://127.0.0.1:53592/lockspire",
+      "discovered_issuer": "http://127.0.0.1:53592/lockspire",
+      "executed": true,
+      "fapi_message_signing_excluded": true,
+      "fapi_security_excluded": true,
+      "fresh_jti": true,
+      "http_status": 400,
+      "outcome": "pass",
+      "rejected_audience_uri": "http://127.0.0.1:53592/lockspire/wrong"
+    },
+    "VPROOF-02-HTTP-PAR-JWT-REJECTED": {
+      "assertion_audience": "http://127.0.0.1:53592/lockspire",
+      "assertion_passed": true,
+      "configured_issuer": "http://127.0.0.1:53592/lockspire",
+      "discovered_issuer": "http://127.0.0.1:53592/lockspire",
+      "executed": true,
+      "fresh_jti": true,
+      "http_status": 401,
+      "outcome": "pass",
+      "rejected_audience_uri": "http://127.0.0.1:53592/lockspire/wrong"
+    },
+    "VPROOF-02-HTTP-POST-CONTROL": {
+      "assertion_audience": "http://127.0.0.1:53592/lockspire",
+      "assertion_passed": true,
+      "configured_issuer": "http://127.0.0.1:53592/lockspire",
+      "discovered_issuer": "http://127.0.0.1:53592/lockspire",
+      "executed": true,
+      "fresh_jti": true,
+      "http_status": 200,
+      "outcome": "pass",
+      "rejected_audience_uri": "http://127.0.0.1:53592/lockspire/wrong"
+    },
+    "VPROOF-02-HTTP-REVOCATION-JWT": {
+      "assertion_audience": "http://127.0.0.1:53592/lockspire",
+      "assertion_passed": true,
+      "configured_issuer": "http://127.0.0.1:53592/lockspire",
+      "discovered_issuer": "http://127.0.0.1:53592/lockspire",
+      "executed": true,
+      "fresh_jti": true,
+      "http_status": 200,
+      "outcome": "pass",
+      "rejected_audience_uri": "http://127.0.0.1:53592/lockspire/wrong",
+      "revoked_token_inactive": true
+    },
+    "VPROOF-02-HTTP-TOKEN-JWT": {
+      "assertion_audience": "http://127.0.0.1:53592/lockspire",
+      "assertion_passed": true,
+      "configured_issuer": "http://127.0.0.1:53592/lockspire",
+      "discovered_issuer": "http://127.0.0.1:53592/lockspire",
+      "executed": true,
+      "fresh_jti": true,
+      "http_status": 200,
+      "outcome": "pass",
+      "rejected_audience_uri": "http://127.0.0.1:53592/lockspire/wrong"
+    }
+  },
+  "pair": "floor",
+  "partial": true,
+  "run_id": "7542f56acb794fc8951a79cda256eb67",
+  "runner": "2da528fba3ca894cda4e5776b47eb6ccaf12f93c",
+  "runtime": {
+    "elixir": "1.19.5",
+    "otp": "28",
+    "postgresql": "14.17 (Homebrew)"
+  },
+  "schema": "lockspire-installed-verifier-v1",
+  "scope": "endpoints",
+  "stable_case_ids": [
+    "VPROOF-02-HTTP-TOKEN-JWT",
+    "VPROOF-02-HTTP-INTROSPECTION-JWT",
+    "VPROOF-02-HTTP-REVOCATION-JWT",
+    "VPROOF-02-HTTP-DEVICE-JWT",
+    "VPROOF-02-HTTP-CIBA-JWT",
+    "VPROOF-02-HTTP-PAR-JWT-REJECTED",
+    "VPROOF-02-HTTP-JWT-NEGATIVE-CONTROLS",
+    "VPROOF-02-HTTP-BASIC-CONTROL",
+    "VPROOF-02-HTTP-POST-CONTROL"
+  ],
+  "store": "builtin"
+}

@@ -1,33 +1,33 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": "v1.47 — OAuth/OIDC Core Interoperability & Hardening",
+  "milestone": "v1.48 — Client Authentication Key Isolation & Rotation",
   "phases": [
     {
-      "number": "171",
-      "name": "Accepted Baseline & Finding Qualification",
+      "number": "175",
+      "name": "Accepted Baseline & Verifier Compatibility Contract",
+      "status": "complete"
+    },
+    {
+      "number": "176",
+      "name": "Dedicated Verifier Custody & Compatible Runtime",
+      "status": "complete"
+    },
+    {
+      "number": "177",
+      "name": "Safe Verifier Maintenance & Recovery",
+      "status": "complete"
+    },
+    {
+      "number": "178",
+      "name": "Packaged Upgrade Proof & Delivery Handoff",
       "status": "in_progress"
-    },
-    {
-      "number": "172",
-      "name": "Authorization Responses",
-      "status": "pending"
-    },
-    {
-      "number": "173",
-      "name": "Conditional PAR & Profile Boundaries",
-      "status": "pending"
-    },
-    {
-      "number": "174",
-      "name": "Packaged Proof & Delivery Handoff",
-      "status": "pending"
     }
   ],
   "next": {
     "command": "$gsd-progress --next",
     "label": "Advance to the next step",
-    "reason": "Phase 1 of 4 · 0% · executing"
+    "reason": "Phase 4 of 4 · 75% · executing"
   },
-  "updated_at": "2026-10-24T20:23:09.460Z"
+  "updated_at": "2026-10-27T18:14:05.438Z"
 }

@@ -1,0 +1,2042 @@
+{
+  "schema_version": 1,
+  "phase": 171,
+  "selection_status": "frozen",
+  "baseline": {
+    "accepted_sha": "fe38beee987b135e87c99e7aa7f2488b4c8613e8",
+    "implementation_base": "fe38beee987b135e87c99e7aa7f2488b4c8613e8",
+    "receipt_ref": ".planning/phases/171-accepted-baseline-finding-qualification/171-MAIN-ACCEPTANCE.json",
+    "receipt_sha256": "be2cdf5fe60df6788d304e451d736b4ac7746a111c9ff71b422ef27b5b777e39",
+    "receipt_schema": "lockspire-phase-139-acceptance-v1"
+  },
+  "profiles": [
+    {
+      "observation_id": "phase37-20261024T201228Z",
+      "profile": "phase37",
+      "observed_at": "2026-10-24T20:12:28Z",
+      "operator": "Codex gsd-executor (Phase 171 Plan 02)",
+      "status": "unavailable",
+      "unavailable_cause": "infrastructure_prerequisite",
+      "source_identity_check": {
+        "before_sha": "d78f0fd944b8c8612261883e09cfb844a698bd92",
+        "after_sha": "d78f0fd944b8c8612261883e09cfb844a698bd92",
+        "changed_during_observation": false
+      },
+      "source_host": {
+        "kind": "repository_source_host",
+        "source_sha": "d78f0fd944b8c8612261883e09cfb844a698bd92",
+        "path": "examples/adoption_demo",
+        "identity": "Billingo adoption host source wrapped by scripts/conformance/run_ephemeral_oidf_profile.sh; this is not a packaged-host run.",
+        "public_origin_observed": false
+      },
+      "package_identity": {
+        "status": "not_applicable",
+        "reason": "The existing wrapper runs examples/adoption_demo from this source checkout and does not install a package."
+      },
+      "suite_inputs": {
+        "lock_path": "scripts/conformance/oidf-suite-lock.json",
+        "lock_sha256": "7d5463f1e2913bd8b8d88abc491a50a848e88a9d93debf4f049c75395592b590",
+        "suite_tag": "release-v5.1.43",
+        "suite_commit": "16ad152b1b2c0baacd3d2519128340d95deb2b8c",
+        "archive_sha256": "c11be330b5a731bf3bca312f7b44d6bfe3981b448d5f58ec3dc2e48f3f509c8e",
+        "helper_sha256": {
+          "docker-compose-prebuilt.yml": "9ca2b63066e6d545edca39c59830c5afb5d569d19e14815a0f53a4682f717f2b",
+          "scripts/run-test-plan.py": "abf7b2637accfbf06a1b7f370bc16516b5ba303e7784eea387e59c74877827e1",
+          "scripts/conformance.py": "927709c76c4be48d52abaa36b5e52804803c72155695991df5a9645a9303a49f",
+          "scripts/test_plan_parser.py": "2b00870b2dc46f1d44d047c715c0ef6978f24ece97a4a9d3b48ceeea8d01830f"
+        },
+        "image_digests": {
+          "server": "sha256:f6b1bb02bc746dd216506f773bc19997b113072fd22dec515f7e3357e218d950",
+          "nginx": "sha256:6a13e1c9ae2d19f2d0fea0a371905d580d61b960e0da84c01d5006729a5f1426",
+          "mongodb": "sha256:b415b12f638e2685d06c58ab7fb5943577c50fadec6d9340ef67d21aeac72070"
+        },
+        "plan_path": "scripts/conformance/phase37-plan.json",
+        "plan_sha256": "ccf89451c2cf0d2bff8521584821a143bcb8b38fcf18d51447056814894ee820",
+        "suite_plan": "oidcc-test-plan",
+        "modules": [
+          "oidcc-prompt-none-not-logged-in",
+          "oidcc-ensure-registered-redirect-uri",
+          "oidcc-redirect-uri-query-mismatch",
+          "oidcc-redirect-uri-query-OK",
+          "oidcc-prompt-none-logged-in",
+          "oidcc-max-age-10000"
+        ]
+      },
+      "preflight": {
+        "immutable_input_validator": {
+          "command": "python3 scripts/conformance/oidf_inputs.py --lock scripts/conformance/oidf-suite-lock.json --validate-only",
+          "exit_code": 0
+        },
+        "mix_check": {
+          "command": "mix lockspire.oidf_conformance --check",
+          "exit_code": 0,
+          "diagnostic": "The command reported OK, but a separate locked-closure check showed missing or mismatched Python distributions; do not treat this preflight as dependency readiness."
+        },
+        "python": {
+          "required_version": "3.13.15",
+          "observed_version": "3.13.2",
+          "required_pip": "26.2.1",
+          "observed_pip": "25.0",
+          "exact_interpreter_lookup": {
+            "command": "UV_CACHE_DIR=/tmp/lockspire-171-uv-cache uv python find 3.13.15",
+            "exit_code": 2,
+            "result": "No interpreter found for Python 3.13.15 in virtual environments, managed installations, or search path"
+          },
+          "locked_dependencies": {
+            "command": "python3.13 metadata check against scripts/conformance/runner-requirements.lock",
+            "exit_code": 1,
+            "mismatches": [
+              "anyio 4.14.2: missing",
+              "certifi 2026.7.22: installed 2025.1.31",
+              "h11 0.16.0: missing",
+              "httpcore 1.0.9: missing",
+              "httpx 0.28.1: missing",
+              "idna 3.19: missing",
+              "pyparsing 3.3.2: missing"
+            ]
+          }
+        },
+        "resources": {
+          "docker_server": "29.5.2 available",
+          "docker_compose": "v5.1.3 available",
+          "curl": "available",
+          "jq": "available",
+          "postgres": "accepting connections at /tmp:5432",
+          "port_4100": "no listener observed"
+        }
+      },
+      "profile_attempt": {
+        "command": "LOCKSPIRE_OIDF_EPHEMERAL_DB=true LOCKSPIRE_PHASE37_ARTIFACT_DIR=.artifacts/conformance/phase37/171-02-retry-20261024T201228Z bash scripts/conformance/run_ephemeral_oidf_profile.sh phase37",
+        "started": false,
+        "interrupted": false,
+        "exit_code": null,
+        "result_classification": null,
+        "reason": "Not launched: the selected interpreter, pip, and locked dependency closure are unavailable."
+      },
+      "artifact_output": {
+        "directory_allocated": false,
+        "receipt_path": null,
+        "receipt_sha256": null,
+        "cleanup": "Not applicable; the profile wrapper and disposable resources were not started."
+      },
+      "historical_observation": {
+        "documented_run_id": "33139876101",
+        "documented_status": "suite_failure",
+        "documented_artifact": "downloaded Phase 37 receipt artifact reported in 137-VERIFICATION.md",
+        "receipt_bytes_in_current_checkout": false,
+        "summary_only_detail": "The historical verification says authorization error behavior remained; it contains no exact module assertion or per-module result.",
+        "exact_historical_assertion": "unavailable"
+      },
+      "next_owner": "Phase 171 executing maintainer (Codex gsd-executor, Plan 02)",
+      "next_action": "Prepare or select the existing workflow environment at source SHA d78f0fd944b8c8612261883e09cfb844a698bd92 with Elixir 1.19.5/OTP 28 and CPython 3.13.15/pip 26.2.1. Verify all seven distributions and wheel-lock versions from runner-requirements.lock; then retry mix lockspire.oidf_conformance --check and this wrapper serially using the recorded lock and plan identities and the new artifact directory above. Keep unavailable until a real profile receipt is produced."
+    },
+    {
+      "observation_id": "fapi2-20261024T201228Z",
+      "profile": "fapi2",
+      "observed_at": "2026-10-24T20:12:28Z",
+      "operator": "Codex gsd-executor (Phase 171 Plan 02)",
+      "status": "unavailable",
+      "unavailable_cause": "infrastructure_prerequisite",
+      "source_identity_check": {
+        "before_sha": "d78f0fd944b8c8612261883e09cfb844a698bd92",
+        "after_sha": "d78f0fd944b8c8612261883e09cfb844a698bd92",
+        "changed_during_observation": false
+      },
+      "source_host": {
+        "kind": "repository_source_host",
+        "source_sha": "d78f0fd944b8c8612261883e09cfb844a698bd92",
+        "path": "examples/adoption_demo",
+        "identity": "Billingo adoption host source wrapped by scripts/conformance/run_ephemeral_oidf_profile.sh; this is not a packaged-host run.",
+        "public_origin_observed": false
+      },
+      "package_identity": {
+        "status": "not_applicable",
+        "reason": "The existing wrapper runs examples/adoption_demo from this source checkout and does not install a package."
+      },
+      "suite_inputs": {
+        "lock_path": "scripts/conformance/oidf-suite-lock.json",
+        "lock_sha256": "7d5463f1e2913bd8b8d88abc491a50a848e88a9d93debf4f049c75395592b590",
+        "suite_tag": "release-v5.1.43",
+        "suite_commit": "16ad152b1b2c0baacd3d2519128340d95deb2b8c",
+        "archive_sha256": "c11be330b5a731bf3bca312f7b44d6bfe3981b448d5f58ec3dc2e48f3f509c8e",
+        "helper_sha256": {
+          "docker-compose-prebuilt.yml": "9ca2b63066e6d545edca39c59830c5afb5d569d19e14815a0f53a4682f717f2b",
+          "scripts/run-test-plan.py": "abf7b2637accfbf06a1b7f370bc16516b5ba303e7784eea387e59c74877827e1",
+          "scripts/conformance.py": "927709c76c4be48d52abaa36b5e52804803c72155695991df5a9645a9303a49f",
+          "scripts/test_plan_parser.py": "2b00870b2dc46f1d44d047c715c0ef6978f24ece97a4a9d3b48ceeea8d01830f"
+        },
+        "image_digests": {
+          "server": "sha256:f6b1bb02bc746dd216506f773bc19997b113072fd22dec515f7e3357e218d950",
+          "nginx": "sha256:6a13e1c9ae2d19f2d0fea0a371905d580d61b960e0da84c01d5006729a5f1426",
+          "mongodb": "sha256:b415b12f638e2685d06c58ab7fb5943577c50fadec6d9340ef67d21aeac72070"
+        },
+        "plan_path": "scripts/conformance/fapi2-plan.json",
+        "plan_sha256": "5b8f1e196da86e8d022e592d1ced5c7033667c413b64ae7b4df38c7c2b857583",
+        "suite_plan": "fapi2-security-profile-final-test-plan",
+        "modules": [],
+        "empty_modules_meaning": "Module selection is delegated to the named upstream suite plan; this is not a zero-test profile."
+      },
+      "preflight": {
+        "immutable_input_validator": {
+          "command": "python3 scripts/conformance/oidf_inputs.py --lock scripts/conformance/oidf-suite-lock.json --validate-only",
+          "exit_code": 0
+        },
+        "mix_check": {
+          "command": "mix lockspire.oidf_conformance --check",
+          "exit_code": 0,
+          "diagnostic": "The command reported OK, but a separate locked-closure check showed missing or mismatched Python distributions; do not treat this preflight as dependency readiness."
+        },
+        "python": {
+          "required_version": "3.13.15",
+          "observed_version": "3.13.2",
+          "required_pip": "26.2.1",
+          "observed_pip": "25.0",
+          "exact_interpreter_lookup": {
+            "command": "UV_CACHE_DIR=/tmp/lockspire-171-uv-cache uv python find 3.13.15",
+            "exit_code": 2,
+            "result": "No interpreter found for Python 3.13.15 in virtual environments, managed installations, or search path"
+          },
+          "locked_dependencies": {
+            "command": "python3.13 metadata check against scripts/conformance/runner-requirements.lock",
+            "exit_code": 1,
+            "mismatches": [
+              "anyio 4.14.2: missing",
+              "certifi 2026.7.22: installed 2025.1.31",
+              "h11 0.16.0: missing",
+              "httpcore 1.0.9: missing",
+              "httpx 0.28.1: missing",
+              "idna 3.19: missing",
+              "pyparsing 3.3.2: missing"
+            ]
+          }
+        },
+        "resources": {
+          "docker_server": "29.5.2 available",
+          "docker_compose": "v5.1.3 available",
+          "curl": "available",
+          "jq": "available",
+          "postgres": "accepting connections at /tmp:5432",
+          "port_4100": "no listener observed",
+          "fapi2_provider_origin_tls_browser_path": "unavailable; no profile/container/host was started, so external provider origin, TLS termination and browser path were not observed"
+        }
+      },
+      "profile_attempt": {
+        "command": "LOCKSPIRE_OIDF_EPHEMERAL_DB=true LOCKSPIRE_FAPI2_ARTIFACT_DIR=.artifacts/conformance/fapi2/171-02-retry-20261024T201228Z bash scripts/conformance/run_ephemeral_oidf_profile.sh fapi2",
+        "started": false,
+        "interrupted": false,
+        "exit_code": null,
+        "result_classification": null,
+        "reason": "Not launched: the selected interpreter, pip, and locked dependency closure are unavailable; the disposable provider-origin/TLS/browser path has not been observed."
+      },
+      "artifact_output": {
+        "directory_allocated": false,
+        "receipt_path": null,
+        "receipt_sha256": null,
+        "cleanup": "Not applicable; the profile wrapper and disposable resources were not started."
+      },
+      "historical_observation": {
+        "documented_run_id": "33139876101",
+        "documented_status": "suite_failure",
+        "documented_artifact": "downloaded FAPI 2.0 receipt artifact reported in 137-VERIFICATION.md",
+        "receipt_bytes_in_current_checkout": false,
+        "summary_only_detail": "The historical verification summarizes PAR/TLS/WebRunner interoperability; it contains no exact module assertion or per-module result.",
+        "exact_historical_assertion": "unavailable"
+      },
+      "next_owner": "Phase 171 executing maintainer (Codex gsd-executor, Plan 02)",
+      "next_action": "Prepare or select the existing workflow environment at source SHA d78f0fd944b8c8612261883e09cfb844a698bd92 with Elixir 1.19.5/OTP 28 and CPython 3.13.15/pip 26.2.1. Verify all seven distributions and wheel-lock versions from runner-requirements.lock; then retry mix lockspire.oidf_conformance --check, confirm the disposable provider-origin/TLS/browser path, and run this wrapper serially using the recorded lock and plan identities and the new artifact directory above. Keep unavailable until a real profile receipt is produced."
+    }
+  ],
+  "scope_revision": {
+    "required": false,
+    "rationale": null
+  },
+  "category_coverage": [
+    {
+      "category": "unsafe and valid callbacks; OAuth error/state and query encoding",
+      "case_ids": [
+        "A171-001",
+        "A171-002"
+      ],
+      "status": "enumerated"
+    },
+    {
+      "category": "unsupported response mode boundary",
+      "case_ids": [
+        "A171-003"
+      ],
+      "status": "qualified_counterexample"
+    },
+    {
+      "category": "prompt=none, max_age, and host-owned auth_time",
+      "case_ids": [
+        "A171-004",
+        "A171-005",
+        "A171-006"
+      ],
+      "status": "enumerated"
+    },
+    {
+      "category": "PAR client binding, expiry, and one-use/replay",
+      "case_ids": [
+        "P171-001",
+        "P171-002",
+        "P171-003"
+      ],
+      "status": "enumerated"
+    },
+    {
+      "category": "pushed versus front-channel conflicts and required-PAR",
+      "case_ids": [
+        "P171-004",
+        "P171-005"
+      ],
+      "status": "qualified_counterexample"
+    },
+    {
+      "category": "configured issuer and advertised discovery metadata",
+      "case_ids": [
+        "P171-006"
+      ],
+      "status": "enumerated"
+    },
+    {
+      "category": "external provider-origin, TLS/proxy, and browser reachability",
+      "case_ids": [],
+      "status": "excluded_unavailable",
+      "rationale": "Supplemental profile wrappers did not start because the locked Python environment is absent. External origin/TLS/browser behavior is unobserved; this does not establish a Lockspire product defect or selected mandatory case."
+    }
+  ],
+  "cases": [
+    {
+      "id": "A171-001",
+      "category": "callback_safety",
+      "family": "registered redirect URI exact match",
+      "priority": "P1",
+      "condition_id": "invalid-trailing-slash-callback",
+      "requirement_ids": [
+        "FIND-01",
+        "AUTHR-01"
+      ],
+      "source": {
+        "kind": "repository_test",
+        "date": "2026-10-24",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "test_file_sha256": "81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4"
+      },
+      "provider_identity": "GeneratedHostApp Phoenix endpoint from source checkout, mounted at /lockspire; no package receipt.",
+      "input_identity": {
+        "kind": "repository_test",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "request": "Authorization Code request uses https://client.example.com/callback/ while the synthetic client registered https://client.example.com/callback."
+      },
+      "supported_mount": "Generated host /lockspire/authorize endpoint",
+      "profile": "authorization code with PKCE S256",
+      "auth_mode": "synthetic public client; rejection precedes host authentication",
+      "safe_condition": "A trailing-slash mismatch is an invalid redirect URI.",
+      "normative_references": [
+        {
+          "url": "https://openid.net/specs/openid-connect-core-1_0.html#AuthError",
+          "section": "OIDC Core 3.1.2.6",
+          "basis": "An invalid Redirection URI must not receive an error redirect."
+        }
+      ],
+      "support_reference": {
+        "path": "docs/supported-surface.md",
+        "claim": "Phase 37 strictness slice includes exact redirect_uri matching."
+      },
+      "observed_outcome": "HTTP 400 first-party error; no Location header.",
+      "expected_outcome": "Reject the mismatched URI without redirecting the user agent to it.",
+      "cause": "already_correct_not_reproduced",
+      "cause_detail": "The current source-host test matched the exact-match safety expectation; no current protocol defect was reproduced.",
+      "repro": {
+        "status": "pass",
+        "evidence_kind": "repository_test",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs",
+        "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "test_name": "exact redirect_uri mismatches stay on the browser-safe surface",
+        "test_line": 105,
+        "test_count": 1,
+        "command_total_tests": 44,
+        "failure_count": 0,
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"
+      },
+      "observations": [
+        {
+          "observation_id": "A171-001-20261024-01",
+          "date": "2026-10-24",
+          "condition_id": "invalid-trailing-slash-callback",
+          "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "input_identity": "test/integration/phase37_protocol_strictness_e2e_test.exs@81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4",
+          "status": "pass"
+        }
+      ],
+      "next_owner": "Phase 171 executing maintainer",
+      "repro_owner": "Lockspire maintainers",
+      "regression_owner": "Lockspire maintainers",
+      "disposition": "Current deterministic proof supports this one unsafe-callback boundary; it makes no valid-callback package or certification claim."
+    },
+    {
+      "id": "A171-002",
+      "category": "error_state_encoding",
+      "family": "valid callback error/state and query encoding",
+      "priority": "P1",
+      "condition_id": "registered-query-callback-error-state",
+      "requirement_ids": [
+        "FIND-01",
+        "AUTHR-02"
+      ],
+      "source": {
+        "kind": "repository_test",
+        "date": "2026-10-24",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/lockspire/web/authorize_controller_test.exs",
+        "test_file_sha256": "382ce013af67d40df21f12d49e4918a9442b8bae52d788becdd92ebc8edd6590"
+      },
+      "provider_identity": "Lockspire.Web.Router test host with configured issuer https://issuer.test/lockspire and /lockspire mount.",
+      "input_identity": {
+        "kind": "repository_test",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/lockspire/web/authorize_controller_test.exs",
+        "request": "Registered callback https://client.example.com/callback?foo=bar&state=old-state plus a safe validation error; synthetic client values."
+      },
+      "supported_mount": "Lockspire.Web.Router /authorize",
+      "profile": "authorization code; default query response mode",
+      "auth_mode": "synthetic registered client",
+      "safe_condition": "The callback is the exact registered URI including its query component; new OAuth error/state fields are encoded without replacing unrelated query data or trusting stale state.",
+      "normative_references": [
+        {
+          "url": "https://openid.net/specs/openid-connect-core-1_0.html#AuthError",
+          "section": "OIDC Core 3.1.2.6",
+          "basis": "For a valid Redirection URI, return the appropriate error and state parameters."
+        }
+      ],
+      "support_reference": {
+        "path": "docs/supported-surface.md",
+        "claim": "Authorization code is supported with exact redirect URI matching."
+      },
+      "observed_outcome": "302/303 to the registered callback; foo=bar and state=state-123 remain, error=invalid_request is present, and state=old-state is absent.",
+      "expected_outcome": "Return the OAuth error and current state through the exact valid callback while preserving unrelated registered query data.",
+      "cause": "already_correct_not_reproduced",
+      "cause_detail": "The focused controller test passed for this exact registered callback and query condition.",
+      "repro": {
+        "status": "pass",
+        "evidence_kind": "repository_test",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs",
+        "test_path": "test/lockspire/web/authorize_controller_test.exs",
+        "test_name": "redirect-safe validation failures merge existing redirect query params canonically",
+        "test_line": 274,
+        "test_count": 1,
+        "command_total_tests": 44,
+        "failure_count": 0,
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"
+      },
+      "observations": [
+        {
+          "observation_id": "A171-002-20261024-01",
+          "date": "2026-10-24",
+          "condition_id": "registered-query-callback-error-state",
+          "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "input_identity": "test/lockspire/web/authorize_controller_test.exs@382ce013af67d40df21f12d49e4918a9442b8bae52d788becdd92ebc8edd6590",
+          "status": "pass"
+        }
+      ],
+      "next_owner": "Phase 171 executing maintainer",
+      "repro_owner": "Lockspire.Web.AuthorizeControllerTest",
+      "regression_owner": "Lockspire maintainers",
+      "disposition": "Existing deterministic proof is reused; callback mismatch policy remains unchanged."
+    },
+    {
+      "id": "A171-003",
+      "category": "response_mode_boundary",
+      "family": "unsupported response mode error boundary",
+      "priority": "P1",
+      "condition_id": "unsupported-response-mode",
+      "requirement_ids": [
+        "FIND-01",
+        "AUTHR-02"
+      ],
+      "source": {
+        "kind": "repository_test",
+        "date": "2026-10-24",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "test_path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
+        "test_file_sha256": "0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5"
+      },
+      "provider_identity": "Lockspire.Web.Router source-host test host configured with the synthetic issuer and /lockspire consent mount.",
+      "input_identity": {
+        "kind": "repository_test",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "test_path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
+        "probe_sha256": "0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5",
+        "request": "Valid registered authorization-code request with scope openid email, state, nonce and S256; candidate changes only response_mode to binary."
+      },
+      "supported_mount": "Lockspire.Web.Router /authorize",
+      "profile": "authorization code response-mode validation",
+      "auth_mode": "synthetic registered client",
+      "safe_condition": "Response mode is unsupported, so the server cannot safely encode the error using that mode.",
+      "normative_references": [
+        {
+          "url": "https://openid.net/specs/openid-connect-core-1_0.html#AuthError",
+          "section": "OIDC Core 3.1.2.6",
+          "basis": "An unsupported Response Mode requires HTTP 400 without Error Response parameters."
+        }
+      ],
+      "support_reference": {
+        "path": "docs/supported-surface.md",
+        "claim": "Only repo-proven authorization-code and response representations are claimed."
+      },
+      "observed_outcome": "HTTP 302 to the registered callback with error, error_description, iss, and state parameters.",
+      "expected_outcome": "HTTP 400 without OAuth Error Response parameters for unsupported response_mode.",
+      "cause": "protocol",
+      "cause_detail": "The controlled request reached the named final assertion; the source returned a registered-callback redirect with OAuth error parameters instead of HTTP 400 without them.",
+      "repro": {
+        "status": "counterexample",
+        "evidence_kind": "controlled_http_probe",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration .planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs --seed 0",
+        "test_path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
+        "test_name": "A171-003 valid direct consent control then requires unsupported mode to be HTTP 400 without OAuth error parameters",
+        "test_count": 2,
+        "failure_count": 2,
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "test_file_sha256": "0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5",
+        "probe_observation_id": "phase171-probe-20261024T211604Z",
+        "assertion_id": "A171-003:http-error-disposition",
+        "controls_passed": true,
+        "control_ids": [
+          "A171-003:consent-route-origin-guard",
+          "A171-003:query-mode-consent"
+        ],
+        "expected_projection": {
+          "status": 400,
+          "location_kind": "none",
+          "error_parameter_names": []
+        },
+        "observed_projection": {
+          "status": 302,
+          "location_kind": "registered_callback",
+          "error_parameter_names": [
+            "error",
+            "error_description",
+            "iss",
+            "state"
+          ]
+        },
+        "reason": "The controlled request reached the named final assertion; the source returned a registered-callback redirect with OAuth error parameters instead of HTTP 400 without them."
+      },
+      "observations": [
+        {
+          "observation_id": "A171-003-20261024-01",
+          "date": "2026-10-24",
+          "condition_id": "unsupported-response-mode",
+          "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "input_identity": "focused source-test inventory at 9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "status": "not_observed"
+        },
+        {
+          "observation_id": "A171-003-20261024-02",
+          "date": "2026-10-24",
+          "condition_id": "unsupported-response-mode",
+          "source_sha": "3561a51d032e86dc10607b37f78c14313dcb1872",
+          "input_identity": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs@0f1b9dcf5f4a5e5eca75befd2c87bff9865ef515b151a6b93b066cd4e0389207",
+          "probe_sha256": "0f1b9dcf5f4a5e5eca75befd2c87bff9865ef515b151a6b93b066cd4e0389207",
+          "status": "counterexample",
+          "assertion_id": "A171-003:http-error-disposition",
+          "probe_observation_id": "phase171-probe-20261024T204101Z"
+        },
+        {
+          "observation_id": "A171-003-20261024-03",
+          "date": "2026-10-24",
+          "condition_id": "unsupported-response-mode",
+          "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+          "input_identity": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs@0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5",
+          "probe_sha256": "0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5",
+          "status": "counterexample",
+          "assertion_id": "A171-003:http-error-disposition",
+          "probe_observation_id": "phase171-probe-20261024T211604Z"
+        }
+      ],
+      "next_owner": "Phase 171 executing maintainer",
+      "repro_owner": "Lockspire.Web.AuthorizeControllerTest",
+      "regression_owner": "Lockspire maintainers",
+      "disposition": "A current supported normative failure was reproduced with valid controls; carry it as correction input to the downstream owner."
+    },
+    {
+      "id": "A171-004",
+      "category": "silent_auth",
+      "family": "prompt=none without host session",
+      "priority": "P1",
+      "condition_id": "prompt-none-no-visible-session",
+      "requirement_ids": [
+        "FIND-01",
+        "AUTHR-03"
+      ],
+      "source": {
+        "kind": "repository_test",
+        "date": "2026-10-24",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "test_file_sha256": "81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4"
+      },
+      "provider_identity": "GeneratedHostApp Phoenix endpoint with host-owned account resolver and session, mounted at /lockspire.",
+      "input_identity": {
+        "kind": "repository_test",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "request": "Public code+PKCE request uses prompt=none without a visible host session."
+      },
+      "supported_mount": "Generated host /lockspire/authorize",
+      "profile": "OIDC authorization code with host-owned sessions",
+      "auth_mode": "public client with PKCE S256; no host session",
+      "safe_condition": "prompt=none must not display or redirect into host login when the user is not silently authenticated.",
+      "normative_references": [
+        {
+          "url": "https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest",
+          "section": "OIDC Core 3.1.2.3",
+          "basis": "With prompt=none the Authorization Server must not interact and must return an error when the user cannot be silently authenticated."
+        },
+        {
+          "url": "https://openid.net/specs/openid-connect-core-1_0.html#AuthError",
+          "section": "OIDC Core 3.1.2.6",
+          "basis": "login_required is an allowed error for an unsatisfied prompt=none request."
+        }
+      ],
+      "support_reference": {
+        "path": "docs/supported-surface.md",
+        "claim": "The Phase 37 strictness slice includes prompt=none returning redirect-safe login_required."
+      },
+      "observed_outcome": "302/303 to the registered callback with login_required and original state; no host /login redirect.",
+      "expected_outcome": "Return redirect-safe login_required without interactive host login.",
+      "cause": "already_correct_not_reproduced",
+      "cause_detail": "The deterministic host integration test passed for the no-session case.",
+      "repro": {
+        "status": "pass",
+        "evidence_kind": "repository_test",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs",
+        "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "test_name": "prompt=none with no visible host session returns login_required without host login redirection",
+        "test_line": 125,
+        "test_count": 1,
+        "command_total_tests": 44,
+        "failure_count": 0,
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"
+      },
+      "observations": [
+        {
+          "observation_id": "A171-004-20261024-01",
+          "date": "2026-10-24",
+          "condition_id": "prompt-none-no-visible-session",
+          "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "input_identity": "test/integration/phase37_protocol_strictness_e2e_test.exs@81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4",
+          "status": "pass"
+        }
+      ],
+      "next_owner": "Phase 171 executing maintainer",
+      "repro_owner": "Lockspire.Integration.Phase37ProtocolStrictnessE2ETest",
+      "regression_owner": "Lockspire maintainers",
+      "disposition": "Existing deterministic source-host proof is reused; host session policy remains host-owned."
+    },
+    {
+      "id": "A171-005",
+      "category": "freshness",
+      "family": "stale host auth_time under max_age",
+      "priority": "P1",
+      "condition_id": "stale-auth-time-max-age",
+      "requirement_ids": [
+        "FIND-01",
+        "AUTHR-03"
+      ],
+      "source": {
+        "kind": "repository_test",
+        "date": "2026-10-24",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "test_file_sha256": "81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4"
+      },
+      "provider_identity": "GeneratedHostApp endpoint uses host-owned current_account_id and current_auth_time_unix session fields.",
+      "input_identity": {
+        "kind": "repository_test",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "request": "Authenticated host session has auth_time 600 seconds old; request uses max_age=60 and prompt=none."
+      },
+      "supported_mount": "Generated host /lockspire/authorize",
+      "profile": "OIDC authorization code with host-owned session freshness",
+      "auth_mode": "public client with PKCE S256 and a stale host session",
+      "safe_condition": "The configured host resolver's old authentication time exceeds the request's max_age.",
+      "normative_references": [
+        {
+          "url": "https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest",
+          "section": "OIDC Core 3.1.2.2 max_age",
+          "basis": "The OP must attempt active reauthentication when elapsed time exceeds max_age."
+        },
+        {
+          "url": "https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest",
+          "section": "OIDC Core 3.1.2.3",
+          "basis": "prompt=none prevents interaction and requires an error when silent authentication cannot satisfy the request."
+        }
+      ],
+      "support_reference": {
+        "path": "docs/supported-surface.md",
+        "claim": "Phase 37 strictness includes durable max_age/auth_time handling."
+      },
+      "observed_outcome": "302/303 to the registered callback with login_required and original state.",
+      "expected_outcome": "Do not treat a stale host auth_time as fresh; return login_required without interaction under prompt=none.",
+      "cause": "already_correct_not_reproduced",
+      "cause_detail": "The deterministic host-session test passed for max_age=60 against stale auth_time.",
+      "repro": {
+        "status": "pass",
+        "evidence_kind": "repository_test",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs",
+        "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "test_name": "prompt=none plus stale auth_time under max_age returns login_required",
+        "test_line": 149,
+        "test_count": 1,
+        "command_total_tests": 44,
+        "failure_count": 0,
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"
+      },
+      "observations": [
+        {
+          "observation_id": "A171-005-20261024-01",
+          "date": "2026-10-24",
+          "condition_id": "stale-auth-time-max-age",
+          "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "input_identity": "test/integration/phase37_protocol_strictness_e2e_test.exs@81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4",
+          "status": "pass"
+        }
+      ],
+      "next_owner": "Phase 171 executing maintainer",
+      "repro_owner": "Lockspire.Integration.Phase37ProtocolStrictnessE2ETest",
+      "regression_owner": "Lockspire maintainers",
+      "disposition": "Existing deterministic source-host proof is reused; the host remains authoritative for account authentication time."
+    },
+    {
+      "id": "A171-006",
+      "category": "freshness",
+      "family": "fresh host auth_time claim",
+      "priority": "P1",
+      "condition_id": "fresh-auth-time-id-token-claim",
+      "requirement_ids": [
+        "FIND-01",
+        "AUTHR-03"
+      ],
+      "source": {
+        "kind": "repository_test",
+        "date": "2026-10-24",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "test_file_sha256": "81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4"
+      },
+      "provider_identity": "GeneratedHostApp endpoint and test AccountResolver map host session auth_time into ID-token claims.",
+      "input_identity": {
+        "kind": "repository_test",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "request": "Fresh host authentication time with max_age or explicit claims.id_token.auth_time request."
+      },
+      "supported_mount": "Generated host /lockspire/authorize and /token",
+      "profile": "OIDC authorization code with host-owned session freshness",
+      "auth_mode": "public client with PKCE S256 and a fresh host session",
+      "safe_condition": "When max_age or explicit auth_time demand is met, emitted ID Token auth_time is an integer equal to the host-provided Unix second.",
+      "normative_references": [
+        {
+          "url": "https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest",
+          "section": "OIDC Core 3.1.2.2 max_age",
+          "basis": "When max_age is used, the ID Token must include auth_time."
+        }
+      ],
+      "support_reference": {
+        "path": "docs/supported-surface.md",
+        "claim": "Phase 37 strictness includes integer auth_time emission when requested."
+      },
+      "observed_outcome": "Both fresh max_age and explicit auth_time flows emit the configured integer auth_time claim.",
+      "expected_outcome": "ID Token includes integer auth_time matching the host-provided authentication time when required.",
+      "cause": "already_correct_not_reproduced",
+      "cause_detail": "The deterministic host integration test passed both request variants.",
+      "repro": {
+        "status": "pass",
+        "evidence_kind": "repository_test",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs",
+        "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "test_name": "fresh auth emits integer auth_time in the ID token when max_age or explicit auth_time demand is present",
+        "test_line": 179,
+        "test_count": 1,
+        "command_total_tests": 44,
+        "failure_count": 0,
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"
+      },
+      "observations": [
+        {
+          "observation_id": "A171-006-20261024-01",
+          "date": "2026-10-24",
+          "condition_id": "fresh-auth-time-id-token-claim",
+          "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "input_identity": "test/integration/phase37_protocol_strictness_e2e_test.exs@81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4",
+          "status": "pass"
+        }
+      ],
+      "next_owner": "Phase 171 executing maintainer",
+      "repro_owner": "Lockspire.Integration.Phase37ProtocolStrictnessE2ETest",
+      "regression_owner": "Lockspire maintainers",
+      "disposition": "Existing deterministic source-host proof is reused; this does not assert user-supplied or package auth_time policy."
+    },
+    {
+      "id": "P171-001",
+      "category": "par_lifecycle",
+      "family": "PAR request_uri single-use replay",
+      "priority": "P1",
+      "condition_id": "same-client-request-uri-replay",
+      "requirement_ids": [
+        "FIND-01",
+        "PARB-01"
+      ],
+      "source": {
+        "kind": "repository_test",
+        "date": "2026-10-24",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/integration/phase15_par_authorization_e2e_test.exs",
+        "test_file_sha256": "a1529fd15509347e9ea76fdcc3d603182c3582d9cb105c47e18d2bf0b5df69be"
+      },
+      "provider_identity": "GeneratedHostApp Phoenix endpoint with Ecto test repository; Lockspire-issued urn:ietf:params:oauth:request_uri.",
+      "input_identity": {
+        "kind": "repository_test",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/integration/phase15_par_authorization_e2e_test.exs",
+        "request": "Same public client submits the same issued request_uri to /authorize a second time after the first flow consumed it."
+      },
+      "supported_mount": "Generated host /par and /authorize",
+      "profile": "PAR over authorization code + PKCE",
+      "auth_mode": "public client with PKCE S256",
+      "safe_condition": "One pushed reference is not reopened by replay after successful authorization-code use.",
+      "normative_references": [
+        {
+          "url": "https://www.rfc-editor.org/rfc/rfc9126.html#section-4",
+          "section": "RFC 9126 Section 4",
+          "basis": "The client must use each request_uri once; expired references must be rejected."
+        }
+      ],
+      "support_reference": {
+        "path": "docs/supported-surface.md",
+        "claim": "Pushed authorization requests use Lockspire-issued request_uri references."
+      },
+      "observed_outcome": "Second /authorize use returns HTTP 400 with request_uri invalid, expired, or already used.",
+      "expected_outcome": "A consumed request_uri cannot reopen the authorization flow.",
+      "cause": "already_correct_not_reproduced",
+      "cause_detail": "The required-PAR source integration test completed the first flow and rejected replay.",
+      "repro": {
+        "status": "pass",
+        "evidence_kind": "repository_test",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs",
+        "test_path": "test/integration/phase15_par_authorization_e2e_test.exs",
+        "test_name": "required-PAR rejects direct authorize but still completes the canonical PAR auth-code plus PKCE flow",
+        "test_line": 92,
+        "test_count": 1,
+        "command_total_tests": 44,
+        "failure_count": 0,
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"
+      },
+      "observations": [
+        {
+          "observation_id": "P171-001-20261024-01",
+          "date": "2026-10-24",
+          "condition_id": "same-client-request-uri-replay",
+          "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "input_identity": "test/integration/phase15_par_authorization_e2e_test.exs@a1529fd15509347e9ea76fdcc3d603182c3582d9cb105c47e18d2bf0b5df69be",
+          "status": "pass"
+        }
+      ],
+      "next_owner": "Phase 171 executing maintainer",
+      "repro_owner": "Lockspire.Integration.Phase15ParAuthorizationE2ETest",
+      "regression_owner": "Lockspire maintainers",
+      "disposition": "Existing deterministic source-host proof is reused; no FAPI certification claim."
+    },
+    {
+      "id": "P171-002",
+      "category": "par_lifecycle",
+      "family": "PAR request_uri client binding",
+      "priority": "P1",
+      "condition_id": "foreign-client-uses-issued-reference",
+      "requirement_ids": [
+        "FIND-01",
+        "PARB-01"
+      ],
+      "source": {
+        "kind": "repository_test",
+        "date": "2026-10-24",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/lockspire/web/authorize_controller_test.exs",
+        "test_file_sha256": "382ce013af67d40df21f12d49e4918a9442b8bae52d788becdd92ebc8edd6590"
+      },
+      "provider_identity": "Lockspire.Web.Router with two synthetic clients and durable PAR store.",
+      "input_identity": {
+        "kind": "repository_test",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/lockspire/web/authorize_controller_test.exs",
+        "request": "Client B submits Client A's valid request_uri to /authorize; synthetic credentials only."
+      },
+      "supported_mount": "Lockspire.Web.Router /par and /authorize",
+      "profile": "PAR client binding",
+      "auth_mode": "registered confidential clients",
+      "safe_condition": "Only the posting client can use the resulting request_uri.",
+      "normative_references": [
+        {
+          "url": "https://www.rfc-editor.org/rfc/rfc9126.html#section-2.2",
+          "section": "RFC 9126 Section 2.2",
+          "basis": "The request_uri value must be bound to the client that posted the authorization request."
+        }
+      ],
+      "support_reference": {
+        "path": "docs/supported-surface.md",
+        "claim": "PAR is supported as Lockspire-issued request_uri references."
+      },
+      "observed_outcome": "Wrong-client use returns HTTP 400; the request_uri is burned and subsequent owner use is also rejected.",
+      "expected_outcome": "Reject a request_uri presented by a different client and prevent cross-client reuse.",
+      "cause": "already_correct_not_reproduced",
+      "cause_detail": "The current controller test verified rejection and burn behavior.",
+      "repro": {
+        "status": "pass",
+        "evidence_kind": "repository_test",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs",
+        "test_path": "test/lockspire/web/authorize_controller_test.exs",
+        "test_name": "wrong-client par attempts are rejected and burn the request_uri",
+        "test_line": 630,
+        "test_count": 1,
+        "command_total_tests": 44,
+        "failure_count": 0,
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"
+      },
+      "observations": [
+        {
+          "observation_id": "P171-002-20261024-01",
+          "date": "2026-10-24",
+          "condition_id": "foreign-client-uses-issued-reference",
+          "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "input_identity": "test/lockspire/web/authorize_controller_test.exs@382ce013af67d40df21f12d49e4918a9442b8bae52d788becdd92ebc8edd6590",
+          "status": "pass"
+        }
+      ],
+      "next_owner": "Phase 171 executing maintainer",
+      "repro_owner": "Lockspire.Web.AuthorizeControllerTest",
+      "regression_owner": "Lockspire maintainers",
+      "disposition": "Existing deterministic source-host proof is reused."
+    },
+    {
+      "id": "P171-003",
+      "category": "par_lifecycle",
+      "family": "expired PAR request_uri",
+      "priority": "P1",
+      "condition_id": "expired-issued-reference",
+      "requirement_ids": [
+        "FIND-01",
+        "PARB-01"
+      ],
+      "source": {
+        "kind": "repository_test",
+        "date": "2026-10-24",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/lockspire/web/authorize_controller_test.exs",
+        "test_file_sha256": "382ce013af67d40df21f12d49e4918a9442b8bae52d788becdd92ebc8edd6590"
+      },
+      "provider_identity": "Lockspire.Web.Router controller test with synthetic already-expired PAR entry.",
+      "input_identity": {
+        "kind": "repository_test",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/lockspire/web/authorize_controller_test.exs",
+        "request": "The host stores a request_uri with expiry 600 seconds in the past, then receives it at /authorize."
+      },
+      "supported_mount": "Lockspire.Web.Router /authorize",
+      "profile": "PAR expiry",
+      "auth_mode": "registered public client",
+      "safe_condition": "A stored request_uri is past its expires_at timestamp.",
+      "normative_references": [
+        {
+          "url": "https://www.rfc-editor.org/rfc/rfc9126.html#section-4",
+          "section": "RFC 9126 Section 4",
+          "basis": "An expired request_uri must be rejected as invalid."
+        }
+      ],
+      "support_reference": {
+        "path": "docs/supported-surface.md",
+        "claim": "PAR references extend the existing authorization code + PKCE flow."
+      },
+      "observed_outcome": "HTTP 400 first-party error; no redirect to a callback.",
+      "expected_outcome": "Reject an expired reference and do not continue authorization.",
+      "cause": "already_correct_not_reproduced",
+      "cause_detail": "The named browser-surface controller test passed.",
+      "repro": {
+        "status": "pass",
+        "evidence_kind": "repository_test",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs",
+        "test_path": "test/lockspire/web/authorize_controller_test.exs",
+        "test_name": "expired par request_uris fail safely at the browser surface",
+        "test_line": 577,
+        "test_count": 1,
+        "command_total_tests": 44,
+        "failure_count": 0,
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"
+      },
+      "observations": [
+        {
+          "observation_id": "P171-003-20261024-01",
+          "date": "2026-10-24",
+          "condition_id": "expired-issued-reference",
+          "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "input_identity": "test/lockspire/web/authorize_controller_test.exs@382ce013af67d40df21f12d49e4918a9442b8bae52d788becdd92ebc8edd6590",
+          "status": "pass"
+        }
+      ],
+      "next_owner": "Phase 171 executing maintainer",
+      "repro_owner": "Lockspire.Web.AuthorizeControllerTest",
+      "regression_owner": "Lockspire maintainers",
+      "disposition": "Existing deterministic source-host proof is reused."
+    },
+    {
+      "id": "P171-004",
+      "category": "par_policy",
+      "family": "required PAR versus direct authorization",
+      "priority": "P1",
+      "condition_id": "required-par-direct-and-pushed-paths",
+      "requirement_ids": [
+        "FIND-01",
+        "PARB-02"
+      ],
+      "source": {
+        "kind": "repository_test",
+        "date": "2026-10-24",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/integration/phase15_par_authorization_e2e_test.exs",
+        "test_file_sha256": "a1529fd15509347e9ea76fdcc3d603182c3582d9cb105c47e18d2bf0b5df69be"
+      },
+      "provider_identity": "GeneratedHostApp Phoenix endpoint with global required-PAR policy and host-owned consent flow.",
+      "input_identity": {
+        "kind": "repository_test",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/integration/phase15_par_authorization_e2e_test.exs",
+        "request": "Compare direct /authorize without request_uri to a pushed request_uri flow for the same synthetic public client."
+      },
+      "supported_mount": "Generated host /par, /authorize, and /token",
+      "profile": "authorization code + PKCE with required PAR",
+      "auth_mode": "public client with S256",
+      "safe_condition": "Global required-PAR policy rejects authorization data sent only front-channel, while a valid pushed request can complete the flow and token exchange.",
+      "normative_references": [
+        {
+          "url": "https://www.rfc-editor.org/rfc/rfc9126.html#section-4",
+          "section": "RFC 9126 Section 4",
+          "basis": "Authorization Server policy may require PAR and refuse requests lacking a PAR-issued request_uri."
+        },
+        {
+          "url": "https://www.rfc-editor.org/rfc/rfc9126.html#section-2.3",
+          "section": "RFC 9126 Section 2.3",
+          "basis": "PAR endpoint errors use the OAuth error response format."
+        }
+      ],
+      "support_reference": {
+        "path": "docs/supported-surface.md",
+        "claim": "Global and client-specific PAR policies may be required or optional."
+      },
+      "observed_outcome": "Direct request returns invalid_request and state to the exact callback; the pushed code+PKCE flow completes; replay is rejected.",
+      "expected_outcome": "Required-PAR rejects direct authorization data and permits the valid pushed flow.",
+      "cause": "already_correct_not_reproduced",
+      "cause_detail": "The named end-to-end source-host test passed both direct rejection and canonical pushed flow.",
+      "repro": {
+        "status": "pass",
+        "evidence_kind": "repository_test",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs",
+        "test_path": "test/integration/phase15_par_authorization_e2e_test.exs",
+        "test_name": "required-PAR rejects direct authorize but still completes the canonical PAR auth-code plus PKCE flow",
+        "test_line": 92,
+        "test_count": 1,
+        "command_total_tests": 44,
+        "failure_count": 0,
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"
+      },
+      "observations": [
+        {
+          "observation_id": "P171-004-20261024-01",
+          "date": "2026-10-24",
+          "condition_id": "required-par-direct-and-pushed-paths",
+          "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "input_identity": "test/integration/phase15_par_authorization_e2e_test.exs@a1529fd15509347e9ea76fdcc3d603182c3582d9cb105c47e18d2bf0b5df69be",
+          "status": "pass"
+        }
+      ],
+      "next_owner": "Phase 171 executing maintainer",
+      "repro_owner": "Lockspire.Integration.Phase15ParAuthorizationE2ETest",
+      "regression_owner": "Lockspire maintainers",
+      "disposition": "Existing deterministic source-host policy evidence is reused."
+    },
+    {
+      "id": "P171-005",
+      "category": "par_policy",
+      "family": "pushed versus front-channel parameter conflict",
+      "priority": "P1",
+      "condition_id": "par-reference-plus-conflicting-front-channel-scope",
+      "requirement_ids": [
+        "FIND-01",
+        "PARB-02"
+      ],
+      "source": {
+        "kind": "repository_test",
+        "date": "2026-10-24",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "test_path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
+        "test_file_sha256": "0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5"
+      },
+      "provider_identity": "Lockspire.Web.Router source-host test host configured with the synthetic issuer and /lockspire consent mount.",
+      "input_identity": {
+        "kind": "repository_test",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "test_path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
+        "probe_sha256": "0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5",
+        "request": "Two form PAR POSTs push scope openid email; reference-only control reaches consent; candidate adds only front-channel scope profile to a fresh reference."
+      },
+      "supported_mount": "Generated host /par and /authorize",
+      "profile": "PAR request-intake conflict boundary",
+      "auth_mode": "synthetic public client with PKCE S256",
+      "safe_condition": "The browser request presents parameters that disagree with values stored behind a valid pushed request_uri.",
+      "normative_references": [
+        {
+          "url": "https://www.rfc-editor.org/rfc/rfc9126.html#section-4",
+          "section": "RFC 9126 Section 4",
+          "basis": "The returned request_uri references pushed authorization request data and directs its use in the authorization request."
+        },
+        {
+          "url": "https://www.rfc-editor.org/rfc/rfc9101.html#section-5",
+          "section": "RFC 9101 Section 5",
+          "basis": "Authorization request parameters may be duplicated between the request object and outer request."
+        },
+        {
+          "url": "https://www.rfc-editor.org/rfc/rfc9101.html#section-6.3",
+          "section": "RFC 9101 Section 6.3",
+          "basis": "The referenced request object is authoritative for duplicated parameters and client-ID equality remains required."
+        },
+        {
+          "url": "https://www.rfc-editor.org/rfc/rfc9101.html#section-10.7",
+          "section": "RFC 9101 Section 10.7",
+          "basis": "The integrity rationale protects request parameters from browser-front-channel modification."
+        }
+      ],
+      "support_reference": {
+        "path": "docs/supported-surface.md",
+        "claim": "PAR is supported as Lockspire-issued references extending the authorization code + PKCE flow."
+      },
+      "observed_outcome": "The reference-only control reaches consent with pushed openid/email; the candidate conflicting outer scope receives HTTP 400 before consent.",
+      "expected_outcome": "The valid reference reaches consent using pushed openid/email, ignoring outer scope=profile without union or override.",
+      "cause": "protocol",
+      "cause_detail": "Both independent PAR POSTs and the reference-only consent control passed; the conflicting outer scope request was rejected with HTTP 400 before consent instead of using the pushed scope. Settled scope interpretation is attributed in 171-QUALIFICATION-DECISIONS.md; the completed controlled HTTP observation reproduces the blanket rejection.",
+      "repro": {
+        "status": "counterexample",
+        "evidence_kind": "controlled_http_probe",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration .planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs --seed 0",
+        "test_path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
+        "test_name": "P171-005 valid pushed-reference control requires pushed scopes to remain authoritative over front-channel scope",
+        "test_count": 2,
+        "failure_count": 2,
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "test_file_sha256": "0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5",
+        "probe_observation_id": "phase171-probe-20261024T211604Z",
+        "assertion_id": "P171-005:pushed-scope-authority",
+        "controls_passed": true,
+        "control_ids": [
+          "P171-005:form-par-post",
+          "P171-005:reference-only-consent",
+          "P171-005:independent-candidate-par-post"
+        ],
+        "expected_projection": {
+          "status_class": "redirect",
+          "location_kind": "host_consent",
+          "scopes": [
+            "email",
+            "openid"
+          ],
+          "state_matches": true,
+          "nonce_matches": true,
+          "client_matches": true
+        },
+        "observed_projection": {
+          "status": 400,
+          "status_class": "other",
+          "location_kind": "none",
+          "scopes": null,
+          "state_matches": false,
+          "nonce_matches": false,
+          "client_matches": false
+        },
+        "reason": "Both independent PAR POSTs and the reference-only consent control passed; the conflicting outer scope request was rejected with HTTP 400 before consent instead of using the pushed scope."
+      },
+      "observations": [
+        {
+          "observation_id": "P171-005-20261024-01",
+          "date": "2026-10-24",
+          "condition_id": "par-reference-plus-conflicting-front-channel-scope",
+          "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "input_identity": "focused source-test inventory at 9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "status": "not_observed"
+        },
+        {
+          "observation_id": "P171-005-20261024-02",
+          "date": "2026-10-24",
+          "condition_id": "par-reference-plus-conflicting-front-channel-scope",
+          "source_sha": "3561a51d032e86dc10607b37f78c14313dcb1872",
+          "input_identity": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs@0f1b9dcf5f4a5e5eca75befd2c87bff9865ef515b151a6b93b066cd4e0389207",
+          "probe_sha256": "0f1b9dcf5f4a5e5eca75befd2c87bff9865ef515b151a6b93b066cd4e0389207",
+          "status": "counterexample",
+          "assertion_id": "P171-005:pushed-scope-authority",
+          "probe_observation_id": "phase171-probe-20261024T204101Z"
+        },
+        {
+          "observation_id": "P171-005-20261024-03",
+          "date": "2026-10-24",
+          "condition_id": "par-reference-plus-conflicting-front-channel-scope",
+          "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+          "input_identity": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs@0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5",
+          "probe_sha256": "0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5",
+          "status": "counterexample",
+          "assertion_id": "P171-005:pushed-scope-authority",
+          "probe_observation_id": "phase171-probe-20261024T211604Z"
+        }
+      ],
+      "next_owner": "Phase 171 executing maintainer",
+      "repro_owner": "Lockspire.Integration.Phase15ParAuthorizationE2ETest",
+      "regression_owner": "Lockspire maintainers",
+      "disposition": "A current supported normative failure was reproduced with valid controls; carry it as correction input to the downstream owner.",
+      "policy_interpretation": {
+        "date": "2026-10-24",
+        "decision": "For a valid Lockspire-issued reference, the pushed scope is authoritative; ignore the duplicate outer scope without merging or overriding it.",
+        "basis": "Linked-clause interpretation: RFC 9126 Section 4 incorporates RFC 9101 request semantics; RFC 9101 Sections 5 and 6.3 establish duplicate and authoritative parameter handling, and Section 10.7 explains the integrity rationale. This is not a direct quotation from RFC 9126.",
+        "boundaries": [
+          "PAR may be plain form-encoded; no JWT/JAR requirement is introduced.",
+          "Client-ID equality/binding remains required.",
+          "request and request_uri remain mutually exclusive."
+        ]
+      }
+    },
+    {
+      "id": "P171-006",
+      "category": "discovery_metadata",
+      "family": "configured issuer and advertised endpoints",
+      "priority": "P1",
+      "condition_id": "configured-mounted-issuer-metadata",
+      "requirement_ids": [
+        "FIND-01",
+        "PARB-03"
+      ],
+      "source": {
+        "kind": "repository_test",
+        "date": "2026-10-24",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/lockspire/web/discovery_controller_test.exs",
+        "test_file_sha256": "4c905b449e18b908f998245a6775113a8ad6ef620a58ba206a2c96455d4fd4fc"
+      },
+      "provider_identity": "Lockspire.Web.Router with configured issuer https://example.test/lockspire and mount path /lockspire.",
+      "input_identity": {
+        "kind": "repository_test",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/lockspire/web/discovery_controller_test.exs",
+        "request": "GET /.well-known/openid-configuration with a source-host issuer configured to include the Lockspire mount path."
+      },
+      "supported_mount": "Lockspire.Web.Router /.well-known/openid-configuration",
+      "profile": "OIDC discovery for mounted authorization-code + PAR endpoints",
+      "auth_mode": "source-host configuration, no user session",
+      "safe_condition": "Issuer and endpoint metadata are derived from the configured issuer and mount path; only advertised response modes correspond to supported capability entries.",
+      "normative_references": [
+        {
+          "url": "https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata",
+          "section": "OpenID Connect Discovery 1.0 Section 3",
+          "basis": "Provider metadata identifies the issuer and endpoint locations used by relying parties."
+        },
+        {
+          "url": "https://www.rfc-editor.org/rfc/rfc8414.html#section-2",
+          "section": "RFC 8414 Section 2",
+          "basis": "Authorization server metadata publishes endpoint locations and capabilities."
+        }
+      ],
+      "support_reference": {
+        "path": "docs/supported-surface.md",
+        "claim": "OIDC discovery and truthful FAPI metadata are part of the supported surface."
+      },
+      "observed_outcome": "The discovery test reports issuer https://example.test/lockspire and authorization, token, userinfo, JWKS, PAR, revocation, introspection endpoints under that mount; supported response-mode values are listed.",
+      "expected_outcome": "Advertised issuer and endpoint metadata match the configured issuer and mounted route shape.",
+      "cause": "already_correct_not_reproduced",
+      "cause_detail": "Seven discovery controller tests passed, including truthful mounted metadata; this does not exercise external reverse-proxy/TLS/browser reachability.",
+      "repro": {
+        "status": "pass",
+        "evidence_kind": "repository_test",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test test/lockspire/web/discovery_controller_test.exs",
+        "test_path": "test/lockspire/web/discovery_controller_test.exs",
+        "test_name": "GET /.well-known/openid-configuration publishes truthful mounted metadata",
+        "test_line": 92,
+        "test_count": 1,
+        "command_total_tests": 7,
+        "failure_count": 0,
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"
+      },
+      "observations": [
+        {
+          "observation_id": "P171-006-20261024-01",
+          "date": "2026-10-24",
+          "condition_id": "configured-mounted-issuer-metadata",
+          "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "input_identity": "test/lockspire/web/discovery_controller_test.exs@4c905b449e18b908f998245a6775113a8ad6ef620a58ba206a2c96455d4fd4fc",
+          "status": "pass"
+        }
+      ],
+      "next_owner": "Phase 171 executing maintainer",
+      "repro_owner": "Lockspire.Web.DiscoveryControllerTest",
+      "regression_owner": "Lockspire maintainers",
+      "disposition": "Current source-host metadata proof passes; external issuer/TLS/proxy/browser reachability remains excluded pending an available exact-input profile run."
+    }
+  ],
+  "matrix": {
+    "status": "frozen",
+    "rows": [
+      {
+        "case_id": "A171-001",
+        "priority": "P1",
+        "classification": "already_correct_not_reproduced",
+        "next_owner": "Phase 171 executing maintainer",
+        "disposition": "reuse_existing",
+        "readiness": "ready",
+        "requirement_ids": [
+          "FIND-01",
+          "AUTHR-01"
+        ]
+      },
+      {
+        "case_id": "A171-002",
+        "priority": "P1",
+        "classification": "already_correct_not_reproduced",
+        "next_owner": "Phase 171 executing maintainer",
+        "disposition": "reuse_existing",
+        "readiness": "ready",
+        "requirement_ids": [
+          "FIND-01",
+          "AUTHR-02"
+        ]
+      },
+      {
+        "case_id": "A171-003",
+        "priority": "P1",
+        "classification": "protocol",
+        "next_owner": "Phase 171 executing maintainer",
+        "disposition": "retain_correction",
+        "readiness": "ready",
+        "requirement_ids": [
+          "FIND-01",
+          "AUTHR-02"
+        ]
+      },
+      {
+        "case_id": "A171-004",
+        "priority": "P1",
+        "classification": "already_correct_not_reproduced",
+        "next_owner": "Phase 171 executing maintainer",
+        "disposition": "reuse_existing",
+        "readiness": "ready",
+        "requirement_ids": [
+          "FIND-01",
+          "AUTHR-03"
+        ]
+      },
+      {
+        "case_id": "A171-005",
+        "priority": "P1",
+        "classification": "already_correct_not_reproduced",
+        "next_owner": "Phase 171 executing maintainer",
+        "disposition": "reuse_existing",
+        "readiness": "ready",
+        "requirement_ids": [
+          "FIND-01",
+          "AUTHR-03"
+        ]
+      },
+      {
+        "case_id": "A171-006",
+        "priority": "P1",
+        "classification": "already_correct_not_reproduced",
+        "next_owner": "Phase 171 executing maintainer",
+        "disposition": "reuse_existing",
+        "readiness": "ready",
+        "requirement_ids": [
+          "FIND-01",
+          "AUTHR-03"
+        ]
+      },
+      {
+        "case_id": "P171-001",
+        "priority": "P1",
+        "classification": "already_correct_not_reproduced",
+        "next_owner": "Phase 171 executing maintainer",
+        "disposition": "reuse_existing",
+        "readiness": "ready",
+        "requirement_ids": [
+          "FIND-01",
+          "PARB-01"
+        ]
+      },
+      {
+        "case_id": "P171-002",
+        "priority": "P1",
+        "classification": "already_correct_not_reproduced",
+        "next_owner": "Phase 171 executing maintainer",
+        "disposition": "reuse_existing",
+        "readiness": "ready",
+        "requirement_ids": [
+          "FIND-01",
+          "PARB-01"
+        ]
+      },
+      {
+        "case_id": "P171-003",
+        "priority": "P1",
+        "classification": "already_correct_not_reproduced",
+        "next_owner": "Phase 171 executing maintainer",
+        "disposition": "reuse_existing",
+        "readiness": "ready",
+        "requirement_ids": [
+          "FIND-01",
+          "PARB-01"
+        ]
+      },
+      {
+        "case_id": "P171-004",
+        "priority": "P1",
+        "classification": "already_correct_not_reproduced",
+        "next_owner": "Phase 171 executing maintainer",
+        "disposition": "reuse_existing",
+        "readiness": "ready",
+        "requirement_ids": [
+          "FIND-01",
+          "PARB-02"
+        ]
+      },
+      {
+        "case_id": "P171-005",
+        "priority": "P1",
+        "classification": "protocol",
+        "next_owner": "Phase 171 executing maintainer",
+        "disposition": "retain_correction",
+        "readiness": "ready",
+        "requirement_ids": [
+          "FIND-01",
+          "PARB-02"
+        ]
+      },
+      {
+        "case_id": "P171-006",
+        "priority": "P1",
+        "classification": "already_correct_not_reproduced",
+        "next_owner": "Phase 171 executing maintainer",
+        "disposition": "reuse_existing",
+        "readiness": "ready",
+        "requirement_ids": [
+          "FIND-01",
+          "PARB-03"
+        ]
+      }
+    ],
+    "requirement_dispositions": [
+      {
+        "requirement_id": "AUTHR-01",
+        "disposition": "reuse_existing",
+        "case_ids": [
+          "A171-001"
+        ],
+        "existing_proof": [
+          "A171-001"
+        ],
+        "retained_cases": [],
+        "rationale": "A171-001 is current passing exact-match invalid-callback proof; no valid-callback package behavior is inferred."
+      },
+      {
+        "requirement_id": "AUTHR-02",
+        "disposition": "retain_correction",
+        "case_ids": [
+          "A171-002",
+          "A171-003"
+        ],
+        "existing_proof": [
+          "A171-002"
+        ],
+        "retained_cases": [
+          "A171-003"
+        ],
+        "rationale": "Reuse registered callback error/state proof; correct only the reproduced unsupported response_mode HTTP disposition."
+      },
+      {
+        "requirement_id": "AUTHR-03",
+        "disposition": "reuse_existing",
+        "case_ids": [
+          "A171-004",
+          "A171-005",
+          "A171-006"
+        ],
+        "existing_proof": [
+          "A171-004",
+          "A171-005",
+          "A171-006"
+        ],
+        "retained_cases": [],
+        "rationale": "Current source-host prompt=none, max_age and host-owned auth_time evidence remains applicable; Phase 171 schedules no duplicate correction."
+      },
+      {
+        "requirement_id": "PARB-01",
+        "disposition": "reuse_existing",
+        "case_ids": [
+          "P171-001",
+          "P171-002",
+          "P171-003"
+        ],
+        "existing_proof": [
+          "P171-001",
+          "P171-002",
+          "P171-003"
+        ],
+        "retained_cases": [],
+        "rationale": "Reuse current PAR client-binding, expiry and one-use proof."
+      },
+      {
+        "requirement_id": "PARB-02",
+        "disposition": "retain_correction",
+        "case_ids": [
+          "P171-004",
+          "P171-005"
+        ],
+        "existing_proof": [
+          "P171-004"
+        ],
+        "retained_cases": [
+          "P171-005"
+        ],
+        "rationale": "Reuse required-PAR proof; correct only the reproduced outer-scope rejection while preserving PKCE and security-profile boundaries."
+      },
+      {
+        "requirement_id": "PARB-03",
+        "disposition": "reuse_existing",
+        "case_ids": [
+          "P171-006"
+        ],
+        "existing_proof": [
+          "P171-006"
+        ],
+        "retained_cases": [],
+        "rationale": "Reuse configured-issuer/source-host discovery metadata proof; external origin/TLS/browser observations remain supplemental and unavailable, not a selected product failure."
+      }
+    ],
+    "replan_required": true,
+    "amendments": [
+      {
+        "file": ".planning/REQUIREMENTS.md",
+        "anchor": "Qualification-driven scope reconciliation (2026-10-24)",
+        "reason": "Map all six requirements to the twelve qualified cases; retain only the two reproduced corrections and preserve Phase 174 proof obligations."
+      },
+      {
+        "file": ".planning/ROADMAP.md",
+        "anchor": "Phase 172: Authorization Responses / Phase 173: Conditional PAR & Profile Boundaries",
+        "reason": "Narrow dependent work to A171-003 and P171-005 correction contracts; carry existing case proof forward and keep external profile limits supplemental."
+      },
+      {
+        "file": ".planning/phases/171-accepted-baseline-finding-qualification/171-02-PLAN.md",
+        "anchor": "must_haves.truths[2] and dated Verification gap disposition \u2014 2026-10-24",
+        "reason": "Replace the unverified automatic serialization/interruption claim with the actual sequential operator procedure; both wrappers were not launched, so no overlap, interruption or cleanup outcome was observed."
+      },
+      {
+        "file": ".planning/ROADMAP.md",
+        "anchor": "Phases 172\u2013174 Plans fields and Progress rows",
+        "reason": "Replace unknown plan totals with explicit unplanned states and prerequisites, retaining the two selected corrections and Phase 174 obligations."
+      }
+    ],
+    "frozen_at": "2026-10-24T20:49:46Z",
+    "qualification_sha": "6d9a5db65f8cc3cb8c64ea0dd51ad022a6b18945",
+    "blocking_entries": [],
+    "input_manifest": [
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json",
+        "selector": "matrix-selection",
+        "sha256": "8c5a3aa70e6a12b95eb8cd9d7b8dc96b271e776313d2848a1d50c47498675876"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json",
+        "selector": "cases",
+        "sha256": "efa0fdc23474156128f6d1182e7ec91edd8a20deb72ac79ec15a7ffa9fd1d434"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json",
+        "selector": "profiles",
+        "sha256": "5d429db5ece4a46a617644ad78de4454d866282ec1d56d7461c20594402ea59a"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json",
+        "selector": "category-coverage",
+        "sha256": "8302c0fe8260e6f80938d5f7967f4a2f4651f92ab1be76be94b4826db531aed9"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json",
+        "selector": "scope-revision",
+        "sha256": "c7b53a87b1b4da8e42a04137aa3dc9ff23daf1f489b207ea87328b2c727111be"
+      },
+      {
+        "path": ".planning/REQUIREMENTS.md",
+        "selector": "qualification-scope-map",
+        "sha256": "32a7b0dc957b64ad10de00fd636e98d4379b35ed5750f068a279a272dbcc111b"
+      },
+      {
+        "path": ".planning/ROADMAP.md",
+        "selector": "phases-172-173-contract",
+        "sha256": "27dab1dd7eecc59bf4dddbae9b5ce61e34e46cddb824d7c98efd6753615d95a7"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-MAIN-ACCEPTANCE.json",
+        "sha256": "be2cdf5fe60df6788d304e451d736b4ac7746a111c9ff71b422ef27b5b777e39"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION-DECISIONS.md",
+        "sha256": "5becc7fd092ddfc74d16fbb08c696e7319d1b46fa7a57f6061d055819bdba2bb"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-03-PLAN.md",
+        "sha256": "2435e40cd56e3996bea9901fb086c1f1dd75eebee60318282fe58cda22a21536"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-RESEARCH.md",
+        "sha256": "9f9d5b27b7f855280becd28d2bfb60d6ff8c2f6c66014494144c8284a913cf5c"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-PATTERNS.md",
+        "sha256": "f9924c94ad413ef461fc474d0958f5e2a53a1fed26c96a623ebce7cbe6c91c61"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-VALIDATION.md",
+        "sha256": "c63e7dac8728642879a528a964071667f047d048e989e2205fd14a3cf5812739"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-01-SUMMARY.md",
+        "sha256": "e6462dbf111e3e0bbed567eda294530366193001ad73f1241fb91583d8a040b3"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-02-SUMMARY.md",
+        "sha256": "2af034235bacb8b670a3070c376fd1129193c792f1241ae4a2f8d6626cfaca6e"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
+        "sha256": "0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION-PROBE.json",
+        "sha256": "2c3930ae0142b764dcf06708480da6fc8adc3183f08c6bc0ad27022c8e31fe6f"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION-PROBE-20261024T204101Z.json",
+        "sha256": "3f1fd7c2797614b98bfdb6466942a06c05ea11ec908f31f944bd6adaf26ad764"
+      },
+      {
+        "path": "test/lockspire/qualification_ledger_contract_test.exs",
+        "sha256": "7c44014c9471e901c935b6e521dadb5606fe3f7a25ee6ff002f23b99fda1e0c6"
+      },
+      {
+        "path": "test/test_helper.exs",
+        "sha256": "3be10d296761d2e91637603b62a9004bb274ea8abc920f20a930cbdc054bc5d2"
+      },
+      {
+        "path": "test/support/config_case.ex",
+        "sha256": "69a01e44089d3b5a52a16625d6de144d9ad20e442506a2b2b9b18530c7a5e743"
+      },
+      {
+        "path": "test/support/test_account_resolver.ex",
+        "sha256": "bd8e9f723a67b3bd719084ea9a37cb6df52aebefa38da9bc209737b3bc3fe6f8"
+      },
+      {
+        "path": "test/lockspire/web/authorize_controller_test.exs",
+        "sha256": "92d53caee7c915ffddde13ce1181fb10c19d0d1c778be7c976cd12dc5e19bf05"
+      },
+      {
+        "path": "test/integration/phase15_par_authorization_e2e_test.exs",
+        "sha256": "9193f4dbbd075242717293c64dacf8d72c59105e43c196250ed60fb4baee4e30"
+      },
+      {
+        "path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "sha256": "81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4"
+      },
+      {
+        "path": "test/lockspire/web/discovery_controller_test.exs",
+        "sha256": "4c905b449e18b908f998245a6775113a8ad6ef620a58ba206a2c96455d4fd4fc"
+      },
+      {
+        "path": "docs/supported-surface.md",
+        "sha256": "2cd32dee2d0bf1bcc301c26afeea634698e7b0b4a44ee55cf15204705d6f4471"
+      },
+      {
+        "path": "scripts/conformance/runner-requirements.lock",
+        "sha256": "b79d63fff6ca0af43d87db1d90e18552a4765644123159427ca0de3eed632e66"
+      },
+      {
+        "path": "scripts/conformance/oidf-suite-lock.json",
+        "sha256": "7d5463f1e2913bd8b8d88abc491a50a848e88a9d93debf4f049c75395592b590"
+      },
+      {
+        "path": "scripts/conformance/fapi2-plan.json",
+        "sha256": "5b8f1e196da86e8d022e592d1ced5c7033667c413b64ae7b4df38c7c2b857583"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-02-PLAN.md",
+        "sha256": "6fada9064b91f3c4692177eafd5d824dc3d72f277b4f0b920576698da1d175ac"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-04-PLAN.md",
+        "sha256": "511a29d2807ab2fbfbbf0cc917b81feae8ea428a63ea0f23cc0fd2b38aae6de6"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-DELIVERY.md",
+        "sha256": "86031be7618ae66db1ef8088e10887f0dd237a4404a5f11e65e16a70f20361d1"
+      }
+    ],
+    "input_digest": "3edc2b22eca506c063e1483a6a684ada300a54d56d55d1308c78b4812c144137",
+    "input_manifest_audits": [
+      {
+        "date": "2026-10-24",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
+        "previous_sha256": "0f1b9dcf5f4a5e5eca75befd2c87bff9865ef515b151a6b93b066cd4e0389207",
+        "sha256": "2397a84044549b1f4f779846967ab657e522c8b3dee3d2c2f571d7cce2086e6b",
+        "reason": "WR-02 tightened consent-location classification and interaction lookup; the live probe will be requalified after the source stabilizes."
+      },
+      {
+        "date": "2026-10-24",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION-PROBE-20261024T204101Z.json",
+        "previous_sha256": null,
+        "sha256": "3f1fd7c2797614b98bfdb6466942a06c05ea11ec908f31f944bd6adaf26ad764",
+        "reason": "Preserve original controlled-probe bytes and source attribution before recording the post-WR-02 observation."
+      },
+      {
+        "date": "2026-10-24",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
+        "previous_sha256": "2397a84044549b1f4f779846967ab657e522c8b3dee3d2c2f571d7cce2086e6b",
+        "sha256": "a829ac577caa6d2bdc4b72bdcf0df6e9da2196457e65aaabe0d4538593d731ec",
+        "reason": "Keep the two controlled HTTP cases and original actual test count by embedding adversarial route assertions before A171-003's live control."
+      },
+      {
+        "date": "2026-10-24",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
+        "previous_sha256": "a829ac577caa6d2bdc4b72bdcf0df6e9da2196457e65aaabe0d4538593d731ec",
+        "sha256": "0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5",
+        "reason": "Invoke the consent-location adversarial assertion helper as a function so the probe compiles and reaches its controlled HTTP checks."
+      },
+      {
+        "date": "2026-10-24",
+        "path": "test/lockspire/qualification_ledger_contract_test.exs",
+        "previous_sha256": "fcb19db18957a217c0767843213eec331284cf7ad567af133eef95030a0eeb7b",
+        "sha256": "bd4471ce2aff8c3e67b21666634cef01a84e80f25f3e8db701de8f1230c0eec1",
+        "reason": "WR-03 adds type-negative evidence fixtures and shape validation before nested traversal; existing proof requirements remain unchanged."
+      },
+      {
+        "date": "2026-10-24",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION-PROBE.json",
+        "previous_sha256": "3f1fd7c2797614b98bfdb6466942a06c05ea11ec908f31f944bd6adaf26ad764",
+        "sha256": "2c3930ae0142b764dcf06708480da6fc8adc3183f08c6bc0ad27022c8e31fe6f",
+        "reason": "Append the completed post-WR-02 observation with its actual source/probe hashes, exit/counts and passed controls."
+      },
+      {
+        "date": "2026-10-24",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json#cases",
+        "previous_sha256": "5fdb81f30a08635a165ed308ba75cecaf170d3879e0ca9d60217f270fe4e0f22",
+        "sha256": "efa0fdc23474156128f6d1182e7ec91edd8a20deb72ac79ec15a7ffa9fd1d434",
+        "reason": "Bind A171-003 and P171-005 to the newly observed source revision and append the actual dated probe observations while retaining their earlier records."
+      },
+      {
+        "date": "2026-10-24",
+        "path": "test/lockspire/qualification_ledger_contract_test.exs",
+        "previous_sha256": "bd4471ce2aff8c3e67b21666634cef01a84e80f25f3e8db701de8f1230c0eec1",
+        "sha256": "41adfc03d97d63c0f6daae0bf4429832f0192529fb9cff5ad6872c6588117c9b",
+        "reason": "WR-04 decomposes proof, reference, shape, and matrix-disposition checks into cohesive helpers without removing required predicates."
+      },
+      {
+        "date": "2026-10-24",
+        "path": "test/lockspire/qualification_ledger_contract_test.exs",
+        "previous_sha256": "41adfc03d97d63c0f6daae0bf4429832f0192529fb9cff5ad6872c6588117c9b",
+        "sha256": "caaab1b50ab5c887fe688f68ab04d5b31c00b3051c58345b38d2c5e7b6eb2f08",
+        "reason": "WR-05 adds a referenced-case malformed requirement_ids regression and requires a list of nonempty strings before disposition-reference traversal; qualification cases, outcomes, observations, and the normative probe remain unchanged."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json",
+        "selector": "matrix-selection",
+        "previous_sha256": "cf3e205c4ccf57e5bcdcd413e60be568d1f4484aacd83c2de2e9f5075d09041f",
+        "sha256": "8c5a3aa70e6a12b95eb8cd9d7b8dc96b271e776313d2848a1d50c47498675876",
+        "reason": "Record the procedure-scoped claim amendment and a nonblocking limitation for unverified broader overlap/interruption/cleanup behavior."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "path": ".planning/ROADMAP.md",
+        "selector": "phases-172-173-contract",
+        "previous_sha256": "796b5496393344eb733a664b6fcbc30ce89e2579678ccfe9a1764da2d705afb8",
+        "sha256": "f064cef43676cc0db066ecfcb321f6e2351a1c08b0fe137f13e34d1c812ec9af",
+        "reason": "Set explicit downstream phase planning states/prerequisites while retaining correction and Phase 174 obligations."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION-DECISIONS.md",
+        "previous_sha256": "419430c58fd083f980f8eafb39c45adaf03b4cdc6c9dfccc35871d7dcaa03304",
+        "sha256": "5becc7fd092ddfc74d16fbb08c696e7319d1b46fa7a57f6061d055819bdba2bb",
+        "reason": "Append delegated maintainer review dispositions with preserved assumptions and no fabricated human confirmation."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-RESEARCH.md",
+        "previous_sha256": "a816ea5b3814230795cb86f1b3352de8d251b9fe3ad6798dec04f2fd12575905",
+        "sha256": "9f9d5b27b7f855280becd28d2bfb60d6ff8c2f6c66014494144c8284a913cf5c",
+        "reason": "Append dated Phase 171 question dispositions preserving historical unavailability and source-host/external boundaries."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-VALIDATION.md",
+        "previous_sha256": "7c309f05d560d36fb404798c8f696274260eb564d2ee1cc88a38ff7347262a96",
+        "sha256": "b9fa20c0a22d4fd48235470cf150079be0c0b004baa09207e96a5e59010fd19c",
+        "reason": "Record dated delegated dispositions, the completed 04-01 checks, and 04-02 RED/GREEN and lint evidence before final verification."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "path": "test/lockspire/qualification_ledger_contract_test.exs",
+        "previous_sha256": "caaab1b50ab5c887fe688f68ab04d5b31c00b3051c58345b38d2c5e7b6eb2f08",
+        "sha256": "7c44014c9471e901c935b6e521dadb5606fe3f7a25ee6ff002f23b99fda1e0c6",
+        "reason": "Add a draft-matrix negative regression and only the interruption=false predicate for unlaunched profile outcomes."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-02-PLAN.md",
+        "previous_sha256": null,
+        "sha256": "6fada9064b91f3c4692177eafd5d824dc3d72f277b4f0b920576698da1d175ac",
+        "reason": "Add the current procedure-scoped profile truth and preserve the former truth in a dated amendment."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-04-PLAN.md",
+        "previous_sha256": null,
+        "sha256": "511a29d2807ab2fbfbbf0cc917b81feae8ea428a63ea0f23cc0fd2b38aae6de6",
+        "reason": "Record the consumed gap-closure authority for scoped claims, dispositions, regression and manifest changes."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-DELIVERY.md",
+        "previous_sha256": null,
+        "sha256": "86031be7618ae66db1ef8088e10887f0dd237a4404a5f11e65e16a70f20361d1",
+        "reason": "Append actual delegated review dispositions and preserve no-launch, evidence and uncertainty boundaries."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-VALIDATION.md",
+        "previous_sha256": "b9fa20c0a22d4fd48235470cf150079be0c0b004baa09207e96a5e59010fd19c",
+        "sha256": "de2b11d1a0ab4ff59267ab4e776c722c64c78f07ccfb19cb9876ca463b1a54fb",
+        "reason": "Record final measured task 171-04 check output and completed task statuses before final identity refresh; no case, profile, receipt, probe or runtime input changed."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "d7fa46e209a71b25ab8ab380f2ad707d494f329c",
+        "path": ".planning/ROADMAP.md",
+        "selector": "phases-172-173-contract",
+        "previous_sha256": "f064cef43676cc0db066ecfcb321f6e2351a1c08b0fe137f13e34d1c812ec9af",
+        "sha256": "029eb665d728efda5ea6d348ac562d2e7948e7ed881170b55b4a2ced6ea2b08f",
+        "reason": "Reconcile the Phase 172\u2013173 planning selector after the plan/count update committed in 6e160651; no runtime source was changed."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "d7fa46e209a71b25ab8ab380f2ad707d494f329c",
+        "path": "test/lockspire/web/authorize_controller_test.exs",
+        "previous_sha256": "382ce013af67d40df21f12d49e4918a9442b8bae52d788becdd92ebc8edd6590",
+        "sha256": "92d53caee7c915ffddde13ce1181fb10c19d0d1c778be7c976cd12dc5e19bf05",
+        "reason": "Add the durable A171-003 Router regression and valid query-mode control with actual RED/GREEN proof."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "e64a3994b62aae7b84db05548fcd2b66bbffa188",
+        "path": ".planning/ROADMAP.md#phases-172-173-contract",
+        "previous_sha256": "029eb665d728efda5ea6d348ac562d2e7948e7ed881170b55b4a2ced6ea2b08f",
+        "sha256": "c565ffa0bd38152b2c309ef8a9936df3499768754e95981378ab6e623e7e94f6",
+        "reason": "Reviewed SDK phase.complete 172 updates only plan count and completed checkbox after independent passed 11/11 verification; Phase 173 selected contract unchanged."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "path": ".planning/ROADMAP.md",
+        "selector": "phases-172-173-contract",
+        "previous_sha256": "c565ffa0bd38152b2c309ef8a9936df3499768754e95981378ab6e623e7e94f6",
+        "sha256": "a0441aa756a8e22557b1a4f012f0ffef11537f2d109e8c4c55708f944332e266",
+        "source_sha": "a15e397441017d2c6199ed6a5eb21cb67ebc0e36",
+        "reason": "Phase 173 planning commit 79048ed2 added the one-plan entry to the Phase 172\u2013173 selector; audit only the reviewed selector slice authorized by D-07."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "path": "test/integration/phase15_par_authorization_e2e_test.exs",
+        "previous_sha256": "a1529fd15509347e9ea76fdcc3d603182c3582d9cb105c47e18d2bf0b5df69be",
+        "sha256": "9a286e37949857ced7bdf5672d01a9d7d89c4f381d579be7aff6e9a5c3c35413",
+        "source_sha": "a15e397441017d2c6199ed6a5eb21cb67ebc0e36",
+        "reason": "Add the durable P171-005 Router regression with independent control, exact relative consent route, persisted pushed authority, and actual normative RED/GREEN evidence."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "c6d4d3fac68914a4c3c3014ec68f6973d10b9e3b",
+        "path": "test/integration/phase15_par_authorization_e2e_test.exs",
+        "previous_sha256": "9a286e37949857ced7bdf5672d01a9d7d89c4f381d579be7aff6e9a5c3c35413",
+        "sha256": "9193f4dbbd075242717293c64dacf8d72c59105e43c196250ed60fb4baee4e30",
+        "reason": "Phase 173 WR-01: compare exact application/json media type after separating charset parameters; reject application/jsonp prefix without changing runtime behavior."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "cdc64295ee3ce89e2da42de070775b30eed7fd9a",
+        "path": ".planning/ROADMAP.md#phases-172-173-contract",
+        "previous_sha256": "a0441aa756a8e22557b1a4f012f0ffef11537f2d109e8c4c55708f944332e266",
+        "sha256": "27dab1dd7eecc59bf4dddbae9b5ce61e34e46cddb824d7c98efd6753615d95a7",
+        "reason": "Reviewed SDK phase.complete173 plan count and completion checkbox after passed six behavioral truths with two explicit judgment flags; selected contracts unchanged."
+      },
+      {
+        "date": "2026-10-25",
+        "operator": "Codex executing maintainer",
+        "source_sha": "b4c19e8251e7abd886fef68c036a79eb5eadaa30",
+        "path": "docs/supported-surface.md",
+        "previous_sha256": "078b723ec78a7005bf76633ca5fe47c2a7504b203a5c9a87de366a31f876c6bb",
+        "sha256": "2cd32dee2d0bf1bcc301c26afeea634698e7b0b4a44ee55cf15204705d6f4471",
+        "reason": "Phase 174 Plan 02 updated the owned support guide with the two delivered corrections, reproducible local package command, and explicit proof limits; it does not broaden the frozen case selection or claim candidate/main success."
+      },
+      {
+        "date": "2026-10-25",
+        "operator": "Codex executing maintainer",
+        "source_sha": "832c5a41",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-03-PLAN.md",
+        "previous_sha256": "bf02535d6e5f4a8a8065d04765c42c49e4bb52d566f4bc34ea7209375deadc3b",
+        "sha256": "2435e40cd56e3996bea9901fb086c1f1dd75eebee60318282fe58cda22a21536",
+        "reason": "After scoped independent code and security reviews, resolve only the two reviewed Phase 171 Plan 03 prohibition entries as judgment-tier dispositions; preserve the explicit human-review flags and all qualification observations."
+      }
+    ],
+    "metadata_audits": [
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-VALIDATION.md",
+        "previous_sha256": "6c1d1ab5d5fc48ed980449ce536a90c9e14d185f8573f7d97ed53890d6f8e985",
+        "sha256": "61e0cf05140f546f143c3403a24d691b5941bb0108af316cc28794f722e17c24",
+        "reason": "Post-execution Nyquist status/task evidence audit; selected cases, probe, receipt, normative expectations and source runtime inputs unchanged."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-VALIDATION.md",
+        "previous_sha256": "61e0cf05140f546f143c3403a24d691b5941bb0108af316cc28794f722e17c24",
+        "sha256": "6169f2c670bf59a066fd76cb661ed5338ad34fa9fba0b3ec53723345ce2a469c",
+        "reason": "Append post-review test/lint and fresh probe evidence audit; no selected case, expected outcome, runtime input or original observation changed by this metadata update."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-VALIDATION.md",
+        "previous_sha256": "6169f2c670bf59a066fd76cb661ed5338ad34fa9fba0b3ec53723345ce2a469c",
+        "sha256": "7c309f05d560d36fb404798c8f696274260eb564d2ee1cc88a38ff7347262a96",
+        "reason": "Final WR-05 verification-count audit; selected cases, expected outcomes, runtime inputs and probe observations unchanged."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-03-PLAN.md",
+        "previous_sha256": "aa32831de91898a4a870bb41a371968750f2bceb31f731fe9cff397f45f51d88",
+        "sha256": "bf02535d6e5f4a8a8065d04765c42c49e4bb52d566f4bc34ea7209375deadc3b",
+        "reason": "Correct key-link orientation: canonical ledger references the explicitly invoked probe; probe intentionally does not mutate/read the ledger. No task behavior, selected case, normative expectation or evidence changed."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-VALIDATION.md",
+        "previous_sha256": "7c309f05d560d36fb404798c8f696274260eb564d2ee1cc88a38ff7347262a96",
+        "sha256": "b9fa20c0a22d4fd48235470cf150079be0c0b004baa09207e96a5e59010fd19c",
+        "reason": "Record the scoped 171-04 document checks and actual TDD/lint outputs before the final contract verification; selected cases, runtime inputs, receipt and probe observations are unchanged."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-VALIDATION.md",
+        "previous_sha256": "b9fa20c0a22d4fd48235470cf150079be0c0b004baa09207e96a5e59010fd19c",
+        "sha256": "de2b11d1a0ab4ff59267ab4e776c722c64c78f07ccfb19cb9876ca463b1a54fb",
+        "reason": "Refresh only the reviewed VALIDATION identity after recording actual final test, format, Credo and scoped-diff results; matrix selection and all runtime/source observations remain unchanged."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-VALIDATION.md",
+        "previous_sha256": "de2b11d1a0ab4ff59267ab4e776c722c64c78f07ccfb19cb9876ca463b1a54fb",
+        "sha256": "c63e7dac8728642879a528a964071667f047d048e989e2205fd14a3cf5812739",
+        "reason": "Make the executed Wave 4 task map reference its canonical gap-plan source explicitly; no task result, selected case, expectation or original observation changed."
+      }
+    ]
+  },
+  "blockers": [],
+  "exclusions": [
+    "External OIDF/FAPI suites are supplemental and are not case-level evidence; both current profile wrappers were not launched.",
+    "External provider-origin, TLS/proxy, and browser reachability are explicitly excluded from selected protocol cases until a valid exact-input profile can run.",
+    "No case changes policy for valid callback behavior or conflates identical outcomes across distinct request conditions."
+  ],
+  "supplemental_limitations": [
+    {
+      "observation_ids": [
+        "phase37-20261024T201228Z"
+      ],
+      "status": "unavailable",
+      "blocking_for_171_freeze": false,
+      "blocks": "The optional external profile wrapper retry only.",
+      "does_not_block": "The selected source-host HTTP cases, matrix review or qualification freeze.",
+      "reason": "The exact CPython 3.13.15/pip 26.2.1 locked environment is unavailable; no wrapper was launched, classified or issued a receipt.",
+      "owner": "Phase 171 executing maintainer (Codex gsd-executor, Plan 02)",
+      "next_action": "Prepare or select the existing workflow environment at source SHA d78f0fd944b8c8612261883e09cfb844a698bd92 with Elixir 1.19.5/OTP 28 and CPython 3.13.15/pip 26.2.1. Verify all seven distributions and wheel-lock versions from runner-requirements.lock; then retry mix lockspire.oidf_conformance --check and this wrapper serially using the recorded lock and plan identities and the new artifact directory above. Keep unavailable until a real profile receipt is produced."
+    },
+    {
+      "observation_ids": [
+        "fapi2-20261024T201228Z"
+      ],
+      "status": "unavailable",
+      "blocking_for_171_freeze": false,
+      "blocks": "The optional external profile wrapper retry only.",
+      "does_not_block": "The selected source-host HTTP cases, matrix review or qualification freeze.",
+      "reason": "The exact CPython 3.13.15/pip 26.2.1 locked environment is unavailable; no wrapper was launched, classified or issued a receipt.",
+      "owner": "Phase 171 executing maintainer (Codex gsd-executor, Plan 02)",
+      "next_action": "Prepare or select the existing workflow environment at source SHA d78f0fd944b8c8612261883e09cfb844a698bd92 with Elixir 1.19.5/OTP 28 and CPython 3.13.15/pip 26.2.1. Verify all seven distributions and wheel-lock versions from runner-requirements.lock; then retry mix lockspire.oidf_conformance --check, confirm the disposable provider-origin/TLS/browser path, and run this wrapper serially using the recorded lock and plan identities and the new artifact directory above. Keep unavailable until a real profile receipt is produced."
+    },
+    {
+      "observation_ids": [
+        "phase37-20261024T201228Z",
+        "fapi2-20261024T201228Z"
+      ],
+      "status": "UNVERIFIED",
+      "blocking_for_171_freeze": false,
+      "blocks": "Any broader optional-retry claim about automatic overlap, interruption or cleanup behavior.",
+      "does_not_block": "The selected source-host HTTP cases, matrix review or qualification freeze.",
+      "reason": "Both wrappers were NOT LAUNCHED; no overlap, interruption or cleanup event was observed. The sequential operator procedure, static traps and existing contracts do not prove the broader behavior.",
+      "owner": "Phase 171 executing maintainer",
+      "next_action": "Before any future broader optional-retry claim, separately scope and gather overlap/interruption evidence in an owned isolated environment, preserving output and recording actual exit, classification and cleanup. This amendment selects no retry, runner feature or environment preparation."
+    }
+  ]
+}

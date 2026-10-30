@@ -93,7 +93,16 @@ defmodule Lockspire.CompatibilityBaselineContractTest do
     end)
 
     assert Manifest.extensions() == %{
-             Lockspire.Config => [client_store: 0, normalize_mount_path!: 1, transaction_store: 0],
+             Lockspire.Config => [
+               client_secret_verifier_cache_key: 0,
+               client_secret_verifier_context: 0,
+               client_secret_verifier_context: 1,
+               client_secret_verifier_forbidden_key_bytes: 0,
+               client_secret_verifier_operation_forbidden_key_bytes: 1,
+               client_store: 0,
+               normalize_mount_path!: 1,
+               transaction_store: 0
+             ],
              Lockspire.Protocol.AuthorizationRequest => [validate: 2, validate_pushed: 3],
              Lockspire.Protocol.RegistrationManagement => [
                delete: 3,

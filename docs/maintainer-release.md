@@ -17,6 +17,11 @@ This guide is maintainer-only release operations guidance. It does not define a 
 For DCR/logout wording in release notes or release review, defer to the canonical support contract in `docs/supported-surface.md` rather than restating a separate support matrix here. The same rule applies to `client_secret_jwt`: this guide can acknowledge the shipped narrow direct-client slice, but the canonical support contract and the dedicated host guide own the exact support wording.
 The same rule applies to advanced setup claims such as mTLS and protected-route support: release notes and maintainer review can point to `docs/supported-surface.md`, `docs/mtls-host-guide.md`, and `docs/protect-phoenix-api-routes.md`, but should not invent broader trust equivalence, automatic proxy trust, or generic deployment automation language here. Canonical wording enforcement belongs in the proof-focused contract tests and should stay there rather than being redefined in this guide.
 
+For verifier-key operations and their host-owned fleet limits, defer to the
+[canonical verifier configuration guide](client-secret-verifier-configuration.md)
+and [supported-surface contract](supported-surface.md). A source test or a
+local store check is not evidence of package installation or fleet readiness.
+
 ## Normal flow
 
 Run the repo hygiene gate before opening release-prep cleanup or trying to cut a release:
@@ -28,6 +33,28 @@ Run the repo hygiene gate before opening release-prep cleanup or trying to cut a
 Treat `PASS` as ready, `WARN` as triage required, and `BLOCK` as stop-and-fix. If you already have fresh contributor-gate evidence for the exact branch, you can skip the local rerun with `./scripts/maintainer/repo_hygiene_check.sh --skip-mix-ci`.
 
 The standing release-train ledger lives in `.planning/RELEASE-TRAIN.md`. Update it after every real publish so the next maintainer inherits concrete proof instead of oral history.
+
+### Milestone integration and accepted-main evidence
+
+Feature work uses one milestone branch and one reviewed PR to `main`, as
+described in `.planning/DEVELOPMENT-TRAIN.md`. Before integration, record
+candidate checks and hosted CI separately, including any pending blockers; a
+pre-merge audit does not mean the milestone is accepted on `main`. Do not merge
+or publish on the strength of this runbook. After normal reviewed integration,
+the responsible maintainer may use the existing exact-main helper for the
+actual merged SHA only after local `HEAD`, local `main`, and refreshed
+`origin/main` agree and the contributor gate, matching canonical push-CI and
+no-publish Release evidence are available:
+
+```bash
+./scripts/maintainer/repo_hygiene_check.sh --accept-sha <full-merged-main-sha>
+```
+
+Record the observed result and warning dispositions in a dated addendum. If
+those conditions are not met, leave main acceptance pending with the concrete
+blocker and next action. Release Please and the protected exact-ref workflow
+remain the release path; this helper does not authorize a merge, tag, dispatch,
+or publication.
 
 1. Merge reviewed changes to `main`.
 2. Let Release Please open or update the release PR.
@@ -155,6 +182,20 @@ runs the same original server lifecycle tests for the selected dependency pair,
 then checks all 16 packaged browser cases at `/lockspire`,
 `/teams/ops/identity`, and `/`. This separates source/lifecycle evidence from
 real Chrome/CDP transport evidence.
+
+CI installs Hex 2.6.0 explicitly before dependency or package work. The verifier
+predecessor pins include generated package metadata, so local verifier proofs
+must use the same builder (`mix local.hex 2.6.0 --force`) in a private `MIX_HOME`
+for each selected Elixir/OTP runtime. Build that archive with the selected runtime;
+do not copy a compiled Hex archive between OTP versions. A builder upgrade needs
+explicit artifact requalification before changing these pins. This CI proof
+setting does not change the library support matrix or the publishing workflow.
+The predecessor is rebuilt from accepted Git commit
+`173059a166e9ade0f5f57c9980b7b2400a98538c`; its requalified archive/tree pins
+identify the Hex 2.6.0 rebuild. Earlier Hex 2.5.1 builds have different generated
+`hex_metadata.config` bytes. Their original evidence remains historical evidence
+for those artifacts, and cannot stand in for the requalified build. The published
+legacy-control tarball and its pins remain separate.
 
 Local requirements are Bash, Python 3, Mix dependencies for the selected pair,
 Node.js 22.15 or newer with built-in `fetch` and `WebSocket`, and an installed

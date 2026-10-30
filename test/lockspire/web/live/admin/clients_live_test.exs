@@ -350,7 +350,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     assert submit_class == "lockspire-admin-btn lockspire-admin-btn-primary"
   end
 
-  test "app creation shows a form error instead of crashing when storage raises" do
+  test "app creation shows a form error for a missing verifier key without exception logging" do
     endpoint_config = Application.get_env(:lockspire, Lockspire.Web.Endpoint)
 
     Application.put_env(
@@ -383,7 +383,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
         assert html =~ "Missing Key App"
       end)
 
-    assert log =~ "Lockspire admin could not create an app"
+    refute log =~ "Lockspire admin could not create an app"
     assert render(view) =~ "App was not created."
   end
 

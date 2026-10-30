@@ -1,0 +1,19 @@
+{
+  "command": [
+    "python3",
+    "-c",
+    "import pathlib,sys,unittest;sys.path.insert(0,'test/acceptance');import client_verifier_session_authority_test as m;m.WRAPPER=pathlib.Path(sys.argv[1]);r=unittest.TextTestRunner().run(unittest.defaultTestLoader.loadTestsFromModule(m));raise SystemExit(not r.wasSuccessful())",
+    "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-authority-counterfactual-pvz7jc5e/wrapper.sh"
+  ],
+  "nativeChecker": "unittest.TextTestRunner/defaultTestLoader runs the actual authority regression with exact original wrapper bytes copied to owned temporary path; no live source mutation",
+  "counterfactualWrapperCommit": "7c6ff91e0d42e434ef8286e09960425a3f062eb9",
+  "counterfactualWrapperSha256": "48736201647e54cfc5d321bb78e2619509360de90411ac9aa32c0154736a5e59",
+  "exitCode": 1,
+  "executedTests": 1,
+  "output": "F\n======================================================================\nFAIL: test_injected_sibling_registry_row_never_authorizes_signalling (client_verifier_session_authority_test.ActualWrapperSessionAuthority.test_injected_sibling_registry_row_never_authorizes_signalling)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/Users/jon/projects/lockspire/test/acceptance/client_verifier_session_authority_test.py\", line 95, in test_injected_sibling_registry_row_never_authorizes_signalling\n    self.assertTrue(sibling.poll() is None, \"caller-written sibling PID authorized a foreign group signal\")\n    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: False is not true : caller-written sibling PID authorized a foreign group signal\n\n----------------------------------------------------------------------\nRan 1 test in 2.385s\n\nFAILED (failures=1)\n",
+  "stdoutBytes": 0,
+  "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderrBytes": 982,
+  "stderrSha256": "980f49a46dd7a0b065713cf0cc196d0ea8a8edd72fd3facda803110655553b79",
+  "semanticAssessment": "Restoring original actual-wrapper authority kills only this regression's deliberately owned sibling, triggering the strict survival/no-TERM oracle. Exact probe groups reaped/probed absent before cleanup; current fixed source untouched."
+}

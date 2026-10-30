@@ -10,11 +10,13 @@ defmodule CleanRoomProvider.MixProject do
     ]
   end
 
-  def application, do: [mod: {CleanRoomProvider.Application, []}, extra_applications: [:logger]]
+  # Host-only HTTP probes need inets declared so Mix retains its complete code path.
+  def application,
+    do: [mod: {CleanRoomProvider.Application, []}, extra_applications: [:logger, :inets]]
 
   defp deps do
     [
-      {:lockspire, path: "vendor/lockspire", runtime: false},
+      {:lockspire, path: "vendor/lockspire"},
       {:phoenix, "== 1.8.13"},
       {:phoenix_live_view, "== 1.2.10"},
       {:ecto_sql, "== 3.13.5"},

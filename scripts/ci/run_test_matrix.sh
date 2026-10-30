@@ -124,23 +124,32 @@ case "$mode" in
     run_coverage_partition fast "MIX_ENV=test mix do test.setup + test"
     ;;
   --integration)
-    run_coverage_partition integration "MIX_ENV=test mix do test.setup + test --only integration --exclude lifetime_package"
-    candidate_dir=$(mktemp -d "${TMPDIR:-/tmp}/lockspire-lifetime-candidate.XXXXXX")
-    leg_dir=$(mktemp -d "${TMPDIR:-/tmp}/lockspire-lifetime-legs.XXXXXX")
-    trap 'rm -rf "$candidate_dir" "$leg_dir"' EXIT
-    package_version=$(python3 -c 'import re; print(re.search(r"version: \"([^\"]+)\"", open("mix.exs").read()).group(1))')
-    candidate_tar="$candidate_dir/lockspire-${package_version}.tar"
-    expected_source=${source_sha:-$(git rev-parse HEAD)}
-    (umask 077; env MIX_ENV=test mix hex.build --output "$candidate_tar")
-    if command -v sha256sum >/dev/null 2>&1; then
-      candidate_sha=$(sha256sum "$candidate_tar" | awk '{print $1}')
-    else
-      candidate_sha=$(shasum -a 256 "$candidate_tar" | awk '{print $1}')
+    expected_source=${LOCKSPIRE_EXPECTED_CANDIDATE_SOURCE_REVISION:-${source_sha:-$(git rev-parse HEAD)}}
+    [[ "$expected_source" =~ ^[0-9a-f]{40,64}$ ]] || {
+      echo "authenticated lifetime package candidate source revision is invalid" >&2
+      exit 2
+    }
+    if [[ -n "$source_sha" ]]; then
+      [[ "${LOCKSPIRE_EXPECTED_FROZEN_RUNNER_REVISION:-}" == "$source_sha" ]] || {
+        echo "authenticated lifetime package runner does not match the selected source checkout" >&2
+        exit 2
+      }
+      for required in LOCKSPIRE_FROZEN_INPUTS LOCKSPIRE_EXPECTED_FROZEN_MANIFEST_SHA256 \
+        LOCKSPIRE_EXPECTED_CANDIDATE_SOURCE_REVISION LOCKSPIRE_EXPECTED_CANDIDATE_ARCHIVE_SHA256 \
+        LOCKSPIRE_EXPECTED_CANDIDATE_TREE_SHA256; do
+        if [[ -z "${!required:-}" ]]; then
+          echo "authenticated lifetime package owner input is missing: ${required}" >&2
+          exit 2
+        fi
+      done
     fi
+    run_coverage_partition integration "MIX_ENV=test mix do test.setup + test --only integration --exclude lifetime_package"
+    leg_dir=$(mktemp -d "${TMPDIR:-/tmp}/lockspire-lifetime-legs.XXXXXX")
+    trap 'rm -rf "$leg_dir"' EXIT
     mkdir -p .artifacts/ci/client-lifetimes
     rm -f .artifacts/ci/client-lifetimes/receipt.json .artifacts/ci/client-lifetimes/validation.json
     run_partition lifetimes \
-      "LOCKSPIRE_PACKAGE_ROOT='$candidate_dir' LOCKSPIRE_LIFETIME_PACKAGE_TAR='$candidate_tar' LOCKSPIRE_LIFETIME_PACKAGE_SHA256='$candidate_sha' LOCKSPIRE_LIFETIME_SOURCE_REVISION='$expected_source' LOCKSPIRE_LIFETIME_RECEIPT_DIR='$leg_dir' MIX_ENV=test mix test --only lifetime_package test/integration/client_lifetime_packaged_journey_test.exs test/integration/app_lifetime_packaged_upgrade_test.exs"
+      "LOCKSPIRE_LIFETIME_SOURCE_REVISION='$expected_source' LOCKSPIRE_LIFETIME_RECEIPT_DIR='$leg_dir' MIX_ENV=test mix test --only lifetime_package test/integration/client_lifetime_packaged_journey_test.exs test/integration/app_lifetime_packaged_upgrade_test.exs"
     if [[ $last_partition_status -eq 0 ]]; then
       run_partition lifetime_receipts \
         "python3 scripts/acceptance/client_lifetime_receipts.py --fresh '$leg_dir/fresh.json' --custom '$leg_dir/custom.json' --legacy '$leg_dir/legacy.json' --receipt .artifacts/ci/client-lifetimes/receipt.json --validation .artifacts/ci/client-lifetimes/validation.json --expected-source '$expected_source'"

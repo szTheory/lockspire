@@ -1,0 +1,228 @@
+{
+  "schema_version": 1,
+  "source_revision": "73bb46811f4b76b2372b4af2b4e21aaf42893ac1",
+  "proof_index_sha256": "fefc13619dda61b0617cc2fad445f887652edaba42ffaad5d988cb43650e8fb8",
+  "receipt_test_refresh": {
+    "source_commit": "a00f0d0a8e4cc276403b5f5dccf37bb63f900458",
+    "path": "test/acceptance/selected_receipt_test.py",
+    "old_sha256": "9ff26cbbb50a58abda71e520555a124b775fb8d25370732f3ceec3d4ba665e59",
+    "new_sha256": "c7459361fbf4baa5866fd3ee868c2960694ec75bff1e99b290c21b508c8076ff",
+    "review": {
+      "path": ".planning/phases/174-packaged-proof-delivery-handoff/174-REVIEW.md",
+      "sha256": "8a64f3278571d3cb1359003ea690de6c7adaad7976db3cee6a792d3d774f04a4",
+      "status": "clean",
+      "findings": {
+        "critical": 0,
+        "warning": 0,
+        "info": 0,
+        "total": 0
+      }
+    },
+    "python_tests": {
+      "executed": 16,
+      "passed": 16,
+      "failed": 0
+    },
+    "exunit_bridge": {
+      "path": "test/lockspire/clean_room_release_source_contract_test.exs",
+      "sha256": "5f9e123c464ffde23b9017953af09b05dd9b3980b96b5a2cbadef34d68ab58e6",
+      "executed": 7,
+      "passed": 7,
+      "failed": 0
+    },
+    "unchanged_source_owner_green": {
+      "source_revision": "a348bf71285cb0ffe9eeba0da94a6c2d46faa477",
+      "total_tests": 132,
+      "applicability": "typed Phase 171 and Phase 173 owner review; source owner bytes and hashes unchanged; not rerun"
+    }
+  },
+  "proof_artifacts": [
+    {
+      "path": ".planning/phases/174-packaged-proof-delivery-handoff/174-INPUT-FREEZE.json",
+      "sha256": "3c1e0b62508f80e2f448d600e1452a26beba3ab77ace94265c58f2e5ef6e3a9b",
+      "role": "frozen shipped inputs",
+      "status": "63/63 hashes verified"
+    },
+    {
+      "path": ".planning/phases/174-packaged-proof-delivery-handoff/174-PACKAGE-PROOF.json",
+      "sha256": "9ec9de15ccdb3522a6dd179da1f58e8d700e2502e8885782899152700e900844",
+      "role": "fresh package execution",
+      "source_revision": "73bb46811f4b76b2372b4af2b4e21aaf42893ac1",
+      "status": "12/12 passed; 0 failed/skipped"
+    },
+    {
+      "path": ".planning/phases/174-packaged-proof-delivery-handoff/174-PROOF-INDEX.json",
+      "sha256": "fefc13619dda61b0617cc2fad445f887652edaba42ffaad5d988cb43650e8fb8",
+      "role": "source/package/test identity join",
+      "status": "12 exact case rows and current validator-test identity"
+    }
+  ],
+  "prior_reports": [
+    {
+      "phase": 171,
+      "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-VERIFICATION.md",
+      "sha256": "7bde6875e1105ba3ce7903161a0b112b207d5f7ddb6a283d58daae79ae503601",
+      "role": "gsd-verifier",
+      "status": "passed",
+      "score": "10/10 must-haves verified",
+      "covered_fingerprint": "v3:sha256:d495c80c6176f96eab5482edc230bb784c8c72fec87c260f2bf7996a05dadfbc",
+      "flagged_prohibitions": 3,
+      "unresolved_generic_assumptions": [
+        "A-EDGE-BASE-01",
+        "A-EDGE-FIND-02"
+      ],
+      "derivative_audit_cycle_avoided": "The typed Phase171 report excludes this audit from covered_files because this audit records that report's final hash; its source, ledger, freeze, package and proof-index coverage remain current.",
+      "final_operations_applicability": "Proper gsd-verifier inspected the final operations-only disposition append; prior source, ledger, lifecycle, RED/GREEN and proof inputs remain applicable. The growing downstream Phase 174 disposition note is derivative, so it is linked narratively rather than fingerprinted by the earlier phase. No runtime execution is restamped."
+    },
+    {
+      "phase": 172,
+      "path": ".planning/phases/172-authorization-responses/172-VERIFICATION.md",
+      "sha256": "2853a7f512011e7649d31ce4330250d41283e7ec20777e69a68ae23ca0c73b20",
+      "role": "gsd-verifier",
+      "status": "passed",
+      "score": "11/11 must-haves verified",
+      "covered_fingerprint": "v3:sha256:d3bc5c424e8a4aa8a7df1c80987cbeb7567ddb9e82aec551b72478f9170edf3b",
+      "flagged_prohibitions": 2,
+      "unresolved_generic_assumptions": [],
+      "final_operations_applicability": "Proper gsd-verifier inspected the final operations-only disposition append; prior source, ledger, lifecycle, RED/GREEN and proof inputs remain applicable. The growing downstream Phase 174 disposition note is derivative, so it is linked narratively rather than fingerprinted by the earlier phase. No runtime execution is restamped."
+    },
+    {
+      "phase": 173,
+      "path": ".planning/phases/173-conditional-par-profile-boundaries/173-VERIFICATION.md",
+      "sha256": "2c771ae393f24ec573809bf4c337e888375f01f48b6d9675137f4b6ec1841536",
+      "role": "gsd-verifier",
+      "status": "passed",
+      "score": "6/6 behavioral truths verified",
+      "covered_fingerprint": "v3:sha256:ab0ae8e8cdbe6552a11088016ccb1a813df890ea7538c51d56d4fb258ce0a572",
+      "flagged_prohibitions": 2,
+      "unresolved_generic_assumptions": [
+        "three inherited generic fallback limits, preserved in report"
+      ],
+      "fixture_applicability_review": {
+        "role": "gsd-verifier",
+        "status": "passed",
+        "commit": "38a19a292da7c90352494e4f03ade7c10e25ff82",
+        "verdict": "Formatting-only line layout changes; no Elixir tokens, branches, or values changed. Source-owner GREEN remains applicable; the new local package receipt and proof index are separately bound to the refreshed source identity.",
+        "source_owner_green_revision": "a348bf71285cb0ffe9eeba0da94a6c2d46faa477",
+        "test_rerun": false,
+        "changed_files": [
+          {
+            "path": "test/clean_room/provider_host/lib/clean_room_provider/lockspire/account_resolver.ex",
+            "old_sha256": "3b7a12bf3f2846fe07984a0d047058ee50517fab3c390df22888b7bd95e591b3",
+            "new_sha256": "1321e9275317bb63f0fcc738aee1a0dc7312b7769b455694ea30ffc7917a94f8"
+          },
+          {
+            "path": "test/clean_room/provider_host/lib/clean_room_provider_web/controllers/session_controller.ex",
+            "old_sha256": "a0a833085c3e5b4be61010c22817fb89aa858b26e1a590a2c2487bc24919f2ae",
+            "new_sha256": "905b1db6c0d269db2b8128bd87e8f5e71b7ec0ad18efb1a0477831dfaaef4284"
+          }
+        ]
+      }
+    }
+  ],
+  "reviews": [
+    {
+      "path": ".planning/phases/174-packaged-proof-delivery-handoff/174-REVIEW.md",
+      "sha256": "3468e062b1fdcd255d3b81fbffc09f310f5a55da2420801bebeb0cdf2c14b233",
+      "role": "gsd-code-reviewer",
+      "status": "clean",
+      "findings": {
+        "critical": 0,
+        "warning": 0,
+        "info": 0,
+        "total": 0
+      },
+      "scope": "Ten-file final source review; source hashes independently recomputed and matched10/10; original warnings and fixes retained"
+    },
+    {
+      "path": ".planning/phases/174-packaged-proof-delivery-handoff/174-SECURITY.md",
+      "sha256": "1d1e3bc9855031cd13feca5a624539d78ce9944408fc0ea942c92d7977acb82d",
+      "role": "gsd-security-auditor",
+      "status": "verified",
+      "scope": "Full17-threat ASVS L1 aggregate recheck atf7f63788, including final diagnostics and replacement candidate evidence",
+      "threats_found": 17,
+      "threats_closed": 17,
+      "threats_open": 0,
+      "fresh_recheck_after_receipt_test_refresh": false,
+      "note": "The historical security review recorded the prior invalid-alternative test weakness as nonblocking. The a00f0d0 test strengthening is covered by the later clean independent code review and 16/16 Python plus 7/7 bridge results; no new security-auditor recheck is claimed here."
+    },
+    {
+      "path": ".planning/phases/174-packaged-proof-delivery-handoff/174-DISPOSITIONS.md",
+      "sha256": "341d7257b0c93c2e2d5c31b02bc038f39ecae839273c8002b6707f1001150e14",
+      "role": "typed code-reviewer and security-auditor lifecycle reassessment",
+      "status": "scoped-judgments-recorded",
+      "judgment_flags": {
+        "phase171": 3,
+        "phase172": 2,
+        "phase173": 2,
+        "phase174": 2
+      },
+      "prior_sha256": "f26d65f1d21becfcd78a6bc571a205254a6e54f06c16ffcb18c7b62c71c56483",
+      "final_delivery_applicability": "Only accepted-main operations and preserved helper invocation history were appended; judgments and source controls remain unchanged. Proper Phase174 verifier assessed final delivery."
+    }
+  ],
+  "requirements": {
+    "CPROOF-01": "complete: all twelve frozen IDs joined to actual package observations and current source owners",
+    "CPROOF-02": "complete: selected receipt parser suite passed 16/16; source-contract bridge passed 7/7; qualification ledger contract passed 22/22",
+    "DELIV-01": "Complete: immutable candidate local/hosted gates passed, full source review/security closed, final Phase174 proper-owner verification passed23/23 and canonical milestone audit passed14/14.",
+    "DELIV-02": "Complete: PR140 merged reviewedhead6f10fcc7 as173059a1; fresh exact-main acceptance passed, receipt preserved, custody/ranking retained."
+  },
+  "limits": [
+    "Package proof is a local packaged checkout exercised against loopback clean-room hosts; it is not candidate CI, accepted-main-at-package-revision, publication, or release evidence.",
+    "External issuer, TLS, proxy, browser reachability, OIDF and FAPI profiles were not exercised; no certification claim is made.",
+    "CPROOF-01 adjacency/order and CPROOF-02/DELIV-02 unclassified assumptions remain explicit; no concurrency, ordering, or universal certification guarantee is inferred.",
+    "The three Phase 173 generic fallback limits remain unresolved and are preserved in its current report.",
+    "The fixture-only source revision changed formatting in two clean-room host files; the typed Phase 173 owner assessed prior source GREEN applicability, and the full local package proof was rerun at the new frozen identity.",
+    "The receipt-validator test-only strengthening was reviewed and passed its parser and bridge suites; the original 132 source-owner GREEN results remain applicable under typed owner review. A full 12-case package sweep was rerun at frozen source 73bb4681. The later full17-threat phase audit atf7f63788 is recorded separately in reviews; no earlier audit execution is restamped.",
+    "Candidate ec6361d CI is historical for an earlier validator-test identity and is not credited toward DELIV-01 after this test change; replacement candidate9b8cf54d subsequently passed its full gates as recorded in candidate_gates.",
+    "Judgment-tier prohibitions remain non-authoritative and retain unverified-prohibition \u2014 human review recommended flags."
+  ],
+  "flag_counts": {
+    "phase171": 3,
+    "phase172": 2,
+    "phase173": 2,
+    "phase174": 2,
+    "total": 9
+  },
+  "blockers": [],
+  "candidate_gates": {
+    "path": ".planning/phases/174-packaged-proof-delivery-handoff/174-CANDIDATE-GATES.json",
+    "sha256": "5f5fe49084c10061b10bf18b8c57354b6b02b3974981a2cc8fc8705881b87115",
+    "candidate_sha": "9b8cf54dc7e457e2264a15901b011d0c70a1ed8c",
+    "local_mix_ci": "passed, durable exit0",
+    "hosted_ci_run": 40161576115,
+    "hosted_ci": "passed, exactly7canonicaljobs, attempt1",
+    "scope": "Distinct from package execution at73bb4681 and future accepted-main; diagnostic failure-only repair outside63frozeninputs has proper-owner semantic applicability review."
+  },
+  "final_review_provenance": "The immutable proof index keeps the historical eight-file clean review snapshot at package source73bb4681. Current ten-file review is a later proper-owner aggregation; no frozen index or executed source is rewritten. Prior owners assessed it as derivative commentary and preserved stable source/ledger/proof and historical review evidence.",
+  "delivery_refresh": {
+    "observed_at": "2026-10-25T14:29:10.086139+00:00",
+    "accepted_main": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+    "reviewed_pr_head": "6f10fcc73e0af0e41d47760e0371d73d9a83b1a4",
+    "main_receipt": {
+      "path": ".planning/phases/174-packaged-proof-delivery-handoff/174-MAIN-ACCEPTANCE.json",
+      "sha256": "f50652c307019bbe57ad2f4a2a24bbefbc830bfd6f00010431b68971b4c095dd"
+    },
+    "main_ci_run": 40198968774,
+    "release_no_publish_run": 40198968751,
+    "phase_statuses": {
+      "171-accepted-baseline-finding-qualification": {
+        "status": "passed",
+        "report_sha256": "7bde6875e1105ba3ce7903161a0b112b207d5f7ddb6a283d58daae79ae503601"
+      },
+      "172-authorization-responses": {
+        "status": "passed",
+        "report_sha256": "2853a7f512011e7649d31ce4330250d41283e7ec20777e69a68ae23ca0c73b20"
+      },
+      "173-conditional-par-profile-boundaries": {
+        "status": "passed",
+        "report_sha256": "2c771ae393f24ec573809bf4c337e888375f01f48b6d9675137f4b6ec1841536"
+      },
+      "174-packaged-proof-delivery-handoff": {
+        "status": "passed",
+        "report_sha256": "8c01c7be83d05cf8ec61d949ffe40b9ec85b8d5e0f80d21f47a858900e078921"
+      }
+    },
+    "boundary": "Derivative lifecycle aggregation after proper-owner verification; source/package/candidate execution identities are unchanged. No publication claim."
+  }
+}

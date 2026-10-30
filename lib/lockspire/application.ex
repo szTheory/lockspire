@@ -13,6 +13,7 @@ defmodule Lockspire.Application do
   @impl true
   def start(_type, _args) do
     validate_key_encryption!()
+    resolve_client_secret_verifier()
     Lockspire.DiscoveryRoutes.install_default_capability()
 
     children = [
@@ -42,5 +43,34 @@ defmodule Lockspire.Application do
     end
 
     :ok
+  end
+
+  @doc false
+  @spec resolve_client_secret_verifier() ::
+          {:ok, Lockspire.Security.ClientSecretVerifier.Context.t()}
+  def resolve_client_secret_verifier do
+    alias Lockspire.Security.ClientSecretVerifier
+    alias Lockspire.Security.ClientSecretVerifier.Context
+
+    presence =
+      case Application.fetch_env(:lockspire, ClientSecretVerifier) do
+        {:ok, config} -> {:present, config}
+        :error -> :absent
+      end
+
+    {:ok, context} =
+      Context.resolve(presence, Config.client_secret_verifier_forbidden_key_bytes())
+
+    :persistent_term.put(Config.client_secret_verifier_cache_key(), context)
+
+    if context.state == :invalid do
+      Logger.warning(
+        "Lockspire client-secret verifier configuration retained as invalid " <>
+          "(state=invalid reason_code=#{inspect(context.reason)}). " <>
+          "Verifier-dependent operations will fail locally."
+      )
+    end
+
+    {:ok, context}
   end
 end

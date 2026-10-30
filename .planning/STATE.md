@@ -1,19 +1,21 @@
 ---
 gsd_state_version: "1.0"
-milestone: v1.47
-milestone_name: OAuth/OIDC Core Interoperability & Hardening
-current_phase: 174
-status: "Verified and audited — PR #140 final protected checks and main acceptance pending"
-stopped_at: Phase 174 verified complete; canonical milestone audit and reviewed main delivery next
-last_updated: "2026-10-25T06:01:39.466Z"
-last_activity: 2026-10-25
-last_activity_desc: v1.47 audit passed; preparing final PR head
-state_head: de5b9c268b87d806c3a85ccac867a20e808b7da2
+milestone: v1.48
+milestone_name: Client Authentication Key Isolation & Rotation
+current_phase: 178
+current_phase_name: Packaged Upgrade Proof & Delivery Handoff
+current_plan: 12
+status: completed
+stopped_at: completed premerge and ready for review; final exact evidence-only commit/body approval next; integration/main pending D19
+last_updated: "2026-10-29T23:28:54.253255+00:00"
+last_activity: 2026-10-29
+last_activity_desc: Phase178 verification4/4passed; Plan12complete;18/18requirements/4phases/31plans;finalsecuritySECURED37/37;milestoneaudittech_debt/PARTIALcoverage
+state_head: c465f2b8
 progress:
   total_phases: 4
   completed_phases: 4
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 31
+  completed_plans: 31
   percent: 100
 ---
 
@@ -21,24 +23,24 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-25 after Phase 174 verification)
+See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Ship audited v1.47 through PR #140, required final-head checks and fresh synchronized-main acceptance; do not start the provisional next milestone.
+**Current focus:** Phase178 and v1.48 are complete on the premerge branch:12/12phaseplans31/31milestoneplans4/4phases18/18requirements. Actual final verification4/4passed; final independentsecuritySECURED37/37zeroopen/acceptedrisksASVS1; canonicalmilestoneaudittech_debt/no criticalgaps/18integrationpaths5flows. Postrunformalcoveragevalidated/PARTIAL/nyquistfalse; frozen178VALIDATIONdraft remains byte-identical, advisorygeneric/null/prohibitionflagsunresolved/unverified/nonauthoritative and oldfailures/unknowns preserved. Publishedheadc465/qualifiedsourceE7AD/actualcheckout3c7bd/CI40954208717attempt2all7green+sameattemptartifacts/native26/64 remain distinct actual identities. Allownedprocessesclosed/dataretained. Next review exactfinalevidence-onlymetadata commit+preparedPRbody, freshapprovalrequired foranotherexactpush/body; finalmetadataSHAunknownuntilcommit. Existingapprovalsconsumed/nootherremoteauthority. Integration/acceptedmainpendingD19/nullrefs/noMAINreceipt; milestone notarchived. UI-next/Q1–Q10/finalconfirmation/triggers unchanged, nofutureimplementationauthorized.
 
 ## Current Position
 
-Phase: 174
-Plan: Not started
-Status: Verified and audited — PR #140 final protected checks and main acceptance pending
-Last activity: 2026-10-25 — v1.47 audit passed; preparing final PR head
-
-Progress: [██████████] 100% — 4/4 phases, 10/10 plans complete; all14 requirements verified; delivery/main acceptance pending.
+Phase: 178 (Packaged Upgrade Proof & Delivery Handoff) — COMPLETE PREMERGE / READY FOR REVIEW
+Current Plan: 12
+Total Plans in Phase: 12
+Plan: 12/12 complete; 31/31 milestone plans, 4/4 phases and 18/18 requirements complete premerge
+Status: completed premerge / ready for review; milestone not archived; fresh final exact commit/body push approval required; integration/main pending.
+Last activity: 2026-10-29 UTC — final verification4/4/security37/37/audit18requirements4phases18paths5flows/Plan12complete; nonblocking formalcoveragePARTIAL retained.
 
 ## Performance Metrics
 
-v1.47: 4 completed phases, 10 completed plans and 14 verified requirements. Phase 174 passed23/23; package12/12; final candidate local CI and seven hosted jobs pass. Milestone audit and reviewed main delivery are next.
+v1.48: 18 approved requirements, 4 approved phases (175–178), 31 plans with 31 executed; 4/4 phases complete premerge. Phase178 verification passed4/4, finalsecuritySECURED37/37/0open, all18requirements satisfied. Milestoneaudittech_debt retains nonblocking postruncoveragePARTIAL/Nyquistfalse and original advisoryflag provenance; integration/acceptedmain remain pendingD19. Phase 177 corrected source `5e8cd65e` passed full `mix ci` (15 boundary, 2 properties and 2,138 fast tests, 261 integration tests; zero failures), independent security 29/29, clean source review across 32 files and prior regressions 188/0. Independent verification passed 47/47 truths, six requirements and all 23 decisions; no behavior override. Earlier failed attempts and two unclassified/three prohibition flags remain visible. Phase 176 corrected source `71627f27` passed full `mix ci` (2 properties, 2,102 fast tests and 231 integration tests; zero failures), focused security 26/0 and prior-phase regressions 30/0. Independent verification passed 28/28 truths; security closed 22/22 threats and source review found zero issues across 29 files. Four initial audit mechanisms were corrected; failed environmental attempts and three generic edge/three prohibition flags remain disclosed. Earlier Phase 175 candidate f3ef32a7 passed canonical mix ci: boundary 15/0, main 2,055/0 and integration 210/0, with recorded skips/exclusions. Source review has zero open findings.  Fresh pre-qualification exact-main acceptance and required tracer feedback both passed: 22 PASS, 2 WARN, 0 BLOCK, full local contributor gate, seven canonical CI jobs and no-publish Release at `173059a1`. The receipt's final ExUnit stage is 200 tests; the main stage separately passed 2,057 tests. Historical v1.47 remains 4 completed phases, 10 plans and 14 verified requirements; its old receipts are unchanged.
 **Per-Plan Metrics:**
 
 | Plan | Duration | Tasks | Files |
@@ -53,12 +55,44 @@ v1.47: 4 completed phases, 10 completed plans and 14 verified requirements. Phas
 | Phase 174 P02 | 28min | 2 tasks | 8 files |
 | Phase 174 P03 | 19min | 3 tasks | 15 files |
 | Phase 174 P04 | 56min | 2 tasks | 11 files |
+| Phase 175 P01 | 22min+ (from first controlled attempt) | 2 tasks | 3 files |
+| Phase 175 P02 | 10min+ | 3 tasks | 6 files |
+| Phase 176 P01 | 12 min | 2 tasks | 5 files |
+| Phase 176 P02 | 12 min | 2 tasks | 7 files |
+| Phase 176 P03 | 18 min | 2 tasks | 4 files |
+| Phase 176 P04 | 8 min | 2 tasks | 4 files |
+| Phase 176 P05 | 7 min | 2 tasks | 4 files |
+| Phase 176 P06 | 6 min | 2 tasks | 2 files |
+| Phase 176 P07 | 34min | 2 tasks | 7 files |
+| Phase 177 P01 | 9min | 2 tasks | 6 files |
+| Phase 177 P02 | 9min | 2 tasks | 6 files |
+| Phase 177 P07 | 8min | 2 tasks | 7 files |
+| Phase 177 P03 | 23min | 2 tasks | 7 files |
+| Phase 177 P04 | 14min | 2 tasks | 8 files |
+| Phase 177 P05 | 11 min | 2 tasks | 4 files |
+| Phase 177 P06 | 6min | 2 tasks | 3 files |
+| Phase 177 P08 | 10min | 2 tasks | 5 files |
+| Phase 177 P09 | 35min | 2 tasks | 11 files |
+| Phase 178 P01 | 36min | 2 tasks | 8 files |
+| Phase 178 P02 | 33min | 2 tasks | 8 files |
+| Phase 178 P03 | >=76m20s | 2 tasks | 4 files |
+| Phase 178 P04 | 44m | 2 tasks | 9 files |
+| Phase 178 P05 | 31min | 2 tasks | 7 files |
+| Phase 178 P06 | 2h 26m | 2 tasks | 7 files |
+| Phase 178 P07 | 95 min+ (elapsed from first Plan 07 commit; active time unavailable) | 2 tasks | 20 files |
+| Phase 178 P08 | 96min | 2 tasks | 48 files |
+| Phase 178 P9 | 15min | 2 tasks | 7 files |
+| Phase 178 P10 | 75min | 3 tasks | 20 files |
 
 ## Accumulated Context
 
-**Current decision posture:** The user selected v1.47 and delegated upstream research, adversarial synthesis and routine scoped decisions. Use the [standing guide](MILESTONE-GUIDE.txt), [rolling ranking](MILESTONE-ARC.md), [scope](research/v1.47-core-hardening/SCOPE.md) and [research](research/v1.47-core-hardening/SUMMARY.md); prefer small, flat dependencies and existing vetted primitives, refresh future candidates at each boundary, and preserve honest green-main/clean-workspace handoffs.
+**Current decision posture:** The owner accepted the recommended SEC-01-first milestone selection with “follow ur recs” on 2026-10-25. Use the [standing guide](MILESTONE-GUIDE.txt), [rolling ranking](MILESTONE-ARC.md) and [v1.48 baseline](research/v1.48-client-auth-key-isolation/BASELINE.md). Focused research is complete and the owner approved all 18 requirements; the four-phase roadmap is approved. Preserve the UI proposal's Q1–Q10 and confirmed final summary; do not repeat its interview. Prefer existing vetted primitives and small, flat dependency trees.
 
-**Entry limits:** Phase 171 may be planned here; this feature checkout is not accepted main. Before product implementation, reconcile cumulative prior delivery and edit/worktree ownership, then obtain fresh exact-main acceptance through the existing [hygiene checklist](REPO-HYGIENE-CHECKLIST.md). Freeze the finite ledger before dependent plans; replan invalidated slices and reuse already-correct evidence. The [dated baseline](research/v1.47-core-hardening/BASELINE.md) records unqualified historical findings and delivery limits; [original machine-state bytes](research/v1.47-core-hardening/STATE-JSON-BEFORE.json) remain preserved, while the SDK owns the new v1.47 projection. Do not clear historical phase directories 142/143. Selected behavior is mandatory; full external suites remain supplemental/non-certifying.
+**v1.48 entry limits:** This is a local planning branch preserving prior closeout/interview history, not fresh accepted main. Reconcile the retained delivery delta and obtain exact-main acceptance through the existing hygiene helper before product implementation. Preserve historical phases 142/143, old worktrees and demo resources; no blanket phase clearing. GSD's latest-completion parser sees only “Shipped” headings and reports v1.44 incorrectly; authoritative completed history ends at Phase 174. Phase 175 is the approved next phase.
+
+**Historical v1.47 decision posture:** The following entry and phase records preserve their original execution context. Resolved v1.47 blockers below do not block or describe current v1.48 planning.
+
+**Historical v1.47 entry limits:** Phase 171 could be planned before its fresh exact-main acceptance and finite qualification ledger. The [dated baseline](research/v1.47-core-hardening/BASELINE.md), [original machine-state bytes](research/v1.47-core-hardening/STATE-JSON-BEFORE.json) and [Phase 174 delivery](milestones/v1.47-phases/174-packaged-proof-delivery-handoff/174-DELIVERY.md) preserve the original sequence and eventual resolution. Full external suites remain supplemental/non-certifying.
 
 **Phase 171 entry preflight (2026-10-24, after planning commit 322ae40f):** Independent checker passed all 3 plans; 4/4 requirements covered. Read-only GitHub API still reports main `a1e39a01aca258d0ac5f36414bf47c45686d92c1`; local main is `a1a55de0a931c641fbe176e5c3f9c4737aa62b9d`. The planning branch has 414 commits beyond observed origin/main and is not accepted main. All four registered worktrees are clean, but the three prior-agent worktrees retain the unresolved ownership/disposition recorded in BASELINE.md. Automatic advancement stops before acceptance, qualification or product edits; no plan is complete. Next owner: executing maintainer; next action: complete 171-01's reviewed cumulative-delivery and worktree/edit ownership reconciliation, preserving unknown work, before choosing an integration route and running exact-main acceptance. Runtime availability is not the blocker: process-local `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 mix --version` succeeds (Mix 1.19.5 / OTP 28), without changing toolchain files or installing anything. No acceptance/profile/test execution is claimed by this preflight.
 
@@ -70,7 +104,7 @@ Local package/browser/runtime receipts retain exact source and package identitie
 
 ### Pending Todos
 
-- SEC-01 remains preferred provisional v1.48; KEK-04, OPS-03, legacy-plaintext fixture maintenance and existing milestone debt retain their owners and triggers outside selected v1.47.
+- SEC-01 is selected for v1.48. UI quality is the next substantial candidate; its interview is complete. KEK-04, OPS-03, legacy-plaintext fixture maintenance and existing milestone debt retain their owners and triggers outside v1.48.
 - Phase 138 UAT #100 remains pending an authorized live snapshot refresh; inventory dispositions remain proposal-only.
 - Phase 140 WR-01 stays deferred unless the exact sealed Release Please relation rejection recurs.
 - Supplemental OIDF/FAPI evidence remains bounded, redacted and non-certifying.
@@ -121,16 +155,46 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-25T05:51:37.675Z
-Stopped at: Phase 174 verified complete; canonical milestone audit and reviewed main delivery next
-Resume file: .planning/phases/174-packaged-proof-delivery-handoff/174-DELIVERY.md
-Next: Observe the final PR #140 head and required checks, review and merge through the existing train, then run fresh exact-main acceptance. Preserve release auto-merge false and publication unselected.
+Last session: 2026-10-29 UTC.
+Stopped at: completed premerge, ready for review; milestone not archived.
+Resume file: .planning/phases/178-packaged-upgrade-proof-delivery-handoff/.continue-here.md
+Current evidence: 178-VERIFICATION.md (passed4/4), 178-SECURITY.md (SECURED37/37), 178-12-SUMMARY.md (complete), 178-POSTRUN-VALIDATION.md (validated/PARTIAL/Nyquistfalse), and .planning/milestones/v1.48-MILESTONE-AUDIT.md (tech_debt/no criticalgaps). All18requirements,4phases,31plans complete premerge. Publishedheadc465/qualifiedsourceE7AD/CI40954208717attempt2 retain actual separate identities.
+Next: review exact final evidence-only metadata commit and prepared PR body, then obtain fresh exact push/body approval. Final metadata SHA is unknown until commit. No active owned runtime; private data, protected tar and original receipts retained.
 
-### Blockers
+### Current external boundaries
 
-None
+- No concrete premerge requirement/security/integration/flow gap remains. Formal coverage debt is nonblocking/PARTIAL and advisory flags retain original unresolved provenance.
+- Final metadata publication needs fresh exact push/body approval. Prior approvals are consumed. Normal integration and accepted main remain pendingD19/nullrefs/no mainreceipt; no merge/publication or next-milestone implementation authority.
+
+### Historical C98 continuity checkpoint — superseded
+
+Last session: 2026-10-29 UTC.
+Stopped at: C98 local qualification passed; transfer validation passed; exact remote proposal in progress.
+Resume file: .planning/phases/178-packaged-upgrade-proof-delivery-handoff/.continue-here.md
+Current evidence: 178-11-CI-CORRECTION-EVIDENCE-98b79e54.json. Previous epochs remain historical and unwaived.
+Next: Complete all ready local metadata work, verify source closure, prepare exact final SHA/body and request only the required new remote authorization. No active runtime; retain private data and protected tar.
+
+### Historical blockers at that checkpoint
+
+- Old published cc61 CI failed. New hosted seven-job candidate graph/artifacts, milestone audit and main acceptance remain pending. Plan11/12 and VDELIV01/02 are incomplete.
 
 ## Decisions
+
+These decisions retain their original checkpoint context. Earlier stage-specific “pending” or “next” observations below are historical; current completion and authority are recorded above.
+
+- [Phase 178 execution resume]: After root explicitly asked whether to continue implementation and local commits, the owner replied “yes i authorize”. Resume Plan 01 from preserved edits/evidence; retain the earlier approval rejection. This authorization does not include merge or publication.
+
+- [Phase 178 discussion]: Owner delegated subagent research and automatic adoption of coherent scoped recommendations. Use bounded installed journeys across both pairs and built-in/delegated PostgreSQL storage, independently attributed predecessor artifacts, actual contention/audit-INSERT witnesses and explicit pre/postmerge acceptance sequencing. See `178-CONTEXT.md`; no runtime or main-acceptance outcome is claimed.
+
+- [Phase 177 discussion]: Owner delegated fan-out research and automatic adoption of coherent scoped recommendations. Preserve authenticated age metadata during dedicated custody rewrap, distinguish legitimate no-material clients, use selected authority with verifier-only atomic audit, require fresh complete local custody check, resolve bare-Mix configuration locally, and include existing disclosure paths. See 177-CONTEXT.md; runtime requirements remain pending.
+
+- [Phase 176 discussion]: Owner accepted the recommended bundle with “what do u rec? let's do that”. Preserve dedicated custody/configuration, final-ID writer coherence, approved native/migrated lifetime policy, and reader-first activation. Preserve existing token/introspection/revocation/device/CIBA JWT support and PAR/FAPI exclusions; see 176-CONTEXT.md.
+
+- [Phase 175 discussion]: Adopt the user-delegated coherent scoped recommendations in 175-CONTEXT.md. Preserve ciphertext-sensitive authority, explicit reader-first activation, narrow shared-PostgreSQL maintenance authority and existing-path disclosure proof. Fresh exact-main acceptance and actual-caller legacy qualification remain unperformed; native/migrated age policy must receive an explicit qualified disposition before Phase 176 planning.
+
+- [v1.48 roadmap]: Owner explicitly approved Phases 175–178 on 2026-10-25 after approving all 18 requirements. Next action is Phase 175 discussion; no product implementation is complete.
+
+- [v1.48 selection]: Follow the recommended SEC-01-first order; retain UI quality next with all ten interview decisions and final confirmation intact. Research, requirements and roadmap approvals are recorded; phase discussion/planning and implementation-entry gates remain.
 
 - [Phase 171]: Maintainer delegated delivery reconciliation; current run owns preservation decisions. Retain historical worktrees and original local main; deliver completed v1.45/v1.46 separately from unfinished v1.47 planning. — Preserve unique history without inferring old ownership; fresh protected checks and exact-main acceptance remain required.
 - [Phase 171]: Preserve and reuse the original accepted-main receipt; do not rerun the exact-main authority after ledger edits.
@@ -162,3 +226,69 @@ None
 - [Phase 174]: Keep package source f01b6ef77889d38b032944eb37069d6d4b3b3171 distinct from immutable candidate ec6361d9840f2adfda85116d72fec0efe9065c6c.
 - [Phase 174]: Preserve the first failed hosted CI attempt and evaluate exactly seven jobs from the successful latest attempt on the unchanged candidate SHA.
 - [Phase 174]: Leave the new main receipt absent while PR #140 remains open; record the concrete main-acceptance blocker and parent-owned next action.
+- [Phase 175]: Use synchronized main at 173059a166e9ade0f5f57c9980b7b2400a98538c as the fresh pre-qualification baseline.
+- [Phase 175]: Preserve historical and unknown-owner worktrees, databases, demo resources, and generated artifacts; do not clean or publish.
+- [Phase 175]: Keep the VBASE-01 unclassified edge visibly flagged for the later compatibility work.
+- [Phase 175]: Owner explicitly approved the recommended D-20 native age policy revision on 2026-10-25; native dedicated material follows configured client-secret lifetime and migrated rows retain their authenticated original finite deadline.
+- [Phase 177]: Require exact agreement among declared maintenance participants and the selected client, transaction, and audit stores before access.
+- [Phase 177]: Keep native verifier custody decoding internal and report changes only after the selected outer transaction commits.
+- [Phase 177]: Use one internal authenticated envelope decoder for custody inspection and authentication, applying migrated expiry only to authentication.
+- [Phase 177]: Promote legacy verifier material only through Legacy.authenticated_metadata/3, preserving its authenticated finite deadline and requiring hash agreement.
+- [Phase 177]: Preserve RegistrationResult and rotation handoff shapes; redact stored credentials recursively without adding a wrapper struct.
+- [Phase 177]: Apply the existing sensitive repository option to every full-client query/write so Logger and query telemetry are both suppressed.
+- [Phase 177]: Map raw Postgrex and DBConnection failures to fixed reasons while preserving ordinary validation and lifetime outcomes.
+- [Phase 177]: Use identical PostgreSQL COLLATE C expressions for exclusive cursor comparison and ordering after checking UTF8 server encoding.
+- [Phase 177]: Only a complete nil-cursor check establishes current custody; apply reports committed progress and requires a separate fresh check.
+- [Phase 177]: Return bounded encoded client identities, fixed next actions, and authenticated safe key IDs only.
+- [Phase 177]: Bare verifier maintenance resolves a complete task-local context with freshly validated signing exclusions and never changes the serving-node startup snapshot.
+- [Phase 177]: Reject a reporting rewrap when its selected Ecto repository is already in a transaction; retain the provisional low-level callback for caller-owned transactions.
+- [Phase 177]: Treat an uncertain commit response as neither success nor rollback; reconcile with a fresh complete inventory.
+- [Phase 177]: Use committed fixtures and exact pg_blocking_pids relationships to prove concurrency behavior.
+- [Phase 177]: Real PostgreSQL maintenance between JWT authentication and the issuance guard proves obsolete identity rejection; restoration preserves the partner secret while authorized rotation replaces it.
+- [Phase 177]: Preserve the existing one-time plaintext handoff and client/report shapes; no production change was needed after forced disclosure cases passed.
+- [Phase 177]: Treat a successful fresh check as local store evidence; fleet parity, quiescence, backups, and rollback remain host-owned.
+- [Phase 177]: Keep original-key restoration distinct from authorized partner-secret replacement and its one-time handoff.
+- [Phase 178]: Keep installed candidate source revision separate from runner revision; source-bind clean checkout package inputs and leave unproven external source unavailable.
+- [Phase 178]: Use dedicated verifier custody independently from endpoint and signing keys; keep group receipts partial and require exact positive tracer outcomes.
+- [Phase 178]: Keep VPROOF-02 pending until remaining Phase 178 plans complete their assigned coverage.
+- [Phase 178]: Keep delegated maintenance authority limited to the exact declared client, transaction, audit, and repository participants.
+- [Phase 178]: Select optional verifier fixture files by fixed group ownership and fail when a selected input is missing.
+- [Phase 178]: Keep these core receipts partial; VPROOF-02 remains pending until the remaining Phase 178 proof groups complete.
+- [Phase 178]: One-off Mix commands keep runtime listeners disabled; only owned listener processes enable the endpoint server.
+- [Phase 178]: Both old and candidate writers remain legacy through overlap; dedicated activation follows observed predecessor exit.
+- [Phase 178]: Select rollout and legacy-control through separate explicit CLI entrypoints; legacy-control accepts locked/builtin only.
+- [Phase 178]: Use the configured issuer string as client assertion audience on all five installed HTTP endpoints.
+- [Phase 178]: Run the assembled release foreground command as an owned process group and bind the loaded maintenance beam to that release.
+- [Phase 178]: Keep VPROOF-02 pending until the remaining Phase 178 proof groups complete their assigned coverage.
+- [Phase 178]: Capture PostgreSQL backend IDs inside each selected transaction and require the exact observed pg_blocking_pids relation before a contention case passes.
+- [Phase 178]: Provision pool capacity only in the generated transaction-proof host; treat it as headroom because the backend identity mismatch, not pool starvation, was the concrete observed blocker-witness cause.
+- [Phase 178]: Keep VPROOF-02 pending until all remaining Phase 178 evidence owners pass.
+- [Phase 178]: Keep all six group receipts partial; VPROOF-02 remains pending until the remaining Phase 178 evidence owners pass.
+- [Phase 178]: Run issuance probes inside the owned host VM so mounted HTTP callbacks share the serving process and barrier state.
+- [Phase 178]: Use fixed HTTP status and OAuth error enums and field-name-only failure summaries; never retain child diagnostics.
+- [Phase 178]: Keep Plan 07 disclosure receipts partial and VPROOF-02 pending until all Phase 178 proof owners complete and independent review accepts the evidence.
+- [Phase 178]: Run remaining database-backed source checks only through scripts/ci/run_owned_source_tests.py; preserve both wrong-target incidents without repair or cleanup.
+- [Phase 178]: Retained receipt proof pins runner revision, candidate source owner, package archive/tree and current validator revision separately.
+- [Phase 178]: Plan 10 owns fresh fixed-wrapper pair execution and strict composition of the exact 14 locked plus 12 floor receipts; no third all-scope producer is needed.
+- [Phase 178]: Authenticated frozen archive/input ownership remains Plan 10 scope; Plan 08 accepts explicitly pinned checkout receipts.
+- [Phase 178]: The install generator owns Phoenix integration scaffolding; verifier keys and their configuration remain host-owned.
+- [Phase 178]: A mode-less maintenance task applies; preview, apply, and a separate fresh beginning-to-end check remain distinct.
+- [Phase 178]: A local custody check does not authorize fleet retirement, and restored keys remain distinct from authorized partner-secret replacement.
+- [Phase 178]: Retained package validation corroborates existing receipts only; fresh fixed-wrapper runs and frozen inputs remain Plan 10 work.
+- [Phase 178]: Plan 10 completes VPROOF-02 with actual frozen-input package matrix and post-freeze canonical source CI; VDELIV-01 and VDELIV-02 remain pending hosted, audit, and main/delivery evidence.
+- [Phase 178]: Plan 10 source and package evidence remains historical and valid for its exact 1,076-input frozen closure; after main-base synchronization, requalify the 1,077-input closure before marking VPROOF-02 complete.
+
+## Operator Next Steps
+
+- Review the final evidence-only metadata commit and prepared PR #141 body; require fresh approval for that exact push/body update. Do not rerun completed proofs or repeat consumed remote actions.
+- Preserve the independent passed verification, SECURED37/37 security, canonical tech_debt audit, postrun PARTIAL coverage and all original failures/flags/custody records. Milestone remains complete premerge and unarchived.
+- Keep integration/main explicitly pending until separately authorized and actually observed under the existing exact-main helper conditions. No next-milestone implementation, version reservation, merge or publication is authorized.
+
+### Historical operator next steps — superseded
+
+- After clearing context, run `$gsd-execute-phase 178` without --wave. Resume Plan 11 from current phase continue.md/.continue-here.md and the terminal CI40792440885 record. Diagnose and fix the three current failures locally under existing authorization; do not repeat earlier completed fixes or publication.
+- Preserve C50/H175 native proof and all historical failures/limits. Refresh affected evidence for new covered inputs before proposing an exact next remote update. The cc61cffc push/body approval is consumed; further remote mutation needs a new concrete approval. Plan 12 and main/delivery acceptance remain dependent work.
+
+## 2026-10-28T14:00:27.096694+00:00 — Approved PR Update / Hosted Qualification
+
+The user-authorized exact `33db5483` non-force push and approved `cb4b7c4d` PR #141 body update completed and were verified. Run 40696973463 attempt 1 is terminal: four required successes, Integration and Minimum failures, Complete Coverage skipped; Dependency Review succeeded. Six Integration headers and Minimum’s fixed startup witness are attributed in `178-11-APPROVED-UPDATE-OUTCOME.json`. No source change or local runtime followed the hosted failures. The old private lab/cache remain removed. Plan 11/Phase 178 and VDELIV-01/02 remain incomplete; no merge or further remote mutation is authorized. Subsequent tracking commits remain local and unpushed, distinct from published `33db5483`.

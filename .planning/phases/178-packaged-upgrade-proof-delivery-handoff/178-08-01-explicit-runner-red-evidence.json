@@ -1,0 +1,10 @@
+{
+  "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 ERL_FLAGS='+S 4' python3 -m unittest discover -s test/acceptance -p 'client_verifier_receipts_test.py' -k rejects_retained_matrix_without_explicit_runner_pin",
+  "exitCode": 1,
+  "output": "F\n======================================================================\nFAIL: test_read_only_cli_rejects_retained_matrix_without_explicit_runner_pin (client_verifier_receipts_test.CompleteMatrixContracts.test_read_only_cli_rejects_retained_matrix_without_explicit_runner_pin)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/Users/jon/projects/lockspire/test/acceptance/client_verifier_receipts_test.py\", line 59, in test_read_only_cli_rejects_retained_matrix_without_explicit_runner_pin\n    self.assertEqual(result, 1)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^\nAssertionError: 0 != 1\n\n----------------------------------------------------------------------\nRan 1 test in 0.043s\n\nFAILED (failures=1)\n",
+  "targetTest": "client_verifier_receipts_test.CompleteMatrixContracts.test_read_only_cli_rejects_retained_matrix_without_explicit_runner_pin",
+  "targetFile": "test/acceptance/client_verifier_receipts_test.py",
+  "expected": "Retained matrix inputs must require an explicit tested runner SHA and must not self-designate their historical runner as current proof.",
+  "actual": "The read-only full matrix CLI accepted all 26 self-consistent historical receipts without a caller-supplied expected runner identity.",
+  "semanticAssessment": "Valid behavioral RED: typed receipt validation succeeds for a portable retained matrix fixture, but the CLI fails to require an external runner pin before accepting it as a selected validation. No package scenario or database command ran."
+}

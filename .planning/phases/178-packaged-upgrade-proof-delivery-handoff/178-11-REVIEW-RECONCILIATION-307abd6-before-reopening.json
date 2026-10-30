@@ -1,0 +1,63 @@
+{
+  "current_packet_sha256": "63d8fe17daf00929583dfb9609f8c218fa858108cae0e5512410c08677843396",
+  "current_reports": {
+    "integration": {
+      "path": "178-INTEGRATION-REVIEW-307abd6.md",
+      "sha256": "6c3aabcc339c5adc4f7f47a7eef5b35aad926b05aaf057ff9a332986393d076a"
+    },
+    "security": {
+      "path": "178-SECURITY-REVIEW-307abd6.md",
+      "sha256": "017ce9917fbb2dfda275f0f909473d75a42da181606f88d5061b21f3d6e28876"
+    },
+    "source": {
+      "path": "178-SOURCE-REVIEW-307abd6.md",
+      "sha256": "0f0f73b25e7d1605630b870d122f1cc1fef76c1c4efce9a3cac668b74eaf2b0c"
+    }
+  },
+  "delta": "Bounded in-memory callback observations, shared locked provider environment, exact startup/group/reader ownership and dependent teardown gating across SaaS/admin/legacy callers, early setup restoration, faithful failure-transport fixtures and idempotent finite cleanup-record publication. Prior rejected judgments and the source author's correction of332 acceptance are retained under original identities.",
+  "implementation_revision": "307abd6d8381f8b676950dd2f35285661ca40945",
+  "native_validation": "accepted",
+  "preserved_review_history": [
+    {
+      "path": "178-SOURCE-REVIEW-15e7208-rejected.md",
+      "sha256": "810ddd940374d58ccec30c86f3463e5cd16a682e95ac950eadb607b980365430"
+    },
+    {
+      "path": "178-INTEGRATION-REVIEW-15e7208-rejected.md",
+      "sha256": "615d1715bdcc6c1fe4b5bd070046731cf4bf73edcadba6ed70b58758ee8df418"
+    },
+    {
+      "path": "178-SOURCE-REVIEW-4de8f7-rejected.md",
+      "sha256": "1b377dc88132ab6bc2c5fec6f571db88c1ef2ab57f23c9271c855c7876d5fe78"
+    },
+    {
+      "path": "178-SECURITY-REVIEW-4de8f7-rejected.md",
+      "sha256": "00bc8eba5d019d90025851417c3b89089877c43cd817853630013664a7619f04"
+    },
+    {
+      "path": "178-SOURCE-REVIEW-332784-prior-acceptance.md",
+      "sha256": "c639245ced2747161c8418293d0a0afaea2bc28a2e5444d893c2dd58d6ef27ab"
+    },
+    {
+      "path": "178-SECURITY-REVIEW-332784-rejected.md",
+      "sha256": "a44c8d874108b38cf317f7cbeedd720995db81db16bf3b40b0f4dd503fb4600e"
+    },
+    {
+      "path": "178-INTEGRATION-REVIEW-332784-rejected.md",
+      "sha256": "3844cc419b15f8dbb7b052082994868a31799a5271f0e9faf75056bff40741d3"
+    }
+  ],
+  "previous_packet": {
+    "path": "178-INDEPENDENT-REVIEWS-0b71ece.json",
+    "sha256": "25bea8f7c8b92c4a23d62306029876c313aa20ee2a2ccea21a0452ba4b3cab17"
+  },
+  "previous_reconciliation": {
+    "path": "178-11-REVIEW-RECONCILIATION-0b71ece.json",
+    "sha256": "80fc28a69cbe1862f558ef5eb0c9596dc39c529466f1f7a82de03759ba16edc2"
+  },
+  "runtime_limits": "After-commit clean-source Python acceptance285/0 and clean-room48/0 bind307abd6, with unchanged pre/post commit/tree/status/selected hashes. The earlier pre-import-removal48/0 does not apply to332. Canonical0b71 and partial lifetime proof remain historical. New canonical, package, current/minimum-host, hosted candidate and integrated-main qualification remain pending. All incidents, retractions,46992 unknown inner-child closure, E-09/E-10 and generic/descriptorless flags remain unwaived.",
+  "schema": "lockspire-phase178-review-reconciliation-v1",
+  "scope_count": 1078,
+  "scope_sha256": "3c69f26fc866b2b242fb6ecd07da79dead39e1ed40eb50aa4737117a7d2982a5",
+  "security_author_byte_verification": "017ce9917fbb2dfda275f0f909473d75a42da181606f88d5061b21f3d6e28876"
+}

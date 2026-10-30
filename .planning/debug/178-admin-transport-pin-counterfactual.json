@@ -1,0 +1,117 @@
+{
+  "custody": [
+    {
+      "event": "owner",
+      "identity": {
+        "parent_pid": 16973,
+        "pgid": 65030,
+        "pid": 65030,
+        "sid": 65030,
+        "start": [
+          1793164771,
+          944958
+        ]
+      }
+    },
+    {
+      "direct_term": true,
+      "event": "source",
+      "forced_os_probe_denial": false,
+      "producer_sha256": "bcde3f09d0cb16bcf44892bfa98b03927be6a29bffd0eb7a4f08150867c08131",
+      "test_sha256": "d6fe5926c1e23fd27cb43b7cf7b11eb37fbab1051598eb2490da3483fc94f320",
+      "wrapper_sha256": "1a64558967540be9163d08602c7f1cc63ff0f8f5cf2b4222e83638465ba246ec"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 65030,
+        "pgid": 65031,
+        "pid": 65031,
+        "sid": 65031,
+        "start": [
+          1793164772,
+          37672
+        ]
+      }
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 65043,
+        "pgid": 65044,
+        "pid": 65044,
+        "sid": 65044,
+        "start": [
+          1793164772,
+          253700
+        ]
+      }
+    },
+    {
+      "event": "direct_term",
+      "identity": {
+        "parent_pid": 65030,
+        "pgid": 65031,
+        "pid": 65031,
+        "sid": 65031,
+        "start": [
+          1793164772,
+          37672
+        ]
+      }
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 65030,
+        "pgid": 65031,
+        "pid": 65031,
+        "sid": 65031,
+        "start": [
+          1793164772,
+          37672
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 65043,
+        "pgid": 65044,
+        "pid": 65044,
+        "sid": 65044,
+        "start": [
+          1793164772,
+          253700
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 65030,
+        "pgid": 65031,
+        "pid": 65031,
+        "sid": 65031,
+        "start": [
+          1793164772,
+          37672
+        ]
+      }
+    }
+  ],
+  "errors": 0,
+  "failures": 1,
+  "mutant_killed": true,
+  "mutation": "drop_factory_ram_pin",
+  "safe_observations": [
+    "transport_observation status=125 stopped=true stage=diagnostics reason=failure_record_missing groups=2"
+  ],
+  "schema": "lockspire-admin-transport-pin-counterfactual-v1",
+  "tests": 1,
+  "wrapper_sha256": "1a64558967540be9163d08602c7f1cc63ff0f8f5cf2b4222e83638465ba246ec"
+}

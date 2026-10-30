@@ -1,43 +1,44 @@
-# Requirements: Lockspire v1.47
+# Requirements: Lockspire v1.48 Client Authentication Key Isolation & Rotation
 
-**Milestone:** OAuth/OIDC Core Interoperability & Hardening
-**Defined:** 2026-10-24
+**Defined:** 2026-10-25
+**Status:** All18 approved requirements have independently verified concrete outcomes. Allfour phases and31plans are complete at the permitted premerge boundary. Actual CI40954208717attempt2 and strict native candidate/artifact/handoff validation passed; final Phase178 verification passed4/4 and security closed37/37declaredmitigations with0acceptedrisks. The canonical audit retains non-blocking formal coverage PARTIAL/advisory debt. Integration/acceptedmain remain explicitlypending underD19, with no main receipt. Original flags, failures and execution identities are preserved.
 **Core Value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
-**Scope authority:** User-approved direction and autonomous scoped research/synthesis; [scope and decisions](research/v1.47-core-hardening/SCOPE.md).
+**Research:** [SEC-01 synthesis](research/v1.48-client-auth-key-isolation/SUMMARY.md).
 
-## v1.47 Requirements
+## v1.48 Requirements
 
-### Baseline and Finding Qualification
+### Qualified baseline and compatibility contract
 
-- [x] **BASE-01**: Maintainer can start product implementation from a fresh accepted main baseline after reviewed prior-delivery reconciliation, with exact SHA, complete local contributor checks, matching canonical CI/Release no-publish evidence, and explicit worktree/edit ownership.
-- [x] **BASE-02**: Maintainer can run the selected existing conformance profiles with explicit provider/package, suite, image/helper and plan identities; missing or obsolete inputs fail visibly and any input update is reviewed separately from protocol corrections.
-- [x] **FIND-01**: Maintainer can inspect a finite redacted ledger attributing each selected historical/current finding to protocol behavior, harness/transport/browser setup, infrastructure, unsupported scope or already-correct/not-reproduced behavior, with normative/support references and a next owner.
-- [x] **FIND-02**: Downstream implementers can use a qualified case matrix that fixes expected outcomes, repro commands, regression owners and exclusions before dependent implementation plans are created or executed; qualification that removes the corrective premise explicitly narrows/replans the milestone.
+- [x] **VBASE-01**: Maintainer can begin product implementation only after retained-delivery reconciliation and fresh exact-main acceptance through the existing helper, including local contributor checks, matching required CI/Release evidence and explicit resource custody.
+- [x] **VBASE-02**: Maintainer can inspect a finite acceptance contract covering format/key configuration, every verifier writer/reader, legacy ciphertext age, mixed-version rollout/rollback and supported storage adapters; unresolved policy changes stop dependent implementation.
 
-### Authorization Responses
+### Independent verifier key custody
 
-- [x] **AUTHR-01**: A client receives the applicable safe response for each qualified authorization-error case, preserving exact registered-redirect validation and returning no attacker-controlled redirect for an invalid client/redirect combination.
-- [x] **AUTHR-02**: A client receives the specified error/state and supported response-mode representation for each selected valid-callback case, with reserved/error parameters encoded unambiguously and adversarial cases covered.
-- [x] **AUTHR-03**: A client using selected prompt=none or max_age cases receives the applicable protocol outcome and authentication-freshness claims without an inappropriate host login redirect, while account/session authority stays host-owned.
+- [x] **SEC-01**: Host can encrypt newly persisted client-secret-JWT verifier material with dedicated rotatable keys independent of endpoint/session secrets and signing-key KEKs.
+- [x] **SEC-02**: Host can explicitly select current/read keys and compatibility/write mode; malformed or missing required key configuration fails clearly without silently falling back or unexpectedly breaking unrelated host authentication at boot.
+- [x] **SEC-03**: Host can reject tampered, malformed, unknown-key/version and cross-client/purpose verifier envelopes through authenticated, text-safe storage and redacted fail-closed errors.
+- [x] **SEC-04**: Operator and registration callers can create or rotate credentials through every existing shared-secret writer with a coherent persisted hash/verifier pair, preserving one-time secret handoff and configured client/secret lifetimes.
+- [x] **SEC-05**: Integrator can authenticate with dedicated-key verifiers across all existing supported direct-client endpoints while retaining HS256, issuer audience, required JTI/replay protection and the current PAR/FAPI exclusions.
 
-### PAR and Profile Boundaries
+### Upgrade and rotation compatibility
 
-- [x] **PARB-01**: A client using selected pushed-request cases observes the supported client binding, expiry and one-use semantics; invalid, mismatched or reused references fail according to the qualified contract.
-- [x] **PARB-02**: A client receives the qualified outcome for selected pushed-versus-front-channel parameter conflicts and required-PAR profile cases, preserving existing PKCE and security-profile boundaries.
-- [x] **PARB-03**: A host/integrator can distinguish public issuer/TLS/proxy/browser-harness failures from the selected PAR/profile assertions, with advertised endpoints and tested configured surface agreeing for those cases.
+- [x] **VUP-01**: Existing hosts can read usable legacy Plug.Crypto verifier rows during explicit compatibility and deliberately reject them afterward; aged/unreadable rows have a qualified disposition, with no silent age bypass or change to configured credential expiry.
+- [x] **VUP-02**: Host operator can follow and verify a reader-first rolling deployment with explicit writer activation and truthful code/config rollback limits, so old nodes never encounter an unsupported write format in the supported sequence.
+- [x] **VUP-03**: Host operator can introduce a new verifier key, rewrap existing material and retire an old key without changing partner secrets, endpoint/session secrets or signing-key custody.
 
-### Proof and Delivery
+### Safe maintenance, status and recovery
 
-- [x] **CPROOF-01**: Each selected supported behavior has a deterministic automated owner and each actual correction has a failing-before/passing-after regression plus applicable negative/security proof; already-correct behavior reuses valid evidence.
-- [x] **CPROOF-02**: A packaged embedded Phoenix host demonstrates the selected client-visible authorization/PAR outcomes at recorded source/package identities; supplemental external results retain their exact classifications and imply neither certification nor a new full-suite release gate.
-- [x] **DELIV-01**: Maintainer can review a source-bound milestone verification/audit, focused security review and passing required candidate contributor/CI checks; support/guidance changes match delivered behavior and unresolved external limits remain explicit.
-- [x] **DELIV-02**: The next run can resume from a dated handoff recording integration/main acceptance, owned worktree/resource cleanup or explicit remaining blockers, preserved unknown work, and a refreshed ranked milestone roadmap with sources and triggers.
+- [x] **VOPS-01**: Maintainer can preview, apply and check verifier rewrap through repo-safe tooling that is idempotent, reports partial failures/conflicts and returns a failing outcome when the requested completion/readiness condition is not met.
+- [x] **VOPS-02**: Host can rewrap through its supported client/transaction store without overwriting concurrent secret rotation or client updates; ciphertext and audit commit atomically while hashes, expiry, rotation timestamps and other client fields remain unchanged.
+- [x] **VOPS-03**: Operator can inspect redacted status for all stored verifier material, including inactive/expired and non-JWT-method clients; unknown, malformed, unreadable or uninspected rows cannot be presented as ready, and local status does not claim fleet-wide configuration parity.
+- [x] **VOPS-04**: Operator can identify affected clients after missing/lost-key failure and recover through restoring a valid key or the existing authorized secret-rotation/reprovision path, while affected JWT authentication fails closed and unrelated supported authentication remains intact.
 
-## Acceptance Rules
+### Proof and delivery
 
-Phase 171 must enumerate the finite cases for AUTHR/PARB and select the actual downstream scope before implementation plans fan out. These IDs do not assert present bugs or preselect a changed policy. An existing correct implementation may satisfy a case through current evidence; do not invent code changes or duplicate tests. If a slice is unsupported, unobservable, already fully covered or no longer valuable, amend requirements/roadmap explicitly with a reason rather than silently counting a gap as passed.
-
-Every selected case needs its applicable automated evidence. An infrastructure failure is not a protocol pass. External-suite success remains supplemental and non-certifying; full FAPI plan success is not required by implication. Preserve S256 PKCE, exact redirects, hashed client secrets, single-use short-lived codes, refresh rotation/family reuse revocation, no implicit flow, no alg=none, redaction and narrow host ownership.
+- [x] **VPROOF-01**: Security reviewer can verify that verifier plaintext, encryption keys and ciphertext stay out of logs, SQL diagnostics, telemetry, audit, operator reports and protocol responses across success and failure paths.
+- [x] **VPROOF-02**: Maintainer can reproduce source-bound package-installed fresh/legacy-upgrade, mixed-key/version, rotation, rejection and recovery journeys on the existing supported dependency pairs, including actual PostgreSQL concurrency/rollback and a supported configured-store composition; unavailable cases remain explicit failures or blockers. HIGH SEC-178-DISCLOSURE-ATTRIBUTION-01 was corrected and accepted at `50d67751`. Fresh execution at H175 passed canonical source CI (2,456 tests/zero failures/two properties), lifetime composition (47 checks/nine scenarios), verifier pairs (26 receipts/64 cases) and installed current/minimum hosts (96 scenarios). Native root validation passed with exact covered-input equivalence. Earlier failures, old-contract results and original-token retention limits remain unwaived; see `178-11-CORRECTED-NATIVE-PACKAGE-HOST-EVIDENCE-50d6775.json`.
+- [x] **VDELIV-01**: Reviewer can assess a completed milestone audit, focused security/code review and passing required candidate contributor/CI gates, with install/upgrade/support guidance matching verified behavior and no new dependency or public protocol scope.
+- [x] **VDELIV-02**: Next maintainer can resume from a dated delivery/main-acceptance and resource-custody handoff, with unknown work preserved and the rolling ranking refreshed to retain UI quality next and its completed interview.
 
 ## Qualification-driven scope reconciliation (2026-10-24)
 
@@ -45,45 +46,52 @@ All six authorization/PAR requirements remain pending. Phase 171 qualifies the f
 
 The A171-003 correction is limited to unsupported `response_mode` returning HTTP 400 without OAuth Error Response parameters. The P171-005 correction is limited to a valid pushed reference using pushed `openid email` despite outer `scope=profile`; the linked-clause interpretation is documented in `171-QUALIFICATION-DECISIONS.md`. Existing proofs carry forward without duplicate corrections. Neither unavailable optional profile wrapper is treated as product evidence or as a selected-case blocker. CPROOF-01/02 and DELIV-01/02 remain for Phase 174, including each actual correction's RED/GREEN proof, applicable negative/security coverage and packaged-host proof.
 
-## Future Requirements and Triggers
+## Future Requirements
 
-- **SEC-01**: Preferred provisional v1.48 — dedicated-purpose rotatable verifier encryption with explicit legacy read/rewrap, mixed-node compatibility, key-loss recovery and package upgrade proof. Settle its design in that milestone.
-- **TLR-CANDIDATE**: Token lifecycle resilience only after a current counterexample or material uncovered supported-store/concurrency invariant.
-- **OPS-03**: Paged key-maintenance dry-run/status work only after measured scale/operator evidence.
-- **KEK-04**: Host-controlled KMS/Vault provider only after concrete adopter custody and outage requirements.
-- Existing fixture maintenance, archived verification/debt and pending release/integration obligations retain their original owners; they are not silently closed here.
+- **UI quality candidate:** Whole-UI inventory and complete layered coverage for Apps setup/configuration and Tokens/Consents investigation, adoption-demo dev/test `phoenix_storybook`, observed before/after improvements, reliable blocking checks, measured budgets and same-PR maintenance. [Q1–Q10 and final confirmation](research/ui-quality-engine/MILESTONE-PROPOSAL.md) remain accepted; no UI version or phase IDs are scheduled here.
+- **OPS-03:** Paged signing-key maintenance dry-run/status improvements only after measured scale evidence.
+- **KEK-04:** Host-controlled KMS/Vault seam only after concrete adopter custody/outage requirements.
+- **Token lifecycle resilience:** Only for a reproduced gap or material unproved invariant; preserve existing family-wide reuse revocation.
 
 ## Out of Scope
 
-| Scope | Reason |
+| Feature | Reason |
 |---|---|
-| New flows, all-extension audit, broader FAPI or certification claims | Selected supported interoperability cases only |
-| Dedicated verifier-key persistence migration, KMS/Vault | Separate security design and rollout milestone |
-| Refresh retry grace, grant-family rewrites, speculative performance | Requires a concrete finding and explicit policy decision |
-| UI redesign, subjective visual review, account/login/claim-policy ownership | Protocol hardening and embedded host boundaries |
-| Unnecessary dependencies or a second general testing framework | Reuse current tools and small auditable glue; vetted security primitives retained |
-| Manual package publication or release ownership changes | Normal development/Release Please/protected train remains authoritative |
+| UI redesign, Storybook installation or broad admin work | Separate next candidate with completed interview; do not bolt it onto key custody. |
+| KMS/Vault service, generic secrets platform or required external process | No adopter trigger; preserve embedded host ownership and small dependency closure. |
+| New algorithms, authentication methods, PAR/FAPI JWT support or protocol families | SEC-01 changes at-rest custody, not the supported authentication surface. |
+| Changes to configured app/credential lifetimes or automatic legacy-age bypass | Requires qualified behavior and explicit policy disposition; migration must not silently grant authority. |
+| Signing-envelope format change, new client schema or automatic secret rotation | Not required by the recommended in-place text-safe design; re-scope through GSD if evidence disproves that premise. |
+| Arbitrary custom-store compatibility | Prove the declared supported composition and fail unsupported capability explicitly; no direct-repository fallback. |
+| Fleet key distribution/coordination and recovery without a key | Host owns deployment/custody; local checks cannot guarantee node parity or decrypt irrecoverable data. |
+| Public package publication | Milestone delivery uses the normal PR/main train; publication stays with Release Please and protected exact-ref publishing. |
 
 ## Traceability
 
-All 14 requirements map to exactly one of phases 171–174. Conditional scopes must be reconciled at qualification before dependent planning; later milestone candidates have no reserved phase numbers.
+Each approved requirement maps exactly once to the four-phase v1.48 roadmap. All18 concrete requirement outcomes are now independently verified; Phase178 has4/4 roadmap truths. Final independent security post-review completed37/37,0open; the formal coveragePARTIAL judgment remains explicit. VDELIV-02 is satisfied at the explicitD19premerge boundary, with integration and accepted main still pending.
 
 | Requirement | Phase | Status |
 |---|---|---|
-| BASE-01 | Phase 171 | Complete |
-| BASE-02 | Phase 171 | Complete |
-| FIND-01 | Phase 171 | Complete |
-| FIND-02 | Phase 171 | Complete |
-| AUTHR-01 | Phase 172 | Complete |
-| AUTHR-02 | Phase 172 | Complete |
-| AUTHR-03 | Phase 172 | Complete |
-| PARB-01 | Phase 173 | Complete |
-| PARB-02 | Phase 173 | Complete |
-| PARB-03 | Phase 173 | Complete |
-| CPROOF-01 | Phase 174 | Complete |
-| CPROOF-02 | Phase 174 | Complete |
-| DELIV-01 | Phase 174 | Complete |
-| DELIV-02 | Phase 174 | Complete |
+| VBASE-01 | Phase 175 | Complete |
+| VBASE-02 | Phase 175 | Complete |
+| SEC-01 | Phase 176 | Complete |
+| SEC-02 | Phase 176 | Complete |
+| SEC-03 | Phase 176 | Complete |
+| SEC-04 | Phase 176 | Complete |
+| SEC-05 | Phase 176 | Complete |
+| VUP-01 | Phase 176 | Complete |
+| VUP-02 | Phase 176 | Complete |
+| VUP-03 | Phase 177 | Complete |
+| VOPS-01 | Phase 177 | Complete |
+| VOPS-02 | Phase 177 | Complete |
+| VOPS-03 | Phase 177 | Complete |
+| VOPS-04 | Phase 177 | Complete |
+| VPROOF-01 | Phase 177 | Complete |
+| VPROOF-02 | Phase 178 | Complete — corrected C50d/H175 native source, lifetime, verifier-pair and current/minimum installed-host proof; prior limitations retained |
+| VDELIV-01 | Phase 178 | Complete — independent4/4verification and actual canonicalaudit/candidate evidence |
+| VDELIV-02 | Phase 178 | Complete — independently verified premerge handoff under D-19; integration/main pending |
+
+**Coverage:** 18requirements; 18mapped exactly once; 0unmapped; 18independently verified outcomes and 0pending requirement outcomes at the premerge boundary. Phase178 is complete at the D19premerge boundary; integration and acceptedmain remain pending. Historical1,076/1,077-input and C50/H175 results remain attributable only to their actual closures. Current E7AD source/package proof and c465/actual3c7bd2a hosted attempt2 retain separate identities; no accepted main or publication is claimed.
 
 ---
-*Defined 2026-10-24. No runtime correction or implementation acceptance is claimed by planning.*
+*Last updated: 2026-10-29 after actual7/7hostedCI, strict same-attempt artifacts, completedcanonicalaudit, independent4/4verification and37/37declaredsecurityclosure; integration/main remain pending.*

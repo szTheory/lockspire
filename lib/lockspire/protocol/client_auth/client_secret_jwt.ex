@@ -9,12 +9,14 @@ defmodule Lockspire.Protocol.ClientAuth.ClientSecretJwt do
   alias Lockspire.Observability
   alias Lockspire.Protocol.Jar
   alias Lockspire.Protocol.SecurityProfile
-  alias Lockspire.Security.Policy
+  alias Lockspire.Security.ClientSecretVerifier
+  alias Lockspire.Security.ClientSecretVerifier.Context
   alias Lockspire.Storage.Ecto.Repository
 
   @max_assertion_age 600
   @clock_skew 30
   @allowed_algorithm "HS256"
+  @verifier_family "LSCV"
 
   @spec verify(Client.t(), String.t(), keyword()) :: :ok | {:error, atom()}
   def verify(%Client{} = client, assertion, opts)
@@ -33,18 +35,46 @@ defmodule Lockspire.Protocol.ClientAuth.ClientSecretJwt do
     end
   end
 
-  defp resolve_verifier_secret(%Client{client_secret_jwt_verifier_encrypted: encrypted}, opts)
+  defp resolve_verifier_secret(
+         %Client{client_id: client_id, client_secret_jwt_verifier_encrypted: encrypted},
+         opts
+       )
        when is_binary(encrypted) and encrypted != "" do
-    case Policy.unseal_client_secret_jwt_verifier(encrypted, opts) do
+    context = Config.client_secret_verifier_context(opts)
+
+    legacy_opts = maybe_add_legacy_secret_key_base(context, encrypted, opts)
+
+    result = ClientSecretVerifier.open(context, client_id, encrypted, legacy_opts)
+
+    case result do
       {:ok, secret} ->
         {:ok, secret}
 
-      {:error, :invalid_client_secret_jwt_verifier} ->
+      {:error, _reason} ->
         {:error, :client_secret_verifier_unavailable}
     end
   end
 
   defp resolve_verifier_secret(%Client{}, _opts), do: {:error, :client_secret_verifier_missing}
+
+  defp maybe_add_legacy_secret_key_base(context, encrypted, opts) do
+    legacy_allowed? =
+      match?(%Context{state: :absent}, context) or
+        match?(%Context{state: :valid, legacy_read: :allow}, context)
+
+    if legacy_allowed? and not String.starts_with?(encrypted, @verifier_family) do
+      legacy_key =
+        try do
+          Config.secret_key_base()
+        rescue
+          _ -> nil
+        end
+
+      Keyword.put(opts, :legacy_secret_key_base, legacy_key)
+    else
+      opts
+    end
+  end
 
   defp allowed_signing_algorithms(%Client{} = client, opts) do
     case server_policy_store(opts).get_server_policy() do

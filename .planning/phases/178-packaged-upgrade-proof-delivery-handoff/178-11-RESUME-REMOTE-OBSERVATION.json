@@ -1,0 +1,71 @@
+{
+  "schema": "lockspire-phase178-read-only-resume-observation-v1",
+  "observed_at": "2026-10-28 14:28:31 UTC",
+  "repository": "szTheory/lockspire",
+  "pull_request": {
+    "number": 141,
+    "url": "https://github.com/szTheory/lockspire/pull/141",
+    "state": "open",
+    "draft": false,
+    "merged": false,
+    "head_sha": "33db5483bc5aa06b4a51d2742e90fb8616cad7c2",
+    "base_sha": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+    "synthetic_merge_sha": "70afa2a31df5d85549678008dbfeb106993126ec"
+  },
+  "run_id": 40696973463,
+  "scope": "Connector latest-attempt first-page job metadata; seven expected jobs observed. No logs read, no actual job checkout proved by this observation.",
+  "jobs": [
+    {
+      "id": 122846256815,
+      "name": "Adoption Demo Smoke",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 40696973463
+    },
+    {
+      "id": 122846256991,
+      "name": "Minimum Supported Elixir/OTP",
+      "status": "completed",
+      "conclusion": "failure",
+      "run_id": 40696973463
+    },
+    {
+      "id": 122846257078,
+      "name": "Release Hygiene Drift",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 40696973463
+    },
+    {
+      "id": 122846257121,
+      "name": "Dialyzer",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 40696973463
+    },
+    {
+      "id": 122846257263,
+      "name": "Fast Checks",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 40696973463
+    },
+    {
+      "id": 122846257280,
+      "name": "Integration Checks",
+      "status": "completed",
+      "conclusion": "failure",
+      "run_id": 40696973463
+    },
+    {
+      "id": 122850193766,
+      "name": "Complete Coverage Evidence",
+      "status": "completed",
+      "conclusion": "skipped",
+      "run_id": 40696973463
+    }
+  ],
+  "remote_mutations_performed": [],
+  "plan11_complete": false,
+  "plan12_started": false
+}

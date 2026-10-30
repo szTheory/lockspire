@@ -1,0 +1,33 @@
+{
+  "privateDriverSha256": "729e542a7934666f70031ce0cbddcd1f05f924a301b4b65946c166932e2ac7da",
+  "records": [
+    {
+      "mode": "off",
+      "command": "python3 /private/tmp/lockspire178-native-gate-counterfactual-dcy5flc0/native.py off",
+      "exitCode": 1,
+      "executedTests": 1,
+      "output": "F\n======================================================================\nFAIL: test_actual_fast_true_completes_cold_supervised_launch (client_verifier_launch_registration_test.FastLaunchRegistration.test_actual_fast_true_completes_cold_supervised_launch)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/Users/jon/projects/lockspire/test/acceptance/client_verifier_launch_registration_test.py\", line 135, in test_actual_fast_true_completes_cold_supervised_launch\n    self.exercise((\"/usr/bin/true\",))\n    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/jon/projects/lockspire/test/acceptance/client_verifier_launch_registration_test.py\", line 104, in exercise\n    self.assertTrue(wrapper.returncode == (125 if creator_exits else 78), \"actual fast command did not complete registered supervision\")\n    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: False is not true : actual fast command did not complete registered supervision\n\n----------------------------------------------------------------------\nRan 1 test in 2.291s\n\nFAILED (failures=1)\n",
+      "stderrBytes": 1211,
+      "stderrSha256": "5dd66834e082e17a8cd1901eb4a310ec6213369a5b3e796ec37265378886e426",
+      "targetTest": "client_verifier_launch_registration_test.FastLaunchRegistration.test_actual_fast_true_completes_cold_supervised_launch",
+      "targetFile": "test/acceptance/client_verifier_launch_registration_test.py",
+      "expected": "Native actual-wrapper fast-command completes under the same100ms admission delay while held until registrationACK",
+      "actual": "Gate off actual native result preserved",
+      "semanticAssessment": "Only gate token read is disabled in off mode. Both modes have identical100ms pre-registration scheduling delay below the existing2s IPC budget. Product and test source files are untouched; actual wrapper/authority and target assertion run; exact probe resources reconciled by the same native test."
+    },
+    {
+      "mode": "on",
+      "command": "python3 /private/tmp/lockspire178-native-gate-counterfactual-dcy5flc0/native.py on",
+      "exitCode": 0,
+      "executedTests": 1,
+      "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.352s\n\nOK\n",
+      "stderrBytes": 98,
+      "stderrSha256": "69277c314aa1c796a0fe1a90989c01924313e4a506729a83d71b6b844cf84e3f",
+      "targetTest": "client_verifier_launch_registration_test.FastLaunchRegistration.test_actual_fast_true_completes_cold_supervised_launch",
+      "targetFile": "test/acceptance/client_verifier_launch_registration_test.py",
+      "expected": "Native actual-wrapper fast-command completes under the same100ms admission delay while held until registrationACK",
+      "actual": "Gate on actual native result preserved",
+      "semanticAssessment": "Only gate token read is disabled in off mode. Both modes have identical100ms pre-registration scheduling delay below the existing2s IPC budget. Product and test source files are untouched; actual wrapper/authority and target assertion run; exact probe resources reconciled by the same native test."
+    }
+  ]
+}

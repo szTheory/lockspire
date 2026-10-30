@@ -25,6 +25,7 @@ defmodule Lockspire.Protocol.Registration do
   alias Lockspire.ClientMetadata
   alias Lockspire.ClientRegistration.Shape, as: RegistrationShape
   alias Lockspire.Clients
+  alias Lockspire.Clients.SecretMaterial
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.InitialAccessToken, as: IatDomain
   alias Lockspire.Domain.ServerPolicy
@@ -72,10 +73,15 @@ defmodule Lockspire.Protocol.Registration do
          {:ok, iat_record} <- maybe_redeem_iat(iat),
          {:ok, %Resolved{} = resolved} <- resolve_policy(server_policy, iat_record, metadata),
          :ok <- validate_intake_metadata(metadata, resolved, server_policy, nil),
-         credentials <-
+         {:ok, credentials} <-
            metadata
            |> generate_credentials(Map.get(request, :secret_key_base))
-           |> Map.put(:issued_at, issued_at),
+           |> then(fn result ->
+             case result do
+               {:ok, credentials} -> {:ok, Map.put(credentials, :issued_at, issued_at)}
+               {:error, reason} -> {:error, %Error{code: :server_error, reason: reason}}
+             end
+           end),
          {:ok, %Client{} = client} <-
            persist_client(metadata, resolved, iat_record, credentials, source) do
       emit_succeeded(client, iat_record, source)
@@ -482,32 +488,38 @@ defmodule Lockspire.Protocol.Registration do
   end
 
   defp generate_credentials(metadata, secret_key_base) do
-    secret_material = maybe_generate_shared_secret(metadata, secret_key_base)
-    {rat_plaintext, rat_hash} = RegistrationAccessToken.generate()
     client_id = Clients.generate_client_id()
 
-    %{
-      client_id: client_id,
-      client_secret: secret_material.client_secret,
-      client_secret_hash: secret_material.client_secret_hash,
-      client_secret_jwt_verifier_encrypted: secret_material.client_secret_jwt_verifier_encrypted,
-      rat: rat_plaintext,
-      rat_hash: rat_hash
-    }
+    with {:ok, secret_material} <-
+           maybe_generate_shared_secret(metadata, secret_key_base, client_id) do
+      {rat_plaintext, rat_hash} = RegistrationAccessToken.generate()
+
+      {:ok,
+       %{
+         client_id: client_id,
+         client_secret: secret_material.client_secret,
+         client_secret_hash: secret_material.client_secret_hash,
+         client_secret_jwt_verifier_encrypted:
+           secret_material.client_secret_jwt_verifier_encrypted,
+         rat: rat_plaintext,
+         rat_hash: rat_hash
+       }}
+    end
   end
 
-  defp maybe_generate_shared_secret(metadata, secret_key_base) do
+  defp maybe_generate_shared_secret(metadata, secret_key_base, client_id) do
     case Map.get(metadata, "token_endpoint_auth_method", "client_secret_basic") do
       method when method in ["client_secret_basic", "client_secret_post", "client_secret_jwt"] ->
         opts = if is_binary(secret_key_base), do: [secret_key_base: secret_key_base], else: []
-        Clients.rotate_secret_material(opts)
+        SecretMaterial.generate(client_id, opts)
 
       _method_without_shared_secret ->
-        %{
-          client_secret: nil,
-          client_secret_hash: nil,
-          client_secret_jwt_verifier_encrypted: nil
-        }
+        {:ok,
+         %{
+           client_secret: nil,
+           client_secret_hash: nil,
+           client_secret_jwt_verifier_encrypted: nil
+         }}
     end
   end
 

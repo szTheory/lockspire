@@ -1,0 +1,10 @@
+{
+  "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 ERL_FLAGS='+S 4' LOCKSPIRE_TEST_DB_NAME=lockspire_phase177_20261026_owned MIX_ENV=test mix test --only admin_maintenance --formatter Lockspire.TestSupport.GsdTapFormatter test/lockspire/admin/client_verifier_maintenance_test.exs",
+  "exitCode": 2,
+  "output": "TAP version 13\nnot ok 1 - test fresh check accepts inspected public clients with no secret material\n1..1\n",
+  "targetTest": "test fresh check accepts inspected public clients with no secret material",
+  "targetFile": "test/lockspire/admin/client_verifier_maintenance_test.exs",
+  "expected": "A complete read-only check returns a safe report and recognizes the persisted public/no-secret client as no_material.",
+  "actual": "The test's expected successful report match fails because the batch operation is not implemented yet.",
+  "semanticAssessment": "The intended test executed and failed at its expected-result match. The TAP report contains one target failure with no compilation, setup, discovery, or unrelated failures; the current placeholder operation does not satisfy the planned behavior."
+}

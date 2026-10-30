@@ -1,0 +1,90 @@
+{
+  "candidate": {
+    "archive_sha256": "8be113c5d8cd630ee9fefba3494aac2c236350589a5cd9e7c98600a11a8d1e91",
+    "kind": "checkout",
+    "runner_revision": "2da528fba3ca894cda4e5776b47eb6ccaf12f93c",
+    "source_proof": "11296b52dc5b478d8a6a640d952c34c38295c602412d9fd8392776407e2ddef1",
+    "source_revision": "2da528fba3ca894cda4e5776b47eb6ccaf12f93c",
+    "tree_sha256": "2af2082226f0be0e47b1f761cb4e98dd526effc0f93800fbacacce1f3a46b243",
+    "version": "1.6.1"
+  },
+  "executed_count": 4,
+  "host": {
+    "compiled_candidate_sha256": "2e91f65bb5667a011af8f86610529dba709a3cb42124305a8c24257af467a7bc",
+    "live_view": "1.2.10",
+    "lock_sha256": "f77638eeed00fc0a7fa524219ad2fe0c0fd3c147b0436979b925bc4f236f4404",
+    "phoenix": "1.8.13",
+    "resolved_dependency_verified": true,
+    "vendor_tree_sha256": "2af2082226f0be0e47b1f761cb4e98dd526effc0f93800fbacacce1f3a46b243"
+  },
+  "observations": {
+    "VPROOF-02-RECOVERY-EXPIRED-MIGRATION": {
+      "deadline_preserved": true,
+      "executed": true,
+      "expired_http_auth_rejected": true,
+      "expired_http_status": 401,
+      "expired_rewrap_committed": true,
+      "outcome": "pass"
+    },
+    "VPROOF-02-RECOVERY-PRESERVATION": {
+      "age_metadata_preserved": true,
+      "audit_inserted": true,
+      "ciphertext_changed": true,
+      "client_fields_preserved": true,
+      "executed": true,
+      "hash_preserved": true,
+      "outcome": "pass",
+      "partner_secret_preserved": true
+    },
+    "VPROOF-02-RECOVERY-RESTORE-ROTATE": {
+      "affected_status_redacted": true,
+      "basic_http_status": 200,
+      "basic_usable": true,
+      "executed": true,
+      "missing_key_error_code": "invalid_client",
+      "missing_key_http_status": 401,
+      "missing_key_rejected": true,
+      "missing_startup_context_bound": true,
+      "missing_startup_context_has_protecting_key": false,
+      "new_secret_after_rotation_error_code": "other",
+      "new_secret_after_rotation_http_status": 200,
+      "old_secret_after_rotation_error_code": "invalid_client",
+      "old_secret_after_rotation_http_status": 401,
+      "one_time_handoff": true,
+      "original_secret_preserved": true,
+      "outcome": "pass",
+      "post_http_status": 200,
+      "post_usable": true,
+      "restored_http_status": 200,
+      "restored_startup_context_has_protecting_key": true,
+      "rotation_secret_changed": true
+    },
+    "VPROOF-02-RECOVERY-RETRY-RECONCILIATION": {
+      "executed": true,
+      "fresh_complete_check_ready": true,
+      "indeterminate_not_claimed_rollback": true,
+      "interruption_not_ready": true,
+      "outcome": "pass",
+      "partial_not_ready": true,
+      "repeat_no_change": true
+    }
+  },
+  "pair": "locked",
+  "partial": true,
+  "run_id": "eac4786a14ca44599813ec4d919b3d2e",
+  "runner": "2da528fba3ca894cda4e5776b47eb6ccaf12f93c",
+  "runtime": {
+    "elixir": "1.19.5",
+    "otp": "28",
+    "postgresql": "14.17 (Homebrew)"
+  },
+  "schema": "lockspire-installed-verifier-v1",
+  "scope": "recovery",
+  "stable_case_ids": [
+    "VPROOF-02-RECOVERY-PRESERVATION",
+    "VPROOF-02-RECOVERY-RETRY-RECONCILIATION",
+    "VPROOF-02-RECOVERY-RESTORE-ROTATE",
+    "VPROOF-02-RECOVERY-EXPIRED-MIGRATION"
+  ],
+  "store": "delegated"
+}

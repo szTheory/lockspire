@@ -106,6 +106,27 @@ Lockspire ships one narrow symmetric JWT client-authentication slice. It is a di
 
 This slice does not claim broader JWT client-auth support, stronger-trust equivalence with mTLS, or FAPI support. FAPI-sensitive deployments should treat `client_secret_jwt` as outside the shipped FAPI posture.
 
+### Verifier-key maintenance boundary
+
+The selected shared-PostgreSQL repository supports the verifier-specific
+maintenance task `mix lockspire.clients.verifier.rewrap` and the Mix-free
+`Lockspire.Admin.ClientVerifierMaintenance.run/1` operation. The task supports
+apply, read-only preview, fresh complete check, bounded pages, and progress
+resume. With no mode flag the task applies eligible changes; `--dry-run` is a
+preview, and `--check` is a separate fresh, complete scan. A partial or
+indeterminate apply may include committed progress. A resumed cursor is never
+a readiness check. A local check reports custody for the selected store only;
+fleet parity, deployment drain, backups, and rollback remain host
+responsibilities.
+Custom stores must declare a matching client, transaction, and audit authority
+and implement the maintenance callbacks, or maintenance fails closed. Package
+installed proof covers the supported Phoenix 1.8.13 / LiveView 1.2.10 and
+Phoenix 1.8.5 / LiveView 1.1.28 pairs, including built-in storage and the
+declared PostgreSQL-backed delegating composition. This does not extend support
+to arbitrary stores. See the
+[verifier configuration and recovery guide](client-secret-verifier-configuration.md)
+for commands, recovery consequences, and the logging boundary.
+
 ### JWT Introspection Representation
 
 Lockspire supports RFC 9701 JWT introspection as a negotiated representation of the existing introspection endpoint. The direct-client authentication surface stays the same; only the success representation changes when the caller explicitly sends `Accept: application/token-introspection+jwt`.

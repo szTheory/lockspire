@@ -1,0 +1,56 @@
+{
+  "PR": 141,
+  "PR_body": {
+    "exact_readback_match": true,
+    "only_body_updated": true
+  },
+  "approved_body_bytes": 4931,
+  "approved_body_path": "/private/tmp/lockspire178-pr141-update-e7ad5e67/pr-body.md",
+  "approved_body_sha256": "a275303243319b305d6caf11b8d7dbc8de4570fa2eacb7ed31b19d5e9e23d3de",
+  "approved_head": "c465f2b8156c2f17db82910452dbcdf16aa8353b",
+  "authorization": "approved exact push/body completed; no merge/publication/rerun/dispatch/comment/review authority inferred",
+  "automatic_CI": {
+    "GitHub_Git_commit_API_matches": true,
+    "actual_checkout": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+    "checkout_log_utf8_sha256": "0892bda3f7447bb8c5451ac350b96bb8cf90fc9d57fa043727ef1760e5ba374e",
+    "checkout_observed_in_completed_job": 123729936430,
+    "checkout_parents": [
+      "173059a166e9ade0f5f57c9980b7b2400a98538c",
+      "c465f2b8156c2f17db82910452dbcdf16aa8353b"
+    ],
+    "checkout_tree": "57df3f8ec0fcfb69ca647fdc2793ab3df84f5b4c",
+    "complete_candidate_validation": "not_run; waiting actual all7successfuljobs and both sameattempt package artifacts",
+    "raw_log_persisted": false,
+    "run_attempt": 1,
+    "run_id": 40954208717,
+    "status": "in_progress",
+    "workflow_head_sha": "c465f2b8156c2f17db82910452dbcdf16aa8353b"
+  },
+  "base": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+  "canonical_OPEN_THREATS": 4,
+  "dependency_review": {
+    "conclusion": "success",
+    "run_id": 40954208795,
+    "status": "completed"
+  },
+  "draft": false,
+  "merged": false,
+  "native_candidate_checker": {
+    "path": "/private/tmp/lockspire178-hosted-candidate-validation-e7ad-v1.py",
+    "sha256": "376afd89b96cc0f9b5c0df83d741ccb87fb20ee2607dd33d94d446fb6ec05ed2",
+    "status": "UNRUN conditional"
+  },
+  "observed_at": "2026-10-29T21:04:33.673406+00:00",
+  "phase11_complete": false,
+  "phase12": "not_ready",
+  "push": {
+    "PR_head_readback": "c465f2b8156c2f17db82910452dbcdf16aa8353b",
+    "exit_code": 0,
+    "non_force": true,
+    "original_tool_session": 31683,
+    "prior_remote_head": "f962fce47d97a78ae67522301aa65104d42a8b2d",
+    "remote_ref_readback": "c465f2b8156c2f17db82910452dbcdf16aa8353b"
+  },
+  "schema": "lockspire-phase178-approved-remote-update-outcome-v1",
+  "state": "open"
+}

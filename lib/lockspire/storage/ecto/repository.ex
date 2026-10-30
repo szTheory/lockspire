@@ -24,6 +24,10 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Storage.DpopReplayStore
   alias Lockspire.Storage.Ecto.Repository.AuditStore, as: EctoAuditStore
   alias Lockspire.Storage.Ecto.Repository.ClientStore, as: EctoClientStore
+
+  alias Lockspire.Storage.Ecto.Repository.ClientVerifierMaintenance,
+    as: EctoClientVerifierMaintenance
+
   alias Lockspire.Storage.Ecto.Repository.ConsentStore, as: EctoConsentStore
   alias Lockspire.Storage.Ecto.Repository.CibaAuthorizationStore, as: EctoCibaAuthorizationStore
 
@@ -56,6 +60,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   alias Lockspire.Storage.UsedJtiStore
 
   @behaviour ClientStore
+  @behaviour Lockspire.Storage.ClientVerifierMaintenance
   @behaviour InteractionStore
   @behaviour ConsentStore
   @behaviour TokenStore
@@ -74,6 +79,28 @@ defmodule Lockspire.Storage.Ecto.Repository do
   @impl ClientStore
   def lifetime_contract do
     %{version: 1, transaction_authority: transaction_authority()}
+  end
+
+  @impl Lockspire.Storage.ClientVerifierMaintenance
+  def verifier_maintenance_contract do
+    EctoClientVerifierMaintenance.verifier_maintenance_contract(__MODULE__)
+  end
+
+  @impl Lockspire.Storage.ClientVerifierMaintenance
+  def verifier_inventory_page(after_client_id, limit) do
+    EctoClientVerifierMaintenance.verifier_inventory_page(repo(), after_client_id, limit)
+  end
+
+  @impl Lockspire.Storage.ClientVerifierMaintenance
+  def compare_and_rewrap(client_id, expected_hash, expected_verifier, replacement, audit_attrs) do
+    EctoClientVerifierMaintenance.compare_and_rewrap(
+      repo(),
+      client_id,
+      expected_hash,
+      expected_verifier,
+      replacement,
+      audit_attrs
+    )
   end
 
   @impl TransactionStore

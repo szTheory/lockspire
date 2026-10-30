@@ -4,9 +4,11 @@ defmodule Lockspire.Config do
   """
 
   alias Lockspire.Security.KeyEncryption.KeySet
+  alias Lockspire.Security.ClientSecretVerifier.Context
   alias Lockspire.Security.Policy
 
   @app :lockspire
+  @key_encryption_cache_key {Lockspire, :key_encryption}
 
   @doc """
   Returns the configured Ecto repo module, or raises if missing.
@@ -298,7 +300,105 @@ defmodule Lockspire.Config do
     Application.get_env(@app, :mtls_issuer)
   end
 
-  @key_encryption_cache_key {Lockspire, :key_encryption}
+  @client_secret_verifier_cache_key {Lockspire, :client_secret_verifier_context}
+
+  @doc false
+  @spec client_secret_verifier_context() :: Context.t()
+  def client_secret_verifier_context do
+    case :persistent_term.get(@client_secret_verifier_cache_key, :uninitialized) do
+      %Context{} = context ->
+        context
+
+      _uninitialized ->
+        %Context{state: :invalid, reason: :client_secret_verifier_configuration_invalid}
+    end
+  end
+
+  @doc false
+  @spec client_secret_verifier_context(keyword()) :: Context.t()
+  def client_secret_verifier_context(opts) when is_list(opts) do
+    case :persistent_term.get(@client_secret_verifier_cache_key, :uninitialized) do
+      %Context{} = startup_context ->
+        case Keyword.fetch(opts, :client_secret_verifier_context) do
+          :error ->
+            startup_context
+
+          {:ok, override} ->
+            resolve_client_secret_verifier_override(
+              override,
+              startup_context.forbidden_key_bytes
+            )
+        end
+
+      _uninitialized ->
+        %Context{state: :invalid, reason: :client_secret_verifier_configuration_invalid}
+    end
+  rescue
+    _ -> %Context{state: :invalid, reason: :client_secret_verifier_configuration_invalid}
+  end
+
+  def client_secret_verifier_context(_opts),
+    do: %Context{state: :invalid, reason: :client_secret_verifier_configuration_invalid}
+
+  @doc false
+  @spec client_secret_verifier_cache_key() :: {Lockspire, :client_secret_verifier_context}
+  def client_secret_verifier_cache_key, do: @client_secret_verifier_cache_key
+
+  @doc false
+  @spec client_secret_verifier_forbidden_key_bytes() :: [binary()]
+  def client_secret_verifier_forbidden_key_bytes do
+    signing_keys =
+      case :persistent_term.get(@key_encryption_cache_key, :miss) do
+        %KeySet{keys: keys} -> Map.values(keys)
+        _not_initialized -> []
+      end
+
+    (client_secret_verifier_endpoint_key_bytes() ++ signing_keys)
+    |> Enum.filter(&(is_binary(&1) and &1 != ""))
+    |> Enum.uniq()
+  end
+
+  @doc false
+  @spec client_secret_verifier_operation_forbidden_key_bytes(KeySet.t() | nil) :: [binary()]
+  def client_secret_verifier_operation_forbidden_key_bytes(signing_keyset) do
+    signing_keys =
+      case signing_keyset do
+        %KeySet{keys: keys} -> Map.values(keys)
+        nil -> []
+      end
+
+    (client_secret_verifier_endpoint_key_bytes() ++ signing_keys)
+    |> Enum.filter(&(is_binary(&1) and &1 != ""))
+    |> Enum.uniq()
+  end
+
+  defp client_secret_verifier_endpoint_key_bytes do
+    Application.get_all_env(@app)
+    |> Enum.flat_map(fn
+      {_key, config} when is_list(config) ->
+        if Keyword.keyword?(config), do: [Keyword.get(config, :secret_key_base)], else: []
+
+      _other ->
+        []
+    end)
+  end
+
+  defp resolve_client_secret_verifier_override(%Context{} = context, forbidden_key_bytes) do
+    case Context.validate(context, forbidden_key_bytes) do
+      {:ok, context} -> %{context | forbidden_key_bytes: forbidden_key_bytes}
+      {:error, reason} -> %Context{state: :invalid, reason: reason}
+    end
+  end
+
+  defp resolve_client_secret_verifier_override({:present, config}, forbidden_key_bytes),
+    do: resolve_client_secret_verifier_override(config, forbidden_key_bytes)
+
+  defp resolve_client_secret_verifier_override(config, forbidden_key_bytes) do
+    {:ok, context} =
+      Context.resolve({:present, config}, forbidden_key_bytes)
+
+    context
+  end
 
   # Validates the `:key_encryption` block fresh from app env.
   #

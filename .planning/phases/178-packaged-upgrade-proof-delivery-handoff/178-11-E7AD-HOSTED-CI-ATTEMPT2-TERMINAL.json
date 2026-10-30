@@ -1,0 +1,272 @@
+{
+  "artifacts": [
+    {
+      "created_at": "2026-10-29T21:44:12Z",
+      "digest": "sha256:e9a10f5727b4588f2d5c250c57cbbbb9426bc44cc3a191c3d17851fc35b30cbe",
+      "expired": false,
+      "id": 12936150659,
+      "name": "lockspire-host-integration-3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee-floor"
+    },
+    {
+      "created_at": "2026-10-29T21:44:02Z",
+      "digest": "sha256:2b102097ea2a8f4f42b5bf72d015b4775b803ab252bdda51a1170fed0d53a180",
+      "expired": false,
+      "id": 12935811315,
+      "name": "lockspire-verifier-upgrade-3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee-locked"
+    },
+    {
+      "created_at": "2026-10-29T21:44:11Z",
+      "digest": "sha256:49e8756d998a3314b963a327b8e060b6d7bdf281d9bd21fd01f151170d99cf13",
+      "expired": false,
+      "id": 12935791386,
+      "name": "lockspire-verifier-upgrade-3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee-floor"
+    },
+    {
+      "created_at": "2026-10-29T21:44:06Z",
+      "digest": "sha256:dfb7cbcad35f4fe71fd803c52cc3b53f1604e661e81242fd9b0696b629f74317",
+      "expired": false,
+      "id": 12935596513,
+      "name": "lockspire-coverage-integration-3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee"
+    },
+    {
+      "created_at": "2026-10-29T21:44:05Z",
+      "digest": "sha256:efed9dfdac019da96ec79ac4e06be299a17eb14959b75c02b44c86bcc77ccf8f",
+      "expired": false,
+      "id": 12935267245,
+      "name": "lockspire-client-lifetimes-3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee"
+    },
+    {
+      "created_at": "2026-10-29T21:44:03Z",
+      "digest": "sha256:a70edfe4d9880ecaca03757788db1dba2395183bfd655daadf74610f8d388a39",
+      "expired": false,
+      "id": 12935192374,
+      "name": "lockspire-host-integration-3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee-locked"
+    },
+    {
+      "created_at": "2026-10-29T21:19:31Z",
+      "digest": "sha256:8e8f189096939fa45927a44e37a5ee01f1fbeb18b15164992e5e96204e251f98",
+      "expired": false,
+      "id": 12934745055,
+      "name": "fast-test-timings"
+    },
+    {
+      "created_at": "2026-10-29T21:19:30Z",
+      "digest": "sha256:bb4f661e92dec7f66c1c4e3aa964eb81f95a482581051a77b1c373479a56ddd1",
+      "expired": false,
+      "id": 12934495691,
+      "name": "lockspire-coverage-fast-3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee"
+    },
+    {
+      "created_at": "2026-10-29T21:23:44Z",
+      "digest": "sha256:2abfd4d06b1c9d41bbf3dd250518127357ad0af062206747062966c63d4bd376",
+      "expired": false,
+      "id": 12932959565,
+      "name": "integration-test-timings-3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee"
+    }
+  ],
+  "canonical_OPEN_THREATS": 4,
+  "job_log_proofs": [
+    {
+      "checkout_sha": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+      "job_id": 123736063322,
+      "log_utf8_sha256": "0264338a86ef9432fdf2e6a6d7c9aed468d23e05e41c29b5ced1a5fe072d1dab",
+      "name": "Dialyzer"
+    },
+    {
+      "checkout_sha": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+      "job_id": 123736063167,
+      "log_utf8_sha256": "2c57e99c4caac3d912159d145abc10ee4c66a0cc76e3c2a22dbcacebde4c6831",
+      "name": "Fast Checks",
+      "raw_log_persisted": false,
+      "test_summaries": [
+        {
+          "failures": 0,
+          "tests": 15
+        },
+        {
+          "failures": 0,
+          "tests": 2187
+        }
+      ]
+    },
+    {
+      "checkout_sha": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+      "job_id": 123736063134,
+      "log_utf8_sha256": "144252a759fac4f4d0aaebaae902f71d124f50adf96819871317e0b69a561c21",
+      "name": "Release Hygiene Drift",
+      "raw_log_persisted": false,
+      "test_summaries": []
+    },
+    {
+      "checkout_sha": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+      "job_id": 123736063582,
+      "log_utf8_sha256": "102c074a24dfe887112797d263753300bdb7c7e47efcf34d19164243be780473",
+      "name": "Adoption Demo Smoke",
+      "raw_log_persisted": false,
+      "test_summaries": []
+    },
+    {
+      "checkout_sha": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+      "job_id": 123736062766,
+      "log_utf8_sha256": "c2758ea7a14c73a9ab5f4abde73d1e1d12f72a3e81ac67d156cff2f539a9d6b6",
+      "name": "Minimum Supported Elixir/OTP",
+      "raw_log_persisted": false,
+      "test_summaries": [
+        {
+          "failures": 0,
+          "tests": 2755
+        }
+      ],
+      "uploaded_artifact_ids": []
+    },
+    {
+      "checkout_sha": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+      "job_id": 123736063538,
+      "log_utf8_sha256": "ab83d3eb512a2734bab299797cc4e34bf824a39f9b72a6779dea72b29e389a9c",
+      "name": "Integration Checks",
+      "raw_log_persisted": false,
+      "test_summaries": [
+        {
+          "failures": 0,
+          "tests": 565
+        },
+        {
+          "failures": 0,
+          "tests": 3
+        }
+      ],
+      "uploaded_artifact_ids": []
+    },
+    {
+      "checkout_sha": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+      "job_id": 123750899349,
+      "log_utf8_sha256": "358fef0934d07571ee0dd0bd10243ca2afc8293d069af6e3920e479ccc27008a",
+      "name": "Complete Coverage Evidence",
+      "raw_log_persisted": false,
+      "test_summaries": [],
+      "uploaded_artifact_ids": []
+    }
+  ],
+  "jobs": [
+    {
+      "completed_at": "2026-10-29T21:44:15Z",
+      "conclusion": "success",
+      "id": 123736062766,
+      "name": "Minimum Supported Elixir/OTP",
+      "run_attempt": 2,
+      "run_id": 40954208717,
+      "started_at": "2026-10-29T21:13:50Z",
+      "status": "completed"
+    },
+    {
+      "completed_at": "2026-10-29T21:14:03Z",
+      "conclusion": "success",
+      "id": 123736063134,
+      "name": "Release Hygiene Drift",
+      "run_attempt": 2,
+      "run_id": 40954208717,
+      "started_at": "2026-10-29T21:13:49Z",
+      "status": "completed"
+    },
+    {
+      "completed_at": "2026-10-29T21:19:38Z",
+      "conclusion": "success",
+      "id": 123736063167,
+      "name": "Fast Checks",
+      "run_attempt": 2,
+      "run_id": 40954208717,
+      "started_at": "2026-10-29T21:13:49Z",
+      "status": "completed"
+    },
+    {
+      "completed_at": "2026-10-29T21:14:24Z",
+      "conclusion": "success",
+      "id": 123736063322,
+      "name": "Dialyzer",
+      "run_attempt": 2,
+      "run_id": 40954208717,
+      "started_at": "2026-10-29T21:13:49Z",
+      "status": "completed"
+    },
+    {
+      "completed_at": "2026-10-29T21:44:13Z",
+      "conclusion": "success",
+      "id": 123736063538,
+      "name": "Integration Checks",
+      "run_attempt": 2,
+      "run_id": 40954208717,
+      "started_at": "2026-10-29T21:13:49Z",
+      "status": "completed"
+    },
+    {
+      "completed_at": "2026-10-29T21:14:39Z",
+      "conclusion": "success",
+      "id": 123736063582,
+      "name": "Adoption Demo Smoke",
+      "run_attempt": 2,
+      "run_id": 40954208717,
+      "started_at": "2026-10-29T21:13:49Z",
+      "status": "completed"
+    },
+    {
+      "completed_at": "2026-10-29T21:45:02Z",
+      "conclusion": "success",
+      "id": 123750899349,
+      "name": "Complete Coverage Evidence",
+      "run_attempt": 2,
+      "run_id": 40954208717,
+      "started_at": "2026-10-29T21:44:15Z",
+      "status": "completed"
+    }
+  ],
+  "native_candidate_validation": "pending",
+  "pair_upload_proofs": {
+    "floor": [
+      {
+        "id": 12936150659,
+        "name": "lockspire-host-integration-3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee-floor"
+      },
+      {
+        "id": 12935791386,
+        "name": "lockspire-verifier-upgrade-3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee-floor"
+      }
+    ],
+    "locked": [
+      {
+        "id": 12935811315,
+        "name": "lockspire-verifier-upgrade-3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee-locked"
+      },
+      {
+        "id": 12935596513,
+        "name": "lockspire-coverage-integration-3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee"
+      },
+      {
+        "id": 12935267245,
+        "name": "lockspire-client-lifetimes-3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee"
+      },
+      {
+        "id": 12935192374,
+        "name": "lockspire-host-integration-3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee-locked"
+      },
+      {
+        "id": 12932959565,
+        "name": "integration-test-timings-3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee"
+      }
+    ]
+  },
+  "phase11_complete": false,
+  "raw_application_output_persisted": false,
+  "recorded_at": "2026-10-29T21:46:35.872350+00:00",
+  "run": {
+    "conclusion": "success",
+    "event": "pull_request",
+    "head_sha": "c465f2b8156c2f17db82910452dbcdf16aa8353b",
+    "id": 40954208717,
+    "path": ".github/workflows/ci.yml",
+    "run_attempt": 2,
+    "run_started_at": "2026-10-29T21:13:45Z",
+    "status": "completed",
+    "updated_at": "2026-10-29T21:45:03Z"
+  },
+  "schema": "lockspire-phase178-hosted-attempt2-terminal-v1"
+}

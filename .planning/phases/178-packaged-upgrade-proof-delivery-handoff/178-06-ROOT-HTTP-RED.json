@@ -1,0 +1,10 @@
+{
+  "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 ERL_FLAGS='+S 4' PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s test/acceptance -p client_verifier_recovery_test.py",
+  "exitCode": 1,
+  "output": "Ran 6 tests in 0.496s; FAILED (failures=1). test_declared_host_otp_apps_support_http_after_mix_path_pruning: AssertionError: 1 != 0 : declared host OTP applications cannot execute HTTP; child diagnostics withheld",
+  "targetTest": "test_declared_host_otp_apps_support_http_after_mix_path_pruning",
+  "targetFile": "test/acceptance/client_verifier_recovery_test.py",
+  "expected": "The maintainer host's declared OTP applications support actual HTTP 200/400/401/500 calls after Mix code-path pruning.",
+  "actual": "The actual template's logger-only declaration produces a failing HTTP child process despite dynamically starting inets.",
+  "semanticAssessment": "The target test ran and reached its intended child-exit assertion; it was not a loader, collection, fixture or syntax error. An independent owned installed-host probe identified exactly http_util:timestamp/0 as undefined. Changing only the owned host's declaration to include inets restored all four statuses and a normal mounted rejection. No child arguments, messages, raw logs or credential values are included."
+}

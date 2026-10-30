@@ -1,0 +1,32 @@
+{
+  "schema": "lockspire-owned-python-gate-v1",
+  "source_revision": "f809a40b823379e177b8beba1dad964cfcd8eacb",
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "test/acceptance",
+    "-p",
+    "*_test.py"
+  ],
+  "runtime": {
+    "ASDF_ELIXIR_VERSION": "1.19.5-otp-28",
+    "ASDF_ERLANG_VERSION": "28.5",
+    "ERL_FLAGS": "+S 4",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "wrapper_pid": 44524,
+  "started_at": "2026-10-27T08:51:06.449061+00:00",
+  "raw_retention": "memory-only",
+  "timeout_seconds": 1800,
+  "exit": 1,
+  "tests": 226,
+  "summary_ok": false,
+  "raw_bytes": 2747,
+  "raw_sha256": "c1642f2c3129b2f6c746fee08533204e3256fb5a6a7864c9f4dbcfd967ac0de3",
+  "owned_group_stop": "confirmed",
+  "elapsed_seconds": 89.528,
+  "finished_at": "2026-10-27T08:52:35.977483+00:00"
+}

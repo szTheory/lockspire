@@ -32,6 +32,13 @@ defmodule Lockspire.Domain.Client do
 
   @secret_auth_methods [:client_secret_basic, :client_secret_post, :client_secret_jwt]
 
+  @derive {Inspect,
+           except: [
+             :client_secret_hash,
+             :client_secret_jwt_verifier_encrypted,
+             :registration_access_token_hash
+           ]}
+
   @type t :: %__MODULE__{
           id: integer() | nil,
           client_id: String.t(),

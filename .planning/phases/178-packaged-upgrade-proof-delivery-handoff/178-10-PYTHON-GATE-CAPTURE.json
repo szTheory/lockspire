@@ -1,0 +1,39 @@
+{
+  "schema": "lockspire-owned-python-gate-capture-v1",
+  "source_revision": "5fcf93276b6ea9bfdffc37baac9e83a960a2f73c",
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "test/acceptance",
+    "-p",
+    "*_test.py"
+  ],
+  "launcher": [
+    "node",
+    "/Users/jon/.codex/gsd-core/bin/gsd-tools.cjs",
+    "run-with-timeout",
+    "1800",
+    "--"
+  ],
+  "runtime": {
+    "ASDF_ELIXIR_VERSION": "1.19.5-otp-28",
+    "ASDF_ERLANG_VERSION": "28.5",
+    "ERL_FLAGS": "+S 4",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "session_id": 85425,
+  "observed_exit": 0,
+  "tests": 213,
+  "summary_ok": true,
+  "raw_bytes": 738,
+  "raw_sha256": "b6a10aa21f8321998e57fa77d17cf1e413531a1c0a495b0aa715930edc254870",
+  "capture_path": "/private/tmp/lockspire178-full-python-check.out",
+  "capture_mode_after_correction": "0o600",
+  "capture_initial_mode_observed": false,
+  "deviation": "raw diagnostics redirected to owned temporary disk capture instead of memory; changed to0600 while live; fixed summary/hash only read after exit; no raw tool output or marker scan; historical material absence not established",
+  "recorded_at": "2026-10-27T07:53:38.518181+00:00",
+  "capture_removed": true
+}

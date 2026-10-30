@@ -90,6 +90,226 @@ defmodule Lockspire.KeyCacheTest do
   end
 
   describe "repository readiness" do
+    test "the default repository readiness check enables a cold lookup before its retry timer" do
+      table_name = unique_table_name()
+      server_name = unique_server_name()
+      repo_name = unique_server_name()
+      {:ok, calls} = Agent.start_link(fn -> 0 end)
+      parent = self()
+      key = signing_key("default-ready-key")
+
+      {:ok, pid} =
+        KeyCache.start_link(
+          name: server_name,
+          table_name: table_name,
+          repo: repo_name,
+          refresh_interval: 0,
+          initial_retry_interval: 5_000,
+          loader: fn ->
+            count = Agent.get_and_update(calls, &{&1 + 1, &1 + 1})
+            send(parent, {:default_loader_called, count})
+            {:ok, [key]}
+          end
+        )
+
+      refute_receive {:default_loader_called, _}, 30
+      {:ok, repo_pid} = Agent.start_link(fn -> :ready end, name: repo_name)
+
+      assert {:ok, %JOSE.JWK{}} = KeyCache.get_key(key.kid, table_name)
+      assert_receive {:default_loader_called, 1}, 200
+      assert Agent.get(calls, & &1) == 1
+
+      GenServer.stop(pid)
+      Agent.stop(repo_pid)
+      Agent.stop(calls)
+    end
+
+    test "a ready cold lookup loads one full snapshot even while an unready retry is pending" do
+      table_name = unique_table_name()
+      server_name = unique_server_name()
+      {:ok, readiness} = Agent.start_link(fn -> false end)
+      {:ok, calls} = Agent.start_link(fn -> 0 end)
+      parent = self()
+      key = signing_key("cold-ready-key")
+
+      {:ok, pid} =
+        KeyCache.start_link(
+          name: server_name,
+          table_name: table_name,
+          refresh_interval: 0,
+          initial_retry_interval: 5_000,
+          ready?: fn -> Agent.get(readiness, & &1) end,
+          loader: fn ->
+            count = Agent.get_and_update(calls, &{&1 + 1, &1 + 1})
+            send(parent, {:loader_called, count})
+            {:ok, [key]}
+          end
+        )
+
+      refute_receive {:loader_called, _}, 30
+      Agent.update(readiness, fn _ -> true end)
+
+      results =
+        1..12
+        |> Task.async_stream(fn _ -> KeyCache.get_key(key.kid, table_name) end,
+          max_concurrency: 12,
+          timeout: 2_000
+        )
+        |> Enum.to_list()
+
+      assert Enum.all?(results, &match?({:ok, {:ok, %JOSE.JWK{}}}, &1))
+      assert_receive {:loader_called, 1}, 200
+      assert Agent.get(calls, & &1) == 1
+
+      GenServer.stop(pid)
+      Agent.stop(readiness)
+      Agent.stop(calls)
+    end
+
+    test "a failed cold snapshot is throttled until an independent retry succeeds" do
+      table_name = unique_table_name()
+      server_name = unique_server_name()
+      {:ok, readiness} = Agent.start_link(fn -> false end)
+      {:ok, calls} = Agent.start_link(fn -> 0 end)
+      parent = self()
+      key = signing_key("retry-cold-key")
+
+      {:ok, pid} =
+        KeyCache.start_link(
+          name: server_name,
+          table_name: table_name,
+          refresh_interval: 0,
+          initial_retry_interval: 800,
+          ready?: fn -> Agent.get(readiness, & &1) end,
+          loader: fn ->
+            count = Agent.get_and_update(calls, &{&1 + 1, &1 + 1})
+            send(parent, {:loader_called, count})
+            if count == 1, do: {:error, :unavailable}, else: {:ok, [key]}
+          end,
+          failure_reporter: fn reason -> send(parent, {:refresh_failure, reason}) end
+        )
+
+      refute_receive {:loader_called, _}, 30
+      Agent.update(readiness, fn _ -> true end)
+
+      results =
+        1..12
+        |> Task.async_stream(fn _ -> KeyCache.get_key(key.kid, table_name) end,
+          max_concurrency: 12,
+          timeout: 2_000
+        )
+        |> Enum.to_list()
+
+      assert Enum.all?(results, &match?({:ok, {:error, :not_found}}, &1))
+      assert_receive {:loader_called, 1}, 200
+      assert_receive {:refresh_failure, :key_storage_unavailable}, 200
+      refute_receive {:loader_called, 2}, 100
+      assert Agent.get(calls, & &1) == 1
+      assert {:error, :not_found} = KeyCache.get_key("another-unknown-kid", table_name)
+      assert Agent.get(calls, & &1) == 1
+
+      assert_receive {:loader_called, 2}, 2_000
+
+      assert_eventually(fn ->
+        match?({:ok, %JOSE.JWK{}}, KeyCache.get_key(key.kid, table_name))
+      end)
+
+      GenServer.stop(pid)
+      Agent.stop(readiness)
+      Agent.stop(calls)
+    end
+
+    test "an explicit refresh can satisfy a pending retry and cancels the stale retry" do
+      table_name = unique_table_name()
+      server_name = unique_server_name()
+      {:ok, readiness} = Agent.start_link(fn -> false end)
+      parent = self()
+      key = signing_key("manual-refresh-key")
+
+      {:ok, pid} =
+        KeyCache.start_link(
+          name: server_name,
+          table_name: table_name,
+          refresh_interval: 0,
+          initial_retry_interval: 250,
+          ready?: fn -> Agent.get(readiness, & &1) end,
+          loader: fn ->
+            send(parent, :manual_refresh_loaded)
+            {:ok, [key]}
+          end
+        )
+
+      refute_receive :manual_refresh_loaded, 30
+      Agent.update(readiness, fn _ -> true end)
+      send(pid, :refresh)
+      assert_receive :manual_refresh_loaded, 200
+      assert {:ok, %JOSE.JWK{}} = KeyCache.get_key(key.kid, table_name)
+      refute_receive :manual_refresh_loaded, 300
+
+      GenServer.stop(pid)
+      Agent.stop(readiness)
+    end
+
+    test "a successful empty snapshot is warm and unknown kid lookups do not reload" do
+      table_name = unique_table_name()
+      server_name = unique_server_name()
+      {:ok, calls} = Agent.start_link(fn -> 0 end)
+      parent = self()
+
+      {:ok, pid} =
+        KeyCache.start_link(
+          name: server_name,
+          table_name: table_name,
+          refresh_interval: 0,
+          loader: fn ->
+            Agent.update(calls, &(&1 + 1))
+            send(parent, :empty_snapshot_loaded)
+            {:ok, []}
+          end
+        )
+
+      assert_receive :empty_snapshot_loaded, 200
+
+      results =
+        1..12
+        |> Task.async_stream(fn _ -> KeyCache.get_key("not-in-empty-snapshot", table_name) end,
+          max_concurrency: 12,
+          timeout: 2_000
+        )
+        |> Enum.to_list()
+
+      assert Enum.all?(results, &match?({:ok, {:error, :not_found}}, &1))
+      refute_receive :empty_snapshot_loaded, 30
+      assert Agent.get(calls, & &1) == 1
+
+      GenServer.stop(pid)
+      Agent.stop(calls)
+    end
+
+    test "initial_refresh false does not demand-load on a cold lookup" do
+      table_name = unique_table_name()
+      server_name = unique_server_name()
+      parent = self()
+
+      {:ok, pid} =
+        KeyCache.start_link(
+          name: server_name,
+          table_name: table_name,
+          refresh_interval: 0,
+          initial_refresh?: false,
+          ready?: fn -> true end,
+          loader: fn ->
+            send(parent, :unexpected_demand_load)
+            {:ok, []}
+          end
+        )
+
+      assert {:error, :not_found} = KeyCache.get_key("cold-disabled", table_name)
+      refute_receive :unexpected_demand_load, 30
+
+      GenServer.stop(pid)
+    end
+
     test "defers the initial refresh until the repository is ready" do
       table_name = unique_table_name()
       server_name = unique_server_name()
@@ -149,6 +369,47 @@ defmodule Lockspire.KeyCacheTest do
       GenServer.stop(pid)
       Agent.stop(result)
     end
+
+    test "a warm refresh failure retains its snapshot and does not reload on unknown kids" do
+      table_name = unique_table_name()
+      server_name = unique_server_name()
+      jose_jwk = JOSE.JWK.generate_key({:rsa, 2048})
+      public_jwk = jose_jwk |> JOSE.JWK.to_public() |> JOSE.JWK.to_map() |> elem(1)
+      key = %SigningKey{kid: "warm-retained-key", public_jwk: public_jwk}
+      {:ok, result} = Agent.start_link(fn -> {:ok, [key]} end)
+      {:ok, calls} = Agent.start_link(fn -> 0 end)
+      parent = self()
+
+      {:ok, pid} =
+        KeyCache.start_link(
+          name: server_name,
+          table_name: table_name,
+          refresh_interval: 0,
+          ready?: fn -> true end,
+          loader: fn ->
+            Agent.update(calls, &(&1 + 1))
+            Agent.get(result, & &1)
+          end,
+          failure_reporter: fn reason -> send(parent, {:warm_refresh_failure, reason}) end
+        )
+
+      assert_eventually(fn ->
+        match?({:ok, %JOSE.JWK{}}, KeyCache.get_key(key.kid, table_name))
+      end)
+
+      Agent.update(result, fn _ -> {:error, {:database_unavailable, "private"}} end)
+
+      send(pid, :refresh)
+      assert_receive {:warm_refresh_failure, :key_storage_unavailable}
+      assert {:ok, %JOSE.JWK{}} = KeyCache.get_key(key.kid, table_name)
+      assert {:error, :not_found} = KeyCache.get_key("warm-unknown-kid", table_name)
+      refute_receive {:warm_refresh_failure, _}, 100
+      assert Agent.get(calls, & &1) == 2
+
+      GenServer.stop(pid)
+      Agent.stop(result)
+      Agent.stop(calls)
+    end
   end
 
   defp assert_eventually(fun, attempts \\ 20)
@@ -166,6 +427,21 @@ defmodule Lockspire.KeyCacheTest do
 
   defp unique_table_name,
     do: String.to_atom("lockspire_key_cache_test_#{System.unique_integer([:positive])}")
+
+  defp signing_key(kid) do
+    jose_jwk = JOSE.JWK.generate_key({:rsa, 2048})
+    public_jwk = jose_jwk |> JOSE.JWK.to_public() |> JOSE.JWK.to_map() |> elem(1)
+
+    %SigningKey{
+      kid: kid,
+      kty: :RSA,
+      alg: "RS256",
+      use: :sig,
+      public_jwk: public_jwk,
+      status: :active,
+      inserted_at: DateTime.utc_now()
+    }
+  end
 
   defp unique_server_name,
     do: String.to_atom("lockspire_key_cache_server_#{System.unique_integer([:positive])}")

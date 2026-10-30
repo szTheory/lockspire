@@ -1,0 +1,10 @@
+{
+  "command": "python3 -m unittest discover -s test/acceptance -p 'client_verifier_delivery_test.py'",
+  "exitCode": 1,
+  "output": "F\n======================================================================\nFAIL: test_self_reported_source_hash_does_not_authenticate_external_archive (client_verifier_delivery_test.FrozenSourceOwnerContracts.test_self_reported_source_hash_does_not_authenticate_external_archive)\nA public digest over caller claims cannot prove source-to-archive ownership.\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"test/acceptance/client_verifier_delivery_test.py\", line 41, in test_self_reported_source_hash_does_not_authenticate_external_archive\n    with self.assertRaises(PackageInputError):\nAssertionError: PackageInputError not raised\n\n----------------------------------------------------------------------\nRan 1 test in 0.018s\n\nFAILED (failures=1)\n",
+  "targetTest": "test_self_reported_source_hash_does_not_authenticate_external_archive",
+  "targetFile": "test/acceptance/client_verifier_delivery_test.py",
+  "expected": "PackageInputError is raised because caller-computed hashes cannot authenticate an archive's source owner.",
+  "actual": "prepare_package accepted an external archive after validating only a self-reported SHA-256 over its caller-provided source label, archive digest, and extracted tree digest.",
+  "semanticAssessment": "The intended test executed and failed on the target assertion. The failure demonstrates that a public, caller-computable digest is currently sufficient to attribute an external archive to a source revision without proving the archive tree came from that commit. No import, collection, fixture, or unrelated failure occurred."
+}

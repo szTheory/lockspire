@@ -40,7 +40,7 @@ defmodule Lockspire.CiWorkflowEvidenceContractTest do
     workflow = File.read!(@workflow)
     integration_job = integration_job(workflow)
 
-    assert integration_job =~ "timeout-minutes: 30"
+    assert integration_job =~ "timeout-minutes: 75"
     assert integration_job =~ "bash scripts/ci/run_test_matrix.sh --integration"
     assert integration_job =~ "Run integration suite including onboarding and OIDC E2E proof"
     validation_step = step_block(integration_job, "Validate client lifetime receipt")
@@ -49,7 +49,10 @@ defmodule Lockspire.CiWorkflowEvidenceContractTest do
     assert validation_step =~ "if: always()"
     assert validation_step =~ "test -s .artifacts/ci/client-lifetimes/receipt.json"
     assert validation_step =~ "test -s .artifacts/ci/client-lifetimes/validation.json"
-    assert validation_step =~ "EXPECTED_SOURCE_REVISION: ${{ github.sha }}"
+
+    assert validation_step =~
+             "EXPECTED_SOURCE_REVISION: ${{ steps.verifier-candidate.outputs.expected_candidate_source }}"
+
     assert validation_step =~ "validation[\"valid\"] is True"
     assert validation_step =~ "receipt[\"source_revision\"] == expected"
 

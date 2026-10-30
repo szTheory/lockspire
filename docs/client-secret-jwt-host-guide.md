@@ -1,6 +1,14 @@
 # `client_secret_jwt` Host Guide
 
+For the dedicated verifier key settings and reader-first rollout limits, see
+the [client secret verifier configuration guide](client-secret-verifier-configuration.md).
+
 Lockspire ships a narrow `client_secret_jwt` slice for confidential clients on the Lockspire-owned direct-client endpoints that reuse the shared verifier. This guide explains that shipped slice only. It does not broaden the public support contract beyond [`docs/supported-surface.md`](supported-surface.md).
+
+The installer generates the host integration scaffolding, not verifier key
+material or verifier settings. When enabling this authentication method, add
+the dedicated host-owned configuration in the
+[verifier configuration guide](client-secret-verifier-configuration.md).
 
 ## What this guide covers
 
@@ -66,6 +74,13 @@ The shipped `client_secret_jwt` verifier is shared across the Lockspire-owned di
 
 `POST /par` is intentionally excluded from this slice. Lockspire documentation and discovery metadata only claim support where the shared runtime actually enforces it.
 
+The verifier is shared by these five direct-client endpoints; it does not add
+support for client authentication at `/par`. Existing `client_secret_basic`
+and `client_secret_post` checks remain available on their supported endpoints.
+If the verifier key needed by one JWT client is unavailable, that JWT
+authentication fails closed as `invalid_client`; Lockspire does not retry it
+as Basic or post.
+
 ## Explicit non-goals
 
 This guide does not claim:
@@ -89,3 +104,25 @@ Your host app still owns:
 Lockspire owns the protocol verification and operator secret-rotation path
 described here. The host app still owns the human-facing application behavior
 and partner coordination around credential rollout.
+
+
+## Verifier-key changes and client recovery
+
+The dedicated verifier key protects Lockspire's stored copy of the shared
+secret so it can verify `client_secret_jwt` assertions. Changing that key does
+not change the partner's secret. Follow the
+[verifier configuration and recovery guide](client-secret-verifier-configuration.md)
+for reader-first distribution, preview, apply, a separate fresh check, and
+host-owned fleet and rollback checks before retiring a live read key.
+
+If a verifier key is temporarily unavailable, the affected JWT client
+authentication fails closed as `invalid_client`; Lockspire does not fall back
+to Basic or post authentication. Restoring the original key preserves the
+existing partner secret. If it cannot be restored, an authorized client-secret
+rotation or re-provisioning replaces that secret, so coordinate the new
+one-time handoff with the partner. A stored secret hash cannot be reversed.
+The replacement secret receives its configured lifetime, and the JWT
+assertion's own lifetime and replay checks remain in force. Native verifier
+material follows the configured secret lifetime. Migrated material retains its
+authenticated original finite deadline; custody re-wrap after that deadline
+does not make it eligible to authenticate.

@@ -1,0 +1,175 @@
+{
+  "authorization": {
+    "body_sha256": "eaf0ad6a6f6d8b6733356af2ec799da59a8506e743296bbd0f2acd8c4fa90fe3",
+    "consumed": true,
+    "publication_sha": "cc61cffc563fc8df141313c26442186c0b4645a3",
+    "received": true,
+    "scope": [
+      "non_force_push_exact_commit",
+      "replace_PR141_body_exact_file"
+    ],
+    "source": "User replied yes to the exact publication SHA and prepared PR141 body request"
+  },
+  "automatic_workflows": {
+    "CI": {
+      "complete_required_graph_observed": false,
+      "jobs": [
+        {
+          "conclusion": null,
+          "id": 123180681753,
+          "name": "Fast Checks",
+          "status": "in_progress"
+        },
+        {
+          "conclusion": "success",
+          "id": 123180682039,
+          "name": "Release Hygiene Drift",
+          "status": "completed"
+        },
+        {
+          "conclusion": null,
+          "id": 123180682053,
+          "name": "Integration Checks",
+          "status": "in_progress"
+        },
+        {
+          "conclusion": "failure",
+          "id": 123180682056,
+          "name": "Dialyzer",
+          "status": "completed"
+        },
+        {
+          "conclusion": null,
+          "id": 123180682125,
+          "name": "Minimum Supported Elixir/OTP",
+          "status": "in_progress"
+        },
+        {
+          "conclusion": "success",
+          "id": 123180682126,
+          "name": "Adoption Demo Smoke",
+          "status": "completed"
+        }
+      ],
+      "primary_finite_failure": {
+        "cannot_match": true,
+        "covered_pattern": true,
+        "job_id": 123180682056,
+        "raw_log_persisted": false,
+        "source_location": {
+          "line": 95,
+          "path": "lib/lockspire/security/client_secret_verifier/operation_context.ex"
+        },
+        "unused_function": false,
+        "warning_ids": [
+          "pattern_match_cov"
+        ]
+      },
+      "run_id": 40792440885,
+      "status": "in_progress"
+    },
+    "dependency_review": {
+      "conclusion": "success",
+      "run_id": 40792440963,
+      "status": "completed"
+    }
+  },
+  "body_update": {
+    "isError": false,
+    "observed_at": "2026-10-29 00:12:21 UTC",
+    "structured_keys": [
+      "url",
+      "number",
+      "state",
+      "merged",
+      "mergeable",
+      "draft",
+      "body",
+      "title",
+      "base",
+      "base_sha",
+      "head",
+      "head_sha",
+      "head_repo_id",
+      "head_repo_full_name",
+      "merge_commit_sha",
+      "user",
+      "requested_reviewers",
+      "requested_team_reviewers",
+      "diff",
+      "comments",
+      "created_at",
+      "updated_at",
+      "closed_at",
+      "merged_at",
+      "commits",
+      "changed_files",
+      "additions",
+      "deletions",
+      "display_url",
+      "display_title"
+    ]
+  },
+  "delivery": {
+    "VDELIV_01": "pending_failed_required_candidate_CI_and_audit",
+    "VDELIV_02": "pending",
+    "VPROOF_02": "locally_qualified",
+    "phase_178": "in_progress",
+    "plan_11": "incomplete",
+    "plan_12": "unstarted"
+  },
+  "further_remote_action_authorized": false,
+  "merged": false,
+  "new_review_or_comment": false,
+  "new_workflow_rerun_or_dispatch": false,
+  "observed_at": "2026-10-29 00:16:02 UTC",
+  "package_published": false,
+  "post_push_before_body": {
+    "base": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+    "body_sha256": "eaf0ad6a6f6d8b6733356af2ec799da59a8506e743296bbd0f2acd8c4fa90fe3",
+    "draft": false,
+    "head": "cc61cffc563fc8df141313c26442186c0b4645a3",
+    "merge_commit_sha": "49e561c4f34590c51ccf6275735d82d3ce091294",
+    "merged": false,
+    "number": 141,
+    "observed_at": "2026-10-29 00:12:14 UTC",
+    "remote_refs": {
+      "refs/heads/main": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+      "refs/heads/milestone/v1.48-client-auth-key-isolation": "cc61cffc563fc8df141313c26442186c0b4645a3"
+    },
+    "state": "open"
+  },
+  "pre_push": {
+    "base": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+    "draft": false,
+    "head": "33db5483bc5aa06b4a51d2742e90fb8616cad7c2",
+    "merged": false,
+    "number": 141,
+    "observed_at": "2026-10-29 00:11:17 UTC",
+    "state": "open"
+  },
+  "published_head": "cc61cffc563fc8df141313c26442186c0b4645a3",
+  "released": false,
+  "retention": "All prior attempts, retractions, unknown closures, original-token retention limits, E09/E10 and generic/descriptorless flags remain unwaived.",
+  "schema": "lockspire-phase178-approved-corrected-update-outcome-v1",
+  "source_and_package_proof_identities": {
+    "candidate_source": "50d67751a7844dee2f5f595195a6ab455e313fc6",
+    "changed_covered_inputs": 0,
+    "evidence_commit": "7d8306d1e7c1a7ebdfc8a2aa75ce9dea09af164c",
+    "execution_runner": "1757638a7770bb6f09c3b085f002fa7c8b7ed518",
+    "proof_relabelled": false
+  },
+  "verified_publication": {
+    "base_sha": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+    "body_exact_match": true,
+    "body_sha256": "eaf0ad6a6f6d8b6733356af2ec799da59a8506e743296bbd0f2acd8c4fa90fe3",
+    "draft": false,
+    "head_sha": "cc61cffc563fc8df141313c26442186c0b4645a3",
+    "merge_commit_sha": "49e561c4f34590c51ccf6275735d82d3ce091294",
+    "merged": false,
+    "observed_at": "2026-10-29 00:12:35 UTC",
+    "pr_number": 141,
+    "state": "open",
+    "url": "https://github.com/szTheory/lockspire/pull/141"
+  }
+}

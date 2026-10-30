@@ -1,0 +1,258 @@
+{
+  "schema_version": 1,
+  "source_revision": "3a3b942efad5838c530c79bfac771a40bd03f4fe",
+  "files": [
+    {
+      "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-03-PLAN.md",
+      "sha256": "2435e40cd56e3996bea9901fb086c1f1dd75eebee60318282fe58cda22a21536"
+    },
+    {
+      "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json",
+      "sha256": "d4f790a7057ed967f105068631d44eae46d69fefc7013836b868c74121a403b7"
+    },
+    {
+      "path": "docs/supported-surface.md",
+      "sha256": "2cd32dee2d0bf1bcc301c26afeea634698e7b0b4a44ee55cf15204705d6f4471"
+    },
+    {
+      "path": "lib/lockspire/protocol/authorization_request.ex",
+      "sha256": "3dd97834e94398f6f26abae578085e01f70ecb42f8bc4d3235074c62ad7f63da"
+    },
+    {
+      "path": "lib/lockspire/protocol/pushed_authorization_request.ex",
+      "sha256": "1e804bfbe3f1227f73a9d94a531c89de87d8106cab865ab0023c94ce6c39fd7b"
+    },
+    {
+      "path": "lib/lockspire/web/controllers/authorize_controller.ex",
+      "sha256": "e474fb45a0295d45717333716342ef44d490418f9963f59bf8cb27c6172f96e7"
+    },
+    {
+      "path": "lib/lockspire/web/controllers/discovery_controller.ex",
+      "sha256": "19bde5306e0f436cadf8c74d6a5c3cefb948b022573a8fff2b366b4cc29f044e"
+    },
+    {
+      "path": "lib/lockspire/web/controllers/pushed_authorization_request_controller.ex",
+      "sha256": "3653faacf683f55173c3f9363d102d07242a4830512d3020c51637a526825676"
+    },
+    {
+      "path": "mix.exs",
+      "sha256": "0cd13da922fbc96792d6ce8f7ae7d7ad0d0f0d27605308a24f1d2bc629fd8714"
+    },
+    {
+      "path": "mix.lock",
+      "sha256": "5baa6a78be65857defb11fc4fc26b271460c80d259e65a3ae4aebd6ac5962f28"
+    },
+    {
+      "path": "scripts/acceptance/clean_room/build_client.py",
+      "sha256": "8e96381f0be1904f1177721354444c62990a9822144a567f56b5c4fda36e5c11"
+    },
+    {
+      "path": "scripts/acceptance/clean_room/build_provider.py",
+      "sha256": "edf8911f96d7fff46fe32d7c0cbce0f8f406d76e33b335d22ca391fdd8083326"
+    },
+    {
+      "path": "scripts/acceptance/clean_room/lifetime_receipts.py",
+      "sha256": "fa5abe88c2a6ec3db4d60cc1df85fa804c8a841af52a6dad694d943732fdeead"
+    },
+    {
+      "path": "scripts/acceptance/clean_room/package_input.py",
+      "sha256": "b6db259e535f56f0c61cabd82ea0a2043ed44fa8a7ea2d8eb7f78cc40cb39623"
+    },
+    {
+      "path": "scripts/acceptance/clean_room/processes.py",
+      "sha256": "83622597eaea1e7c53b243f8c7a72ecbb3f139104b098c4c30fa087f70c75c7c"
+    },
+    {
+      "path": "scripts/acceptance/clean_room/redaction.py",
+      "sha256": "5afb54859beab56bdd8ccee2d965e18f690338fb2d8cd88c1e36827a2fd167a2"
+    },
+    {
+      "path": "scripts/acceptance/clean_room/selected_receipts.py",
+      "sha256": "cf3d5254b39934e2d60c61b8deacbd8f8055b90406693cac8efff7a2a235b52b"
+    },
+    {
+      "path": "scripts/acceptance/clean_room_saas_journey.py",
+      "sha256": "1fa47489d1c4d2a7a081e629dd14b47cb831be4b96bdd21f12d22d92e43a2af3"
+    },
+    {
+      "path": "test/acceptance/selected_receipt_test.py",
+      "sha256": "c7459361fbf4baa5866fd3ee868c2960694ec75bff1e99b290c21b508c8076ff"
+    },
+    {
+      "path": "test/clean_room/confidential_client/config/config.exs",
+      "sha256": "6a4bd3fb9d973832440b31a4ffee80b55a1f3fabb999fb2b6e61a312e465b6c3"
+    },
+    {
+      "path": "test/clean_room/confidential_client/lib/clean_room_client/application.ex",
+      "sha256": "6d0de52c2b9c2be76bee8869a21a8fdce7925a0a44e2d24aef7051b66339dc9a"
+    },
+    {
+      "path": "test/clean_room/confidential_client/lib/clean_room_client/dpop.ex",
+      "sha256": "7d87db2551a499fac681479f51dfd12be12311f47b27cbcb3ecc6d2c2ba3c83f"
+    },
+    {
+      "path": "test/clean_room/confidential_client/lib/clean_room_client/dpop_session.ex",
+      "sha256": "85f089847fed71178a259becf2c3a8adc1d1341f8e8927b1ab3958478dccdfb6"
+    },
+    {
+      "path": "test/clean_room/confidential_client/lib/clean_room_client/oauth_http.ex",
+      "sha256": "c9e8c9faa528a48932c47029c5749fd0bdac257db343670c36e91dc5b693d33c"
+    },
+    {
+      "path": "test/clean_room/confidential_client/lib/clean_room_client/oauth_transaction.ex",
+      "sha256": "2c77e32ba9c85418ce2a1b69a8f6391a5fe221f2c235e694758c903dea9ac873"
+    },
+    {
+      "path": "test/clean_room/confidential_client/lib/clean_room_client/oidc_verifier.ex",
+      "sha256": "47a2e5af4779508127a0072fe8383ada4e497766e75e42119afdc330796471c1"
+    },
+    {
+      "path": "test/clean_room/confidential_client/lib/clean_room_client/repo.ex",
+      "sha256": "0b1e9c199f63e6a924644591958ef6e15d05989c8c92cf3df97d51ecb542cf54"
+    },
+    {
+      "path": "test/clean_room/confidential_client/lib/clean_room_client/transactions.ex",
+      "sha256": "80233bf3b840349162572b26ea8fa245822dd92ec5398afcf9f202e7fc77b91e"
+    },
+    {
+      "path": "test/clean_room/confidential_client/lib/clean_room_client_web/controllers/journey_controller.ex",
+      "sha256": "dba29d5e34296592b8d7c1190debbf0e45ba0635c0a899e30f093a840d128427"
+    },
+    {
+      "path": "test/clean_room/confidential_client/lib/clean_room_client_web/controllers/oauth_controller.ex",
+      "sha256": "dd027c0a4c3b75c8f2476759d249d6416ecb4aa845f0d8ae8ca74df30c47ba2b"
+    },
+    {
+      "path": "test/clean_room/confidential_client/lib/clean_room_client_web/endpoint.ex",
+      "sha256": "8b418070f122a04a3c66b1b0a2b13ffd4724f42d7155766f74067a05d2fca76c"
+    },
+    {
+      "path": "test/clean_room/confidential_client/lib/clean_room_client_web/error_html.ex",
+      "sha256": "f82045b0408a80f85711d833dd4e74dcd59769ce483cec872d66da85b0a8b998"
+    },
+    {
+      "path": "test/clean_room/confidential_client/lib/clean_room_client_web/router.ex",
+      "sha256": "6a87a6860d8bdfe4109d894720a5ac8118cbb9afa2a80b8c5a58a71a2198b892"
+    },
+    {
+      "path": "test/clean_room/confidential_client/mix.exs",
+      "sha256": "59010018da14ad1f64cfa5daf9701acdb5cc8abc0c22a6c7673cc0527414d0a3"
+    },
+    {
+      "path": "test/clean_room/confidential_client/mix.lock",
+      "sha256": "f77638eeed00fc0a7fa524219ad2fe0c0fd3c147b0436979b925bc4f236f4404"
+    },
+    {
+      "path": "test/clean_room/confidential_client/priv/repo/migrations/20260827000000_create_oauth_transactions.exs",
+      "sha256": "9ae0180b4bd5636a33713e61579b7bb3eda018999e04d5c123df9df05cc609ad"
+    },
+    {
+      "path": "test/clean_room/confidential_client/test/dpop_client_test.exs",
+      "sha256": "7d7bd686474a340758c382275534d794bc7a663c0ca39e8079880757af9a84fc"
+    },
+    {
+      "path": "test/clean_room/confidential_client/test/oauth_transaction_test.exs",
+      "sha256": "32d1a971c378b00e0f82b0afb128a139ed07366d85a1267c5570bcffc77c396f"
+    },
+    {
+      "path": "test/clean_room/confidential_client/test/test_helper.exs",
+      "sha256": "b086ec47f0c6c7aaeb4cffca5ae5243dd05e0dc96ab761ced93325d5315f4b12"
+    },
+    {
+      "path": "test/clean_room/provider_host/admin_proof.exs",
+      "sha256": "4e205885096fad8b7ad8f697b03d510295a0378d156322d0d364ede551efc15d"
+    },
+    {
+      "path": "test/clean_room/provider_host/admin_proof_live_view.js",
+      "sha256": "1101007f8ce6bd2138cd23e5f00327581120c7c092482fb57be0bdb96dd29a32"
+    },
+    {
+      "path": "test/clean_room/provider_host/lib/clean_room_provider/accounts.ex",
+      "sha256": "c74008bb05f57b165c234abeff5ecc64e93d751aac95592de2e6cf48c4fb0153"
+    },
+    {
+      "path": "test/clean_room/provider_host/lib/clean_room_provider/bootstrap.ex",
+      "sha256": "19b73f7eef8acd190abb08da6bc568383501e1dc54fb5138855e6f752e4a7be0"
+    },
+    {
+      "path": "test/clean_room/provider_host/lib/clean_room_provider/lifetime_client_store.ex",
+      "sha256": "7e7e608e1e377cda51f6533ffe6dd50c2ad4cd00d92c3f5cedb4582b8510a055"
+    },
+    {
+      "path": "test/clean_room/provider_host/lib/clean_room_provider/lockspire/account_resolver.ex",
+      "sha256": "1321e9275317bb63f0fcc738aee1a0dc7312b7769b455694ea30ffc7917a94f8"
+    },
+    {
+      "path": "test/clean_room/provider_host/lib/clean_room_provider/lockspire/interaction_handler.ex",
+      "sha256": "b9e78be6a453c25fe931b2789dafa3bdb422748b765d2891570c9adf39f921a4"
+    },
+    {
+      "path": "test/clean_room/provider_host/lib/clean_room_provider_web/controllers/billing_controller.ex",
+      "sha256": "0596e0f7318c7602a87bdf840d4aecb62dae39291d29f3cc80b25c154ace8634"
+    },
+    {
+      "path": "test/clean_room/provider_host/lib/clean_room_provider_web/controllers/session_controller.ex",
+      "sha256": "905b1db6c0d269db2b8128bd87e8f5e71b7ec0ad18efb1a0477831dfaaef4284"
+    },
+    {
+      "path": "test/clean_room/provider_host/lib/clean_room_provider_web/operator_authorization.ex",
+      "sha256": "310fa2999f071a953638920fd2236dc85d5a72cef60a859dbe97414b609daa6e"
+    },
+    {
+      "path": "test/clean_room/provider_host/lib/clean_room_provider_web/router_patch.exs",
+      "sha256": "e319f80c13060e962df627ad041fe0d22028dd23ee17e3e6ea853df4a48c7765"
+    },
+    {
+      "path": "test/clean_room/provider_host/mix.exs",
+      "sha256": "95949bd3d956cff86d9653e2d3a2499a15909e8649e9ed95a2dcbbc71eade949"
+    },
+    {
+      "path": "test/clean_room/provider_host/mix.lock",
+      "sha256": "f77638eeed00fc0a7fa524219ad2fe0c0fd3c147b0436979b925bc4f236f4404"
+    },
+    {
+      "path": "test/integration/phase15_par_authorization_e2e_test.exs",
+      "sha256": "9193f4dbbd075242717293c64dacf8d72c59105e43c196250ed60fb4baee4e30"
+    },
+    {
+      "path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+      "sha256": "81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4"
+    },
+    {
+      "path": "test/lockspire/protocol/authorization_request_test.exs",
+      "sha256": "0e3a6c753cf260d8a6ae9789fb4423eb2e00c9192f934501ab92283b712e6801"
+    },
+    {
+      "path": "test/lockspire/protocol/pushed_authorization_request_test.exs",
+      "sha256": "c1a1cbd038d3e3cd6a8d75423aa04a3102c8a45954cd997f6a53c7187bbe7a03"
+    },
+    {
+      "path": "test/lockspire/qualification_ledger_contract_test.exs",
+      "sha256": "7c44014c9471e901c935b6e521dadb5606fe3f7a25ee6ff002f23b99fda1e0c6"
+    },
+    {
+      "path": "test/lockspire/web/authorize_controller_test.exs",
+      "sha256": "92d53caee7c915ffddde13ce1181fb10c19d0d1c778be7c976cd12dc5e19bf05"
+    },
+    {
+      "path": "test/lockspire/web/discovery_controller_test.exs",
+      "sha256": "4c905b449e18b908f998245a6775113a8ad6ef620a58ba206a2c96455d4fd4fc"
+    },
+    {
+      "path": "test/lockspire/web/pushed_authorization_request_controller_test.exs",
+      "sha256": "9f6a6fc3ca09999af04fdb3ff21c427e621e5c30a82121f7b69facd54624e7b8"
+    },
+    {
+      "path": "test/support/config_case.ex",
+      "sha256": "69a01e44089d3b5a52a16625d6de144d9ad20e442506a2b2b9b18530c7a5e743"
+    },
+    {
+      "path": "test/support/test_account_resolver.ex",
+      "sha256": "bd8e9f723a67b3bd719084ea9a37cb6df52aebefa38da9bc209737b3bc3fe6f8"
+    },
+    {
+      "path": "test/test_helper.exs",
+      "sha256": "3be10d296761d2e91637603b62a9004bb274ea8abc920f20a930cbdc054bc5d2"
+    }
+  ]
+}

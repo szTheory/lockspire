@@ -1,5 +1,5 @@
 defmodule Lockspire.Quality.ProofQualityBaselineTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias Lockspire.TestSupport.QualityBaseline
 

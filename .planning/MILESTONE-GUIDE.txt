@@ -73,6 +73,15 @@ case justify it; never imply compliance or certification from a test suite.
 
 MILESTONE SELECTION LOOP
 
+Use the normal GSD ceremony for every new milestone. Start with
+$gsd-new-milestone and preserve its goal/version confirmation, research choice,
+requirements definition, roadmap approval and commit gates. Existing research,
+candidate rankings and proposal phase lists are inputs, not substitutes for
+that workflow. Then use the configured discuss/plan/check/execute/verify/review
+steps and GSD milestone audit/closeout. Do not implement a proposal directly or
+treat its lettered build stages as approved GSD phases. This applies equally to
+security work and UI quality work (owner reaffirmed 2026-10-25).
+
 Before opening a milestone:
 
 1. Establish the real baseline from the current branch, GSD artifacts,
@@ -106,23 +115,23 @@ Before opening a milestone:
    material risk, choose sustainment or stop. There is no quota to create a
    feature milestone.
 
-CURRENT ROADMAP CANDIDATES (PROVISIONAL; REFRESHED 2026-10-24)
+CURRENT ROADMAP DIRECTION (REFRESHED 2026-10-25)
 
-Near term: v1.46 is archived. The user selected v1.47 OAuth/OIDC Core
-Interoperability & Hardening, starting at Phase 171. Reconcile accumulated
-prior delivery and establish accepted clean green main before implementation.
-Qualify retained supplemental OIDC/FAPI findings at exact current identities,
-then select supported authorization-response and PAR/profile cases. Historical
-suite failures are investigation inputs, not current bug or certification
-claims. Full external conformance remains supplemental.
+Near term: v1.47 is complete and archived through Phase 174. The owner accepted
+the recommended SEC-01-first order and selected v1.48 Client Authentication Key
+Isolation & Rotation. Define dedicated-purpose verifier-key custody, legacy
+compatibility, mixed-version rollout, safe rewrap/status and key-loss recovery.
+Preserve GSD research, requirements and roadmap gates. Fresh exact-main
+acceptance and retained-delivery reconciliation precede product implementation.
 
-Mid term: Provisional v1.48 isolates and rotates client_secret_jwt verifier
-encryption keys (SEC-01), with legacy compatibility, mixed-version rollout,
-rewrap/status and loss recovery. Token lifecycle/concurrency work follows only
-from a reproduced gap or material uncovered invariant; much already exists.
-OPS-03 maintenance paging needs scale evidence; KEK-04 KMS/Vault needs a real
-adopter custody requirement. MILESTONE-ARC.md owns ranking, triggers and exit
-evidence. Do not reserve downstream phases or pre-authorize candidates.
+Mid term: UI Stories & Continuous Quality is the next substantial candidate
+after SEC-01. Preserve its completed design interview and confirmed scope below;
+select its version/phases through a future new-milestone workflow. Token
+lifecycle/concurrency work follows only from a reproduced gap or material
+uncovered invariant; much already exists. OPS-03 maintenance paging needs scale
+evidence; KEK-04 KMS/Vault needs a real adopter custody requirement.
+MILESTONE-ARC.md owns ranking, triggers and exit evidence. Do not reserve
+downstream phases or pre-authorize candidates.
 
 Long term: Maintain, secure, and improve the embedded Phoenix provider as
 real use reveals needs. Consider new protocol or operator scope only when
@@ -159,6 +168,77 @@ UPSTREAM RESEARCH AND DECISION POSTURE (USER DIRECTION 2026-10-24)
   speculative detailed plans for future milestones or force empty phases when
   evidence disproves their premise. No guarantee of a perfect one-shot result
   substitutes for verification.
+
+UI QUALITY CANDIDATE AND STANDING POSTURE (USER DIRECTION 2026-10-25)
+
+At each milestone start/close, include the unversioned candidate in
+.planning/research/ui-quality-engine/MILESTONE-PROPOSAL.md when refreshing the
+rolling ranking. Read its INVENTORY.md and RECOMMENDATIONS.md before repeating
+discovery. This is a recorded proposal, not a selected milestone, reserved
+version/phase sequence or authorization to implement. SEC-01 retains its
+preferred provisional position; UI quality is recommended next after it unless
+fresh security/adopter evidence changes the order. ROADMAP.md and
+MILESTONE-ARC.md retain their current scheduling/ranking authority.
+
+The owner wants real UI compositions reviewable from primitives through groups,
+areas, sections and complete jobs, using plausible synthetic adopter situations
+and the production presentation components. Curate existing operator personas
+and jobs; admit meaningful happy/error/boundary classes and prune impossible or
+redundant stories. Favor intentionally designed typography, hierarchy, restrained
+color, clear user-facing domain language, natural common/expert workflows,
+mobile-first reflow and light/dark parity. Keep actual host ownership and
+read-only queues. Reuse existing tokens, fixtures, scorecards, CDP checks and
+bounded Impeccable review. Tooling remains maintainer-only, outside production
+and Hex; no public theme engine, font downloads or paid/open-ended critic loop.
+
+Use phoenix_storybook for the layered story review surface. The owner explicitly
+reaffirmed this choice on 2026-10-25. Use its existing story discovery,
+variations, navigation and rendering facilities; do not hand-roll a replacement
+storybook/gallery. Local code is limited to Lockspire components, scenario
+adapters and small manifest/check integration helpers around the package. Keep
+the dependency in the maintainer host's dev/test scope, outside the published
+library runtime. Exact compatible version selection belongs to GSD research.
+
+Owner-confirmed interview decisions (2026-10-25): inventory the whole UI, then
+complete layered coverage for app setup/configuration and token/consent
+investigation in the first UI milestone. Establish a rendered baseline and fix
+observed usability/design defects with before/after evidence; installing tools
+alone is insufficient, and no defect quota is implied. Track other jobs for
+later expansion. After adoption, every UI PR maintains its relevant stories and
+prunes newly impossible scenarios. GLOSSARY.md distinguishes operator persona,
+adopter profile, scenario and story variation; PRODUCT.md still owns UI copy.
+These decisions do not open a milestone; the owner confirmed the final design
+summary on 2026-10-25 and the interview is complete.
+
+Interview Q5-Q7: host phoenix_storybook in the adoption demo's dev/test scope;
+DB-free story rendering does not require DB-free demo startup. Complete Apps
+list/create/detail/per-app settings/credentials and Tokens/Consents
+list/detail/investigation pivots/supported revocation. Provider-wide Security,
+Keys, registration rules and operational queues are later expansion scope.
+By UI milestone completion, reliable mechanical checks must block new confirmed
+regressions in covered UI. Tune during the pilot, explicitly triage uncertain
+findings and retain connected behavior/security proof. Design judgment remains
+advisory; an unresolved check cannot silently become a pass.
+
+Interview Q8-Q10: experimentally validate incremental PR targets of <=60 seconds
+static and <=5 minutes warm / <=8 minutes cold browser checks, at most two shards.
+Optimize or explicitly revise budget/coverage through GSD if exceeded; do not
+silently drop required cases. Initial scenarios cover an empty provider, busy
+partner program, mixed-script support and experienced token-reuse investigation,
+plus relevant valid single-tenant/account-less cases. Merge redundant profiles.
+A PR touching uncovered UI adds the changed area and meaningful page-context
+stories without migrating the whole section; shared changes check affected
+existing stories. Q1-Q10 and the final shared-understanding summary are accepted;
+the decision frontier is empty and the interview is complete. Carry these into
+the next $gsd-new-milestone selection without repeating settled questions unless
+new conflicting evidence emerges. No milestone selection or implementation is
+implied by interview closeout.
+
+During unrelated milestones, only refresh relevance and carry useful scenario
+requirements forward; do not turn every boundary into a broad UI audit. When
+UI work is selected, prove a small complete job before expanding stories or
+extracting all LiveViews, measure CI cost, preserve connected behavioral proof
+and record findings/decisions so later sessions do not restart from scratch.
 
 DEPENDENCY POSTURE (USER DIRECTION 2026-10-24)
 

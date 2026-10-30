@@ -1,0 +1,10 @@
+{
+  "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 ERL_FLAGS='+S 4' python3 -m unittest discover -s test/acceptance -p 'client_verifier_delivery_test.py' -k test_source_gate_rejects_caller_claimed_stage_without_owned_capture",
+  "exitCode": 1,
+  "output": "F\n======================================================================\nFAIL: test_source_gate_rejects_caller_claimed_stage_without_owned_capture (client_verifier_delivery_test.SemanticDeliveryRejections.test_source_gate_rejects_caller_claimed_stage_without_owned_capture)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"test/acceptance/client_verifier_delivery_test.py\", line 218, in test_source_gate_rejects_caller_claimed_stage_without_owned_capture\n    with self.assertRaises(verifier_delivery.DeliveryError):\n         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: DeliveryError not raised\n\n----------------------------------------------------------------------\nRan 1 test in 0.001s\n\nFAILED (failures=1)",
+  "targetTest": "test_source_gate_rejects_caller_claimed_stage_without_owned_capture",
+  "targetFile": "test/acceptance/client_verifier_delivery_test.py",
+  "expected": "_check_source rejects caller-supplied arbitrary one-stage green counts and digest strings without a trusted owned-source capture or complete package proof",
+  "actual": "The target assertion failed because _check_source accepted one invented stage with a syntactically valid digest",
+  "semanticAssessment": "Behavioral RED: valid command text, source revision and covered-input labels were supplied, but no trusted guard capture existed; acceptance occurred only because the current validator trusts caller-asserted stage summaries."
+}

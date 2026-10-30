@@ -4,6 +4,7 @@ defmodule Lockspire.Admin.Clients do
   """
 
   alias Lockspire.Clients
+  alias Lockspire.Clients.SecretMaterial
   alias Lockspire.Clients.RegistrationResult
   alias Lockspire.ClientLifecycle
   alias Lockspire.Diagnostics.RemoteJwks
@@ -174,9 +175,8 @@ defmodule Lockspire.Admin.Clients do
     actor = actor_from_attrs(attrs)
 
     with {:ok, %Client{} = client} <- get_client(client_id),
-         :ok <- ensure_confidential_client(client) do
-      secret_material = Clients.rotate_secret_material()
-
+         :ok <- ensure_confidential_client(client),
+         {:ok, secret_material} <- SecretMaterial.generate(client.client_id, []) do
       case ClientLifecycle.rotate_operator_secret(
              client,
              secret_material,

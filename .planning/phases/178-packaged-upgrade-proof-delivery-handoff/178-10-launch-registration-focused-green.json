@@ -1,0 +1,23 @@
+{
+  "command": "PYTHONPATH=test/acceptance python3 -m unittest client_verifier_launch_registration_test client_verifier_session_authority_test client_verifier_wrapper_lifecycle_test client_verifier_process_supervision_test owned_source_tests_test client_frozen_package_layout_test",
+  "environmentSelection": {
+    "ASDF_ELIXIR_VERSION": "1.19.5-otp-28",
+    "ASDF_ERLANG_VERSION": "28.5",
+    "ERL_FLAGS": "+S 4",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "private_environment_transport": "loaded and merged only in memory"
+  },
+  "exitCode": 0,
+  "executedTests": 47,
+  "elapsedSeconds": 19.333,
+  "stdoutBytes": 0,
+  "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderrBytes": 147,
+  "stderrSha256": "de65fbda32ebf45897ff6eaa44537b420cbc4e6fc04b13620a4f082d7b6f3981",
+  "testedOwnedSourceSha256": {
+    "scripts/acceptance/clean_room/package_input.py": "ef0779510c1a36e356b1b919a68f6aebd2bc718e5cfd848a6b7945a3f00f157e",
+    "test/acceptance/client_verifier_launch_registration_test.py": "d5e3a45a6433d04d4f2d783ea80a2cc6a313c8184acda94baf075ef19febcd6d"
+  },
+  "ownedSourceUnchanged": true,
+  "scope": "Cold true/git/pg_isready --version/actual Mix --version caller; stdio/env/cwd/FD/PID/exec errors/no premature side effect/early creator death; existing process authority/lifecycle/sourceguard/layout. No SQL/provider/packageproducer/canonicalCI."
+}

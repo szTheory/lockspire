@@ -1,0 +1,145 @@
+{
+  "alternative_context_restore_command": "$gsd-resume-work",
+  "artifact_retention": {
+    "instruction": "Preserve root safe receipt/archive copies; verify exact digests and custody before reuse. Missing artifacts do not permit reconstruction or restamping of old results.",
+    "root": ".artifacts/phase178",
+    "tracked_by_git": false
+  },
+  "async_jobs": [],
+  "background_process_scope": "No newly active workflow-owned local jobs; historical unknown closures remain unknown and unwaived. No process/DB inspection was performed.",
+  "background_processes": [],
+  "blockers": [
+    {
+      "description": "Dialyzer pattern_match_cov at operation_context.ex:95",
+      "type": "technical",
+      "workaround": "Reproduce and fix the exact warning without weakening failure/key checks."
+    },
+    {
+      "description": "Current Integration and Minimum jobs failed; inner causes UNKNOWN",
+      "type": "technical",
+      "workaround": "Read current job step metadata and RAM-only finite failure witnesses before selecting a correction."
+    }
+  ],
+  "blocking_constraints": [
+    {
+      "name": "ambient_database_selection",
+      "prevention": "OwnedSourceTests plus explicit runtime and fresh private owned PostgreSQL; never shared/default DB inspection or reset.",
+      "severity": "blocking"
+    },
+    {
+      "name": "raw_child_diagnostics",
+      "prevention": "RAM-only raw bytes; finite typed facts/counts/hashes/validated locations; no invented causes.",
+      "severity": "blocking"
+    },
+    {
+      "name": "lost_handle_identity_custody",
+      "prevention": "Retain original handle/token before fallible observer; durable original journal and typed terminal capture; no reconstruction or PID guessing.",
+      "severity": "blocking"
+    },
+    {
+      "name": "premature_dependent_teardown",
+      "prevention": "Confirm inner original groups before DB/data/root deletion; independent original-token PG shutdown is allowed with retained data.",
+      "severity": "blocking"
+    },
+    {
+      "name": "evidence_restamping",
+      "prevention": "Preserve exact source/runner/execution/archive/tree and earlier failed epochs; requalify changed inputs.",
+      "severity": "blocking"
+    }
+  ],
+  "completed_tasks": [
+    {
+      "id": 1,
+      "name": "Reviewed candidate publication and actual hosted identity",
+      "progress": "Exact approved P push/body complete; failing hosted graph and actual checkout relation still require resolution.",
+      "status": "in_progress"
+    }
+  ],
+  "context_notes": "Resume existing Plan 11 correction work with no wave filter. Current failure causes supersede obsolete33db resume notes; old notes remain in pre-handoff commit history. Do not ask to resume routine local work.",
+  "decisions": [
+    {
+      "decision": "Continue routine scoped local fixes/tests/reviews/commits autonomously without wave babysitting",
+      "phase": "178",
+      "rationale": "Previously explicit owner authorization/preferences remain active."
+    },
+    {
+      "decision": "Do not replay exact publication or advance to Plan 12",
+      "phase": "178",
+      "rationale": "Publication already complete, required Plan 11 CI is not passing."
+    }
+  ],
+  "essential_evidence_committed": true,
+  "human_actions_pending": [
+    {
+      "action": "Authorize an eventual new exact remote update only after corrected local work is complete and reviewable",
+      "blocking": false,
+      "context": "Previous exact cc61cffc push/body approval is consumed. No approval is needed to resume routine authorized local work."
+    }
+  ],
+  "identities": {
+    "base_main": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+    "candidate_source": "50d67751a7844dee2f5f595195a6ab455e313fc6",
+    "evidence_commit": "7d8306d1e7c1a7ebdfc8a2aa75ce9dea09af164c",
+    "execution_runner": "1757638a7770bb6f09c3b085f002fa7c8b7ed518",
+    "local_tracking_head_before_handoff": "523699ee8b13d8948473efd8c757c4a825f59b98",
+    "published_head": "cc61cffc563fc8df141313c26442186c0b4645a3"
+  },
+  "local_proof": {
+    "installed_host_scenarios": 96,
+    "lifetime_checks": 47,
+    "lifetime_scenarios": 9,
+    "properties": 2,
+    "selected_inputs": 1079,
+    "source_failures": 0,
+    "source_tests": 2456,
+    "verifier_cases": 64,
+    "verifier_receipts": 26
+  },
+  "native_package_host_record": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-11-CORRECTED-NATIVE-PACKAGE-HOST-EVIDENCE-50d6775.json",
+  "native_package_host_record_sha256": "d13de4726529878af72145f334018ae0b12972c55a9cc7a38e00fb486f00aba3",
+  "next_action": "Read current handoff and terminal CI record, demonstrate structural safeguards, recheck refs read-only, then diagnose current Integration job123180682053 and Minimum job123180682125 and reproduce Dialyzer warning job123180682056.",
+  "phase": "178",
+  "phase_dir": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff",
+  "phase_name": "Packaged Upgrade Proof & Delivery Handoff",
+  "phase_progress": {
+    "phase_plans_complete": 10,
+    "phase_plans_total": 12,
+    "plan_11": "incomplete",
+    "plan_12": "unstarted",
+    "requirements_complete": 16,
+    "requirements_pending": 2
+  },
+  "plan": 11,
+  "remaining_tasks": [
+    {
+      "id": 2,
+      "name": "Passing complete same-attempt hosted graph and requirement evidence",
+      "progress": "Current graph terminal with three failures; no source fix yet.",
+      "status": "in_progress"
+    },
+    {
+      "depends_on": "178-11",
+      "id": "178-12",
+      "name": "Milestone audit and main/delivery handoff",
+      "status": "not_started"
+    }
+  ],
+  "remote_mutation_authorized": false,
+  "resume_command": "$gsd-execute-phase 178",
+  "status": "paused",
+  "task": 2,
+  "temporary_evidence_is_supplemental": true,
+  "terminal_ci_record": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-11-TERMINAL-CI-40792440885.json",
+  "terminal_ci_record_sha256": "166b48ab14dd8c6ba1aa1b94b9c3aec9328e977503caec526170b9618ad90843",
+  "timestamp": "2026-10-29T01:48:56.293Z",
+  "total_tasks": 2,
+  "uncommitted_files": [
+    " M .planning/STATE.md",
+    " M .planning/phases/178-packaged-upgrade-proof-delivery-handoff/.continue-here.md",
+    " M .planning/phases/178-packaged-upgrade-proof-delivery-handoff/continue.md",
+    "?? .planning/HANDOFF.json",
+    "?? .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-11-TERMINAL-CI-40792440885.json"
+  ],
+  "uncommitted_files_observation": "Measured after all handoff files were created and immediately before the handoff commit. All listed entries are handoff metadata intended to commit together; recheck actual status on resume.",
+  "version": "1.0"
+}

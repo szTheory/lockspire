@@ -19,9 +19,11 @@ import os
 from pathlib import Path
 import re
 import signal
+import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from http.cookies import SimpleCookie
 from urllib.parse import parse_qs, urlencode, urljoin, urlparse
@@ -31,7 +33,10 @@ CLEAN_ROOM_DIR = Path(__file__).resolve().parent / "clean_room"
 sys.path.insert(0, str(CLEAN_ROOM_DIR))
 
 from build_client import patch_jose_record_extractors
-from build_provider import prepare_provider, run_child_command, run_child_command_output
+from build_provider import (
+    prepare_provider, provider_environment as prepared_provider_environment,
+    run_child_command, run_child_command_output,
+)
 from lifetime_receipts import validate_lifetime_receipt, write_lifetime_receipt
 from selected_receipts import (
     SELECTED_CASE_IDS,
@@ -40,16 +45,20 @@ from selected_receipts import (
 )
 from package_input import (
     PackageInputError,
+    _OWNED_IDENTITIES,
     clean_room_database_url,
     copy_child_template,
     locked_environment,
     package_source,
     prepare_package,
     probe_environment,
+    owned_session_state,
+    stop_process_group,
     verify_candidate_host,
     verify_candidate_input,
     candidate_host_provenance,
     verify_child,
+    start_owned_session,
 )
 from redaction import Redactor, SentinelSet, safe_failure_summary
 from processes import allocate_loopback_port
@@ -62,10 +71,42 @@ ACTIVE_REDACTOR: Redactor | None = None
 CUSTOM_EXAMPLE_EVIDENCE: dict[str, object] | None = None
 SELECTED_PAR_SHARED: dict[str, object] = {}
 RUN_ROOT_MARKER = ".lockspire-clean-room-owner"
+STARTED_HOST_PROCESSES: list[subprocess.Popen[bytes]] = []
+LIFETIME_CALLBACKS = frozenset({
+    "lifetime_contract",
+    "transaction_authority",
+    "register_client",
+    "lock_clients",
+    "replace_client_registration",
+    "transact",
+})
+_CALLBACK_PREFIX = b"LIFETIME_ADAPTER_CALLBACK "
+_CALLBACK_MAX_LINE_BYTES = 128
+_CALLBACK_MAX_COUNT = 100_000
 
 
 class JourneyInterrupted(Exception):
     """Raised from SIGINT/SIGTERM so the runner reaches its teardown path."""
+
+
+class RetainableTemporaryDirectory:
+    """Remove an owned journey root only after child and database cleanup pass."""
+
+    def __init__(self, prefix: str) -> None:
+        self.prefix = prefix
+        self.path: Path | None = None
+        self.preserve = True
+
+    def __enter__(self) -> str:
+        self.path = Path(tempfile.mkdtemp(prefix=self.prefix))
+        return str(self.path)
+
+    def __exit__(self, _exc_type: object, _exc: object, _traceback: object) -> bool:
+        if self.preserve:
+            return False
+        if self.path is not None and self.path.exists():
+            shutil.rmtree(self.path)
+        return False
 
 
 def interruption_handler(signum: int, _frame: object) -> None:
@@ -183,6 +224,16 @@ def safe_oauth_error_code(response: dict[str, object]) -> str:
     return ""
 
 
+def selected_package_source_revision(current_head: str, environment: dict[str, str] | None = None) -> str:
+    """Prefer the authenticated package source over the hosted synthetic checkout."""
+    selected = os.environ if environment is None else environment
+    return (
+        selected.get("LOCKSPIRE_LIFETIME_SOURCE_REVISION")
+        or selected.get("LOCKSPIRE_EXPECTED_CANDIDATE_SOURCE_REVISION")
+        or current_head
+    )
+
+
 def redirect(response: dict[str, object], label: str) -> str:
     value = response["headers"].get("location")  # type: ignore[union-attr]
     if not isinstance(value, str):
@@ -218,27 +269,155 @@ def wait_ready(origin: str) -> None:
     raise AssertionError("listener readiness timed out")
 
 
-def start_process(child: Path, environment: dict[str, str], log_path: Path) -> subprocess.Popen[bytes]:
-    handle = log_path.open("wb")
-    process = subprocess.Popen(
-        ("mix", "run", "--no-halt"), cwd=child, env=environment, stdin=subprocess.DEVNULL,
-        stdout=handle, stderr=subprocess.STDOUT, close_fds=True, start_new_session=True,
+class CallbackCounter:
+    """Count allowlisted provider callbacks while discarding every other byte."""
+
+    def __init__(self, stream: object) -> None:
+        self._stream = stream
+        self._counts: Counter[str] = Counter()
+        self._condition = threading.Condition()
+        self._done = False
+        self._failed = False
+        self._thread = threading.Thread(target=self._read, name="callback-counter", daemon=True)
+        self._thread.start()
+
+    def _accept_line(self, line: bytes, oversized: bool) -> None:
+        if oversized or not line.startswith(_CALLBACK_PREFIX):
+            return
+        try:
+            callback = line[len(_CALLBACK_PREFIX):].decode("ascii")
+        except UnicodeDecodeError:
+            return
+        if callback not in LIFETIME_CALLBACKS:
+            return
+        with self._condition:
+            if self._counts[callback] < _CALLBACK_MAX_COUNT:
+                self._counts[callback] += 1
+            self._condition.notify_all()
+
+    def _read(self) -> None:
+        line = bytearray()
+        oversized = False
+        try:
+            fd = self._stream.fileno()  # type: ignore[attr-defined]
+            while True:
+                chunk = os.read(fd, 4096)
+                if not chunk:
+                    break
+                for byte in chunk:
+                    if byte == 10:
+                        self._accept_line(bytes(line), oversized)
+                        line.clear()
+                        oversized = False
+                    elif not oversized:
+                        if len(line) < _CALLBACK_MAX_LINE_BYTES:
+                            line.append(byte)
+                        else:
+                            line.clear()
+                            oversized = True
+        except Exception:
+            self._failed = True
+        finally:
+            with self._condition:
+                self._done = True
+                self._condition.notify_all()
+
+    def snapshot(self, *, wait_for_all: bool = False, timeout: float = 5.0) -> dict[str, int]:
+        deadline = time.monotonic() + timeout
+        with self._condition:
+            while wait_for_all and not self._done and not all(self._counts.get(name, 0) for name in LIFETIME_CALLBACKS):
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    break
+                self._condition.wait(remaining)
+            return dict(sorted(self._counts.items()))
+
+    def join(self, timeout: float = 5.0) -> bool:
+        self._thread.join(timeout)
+        return not self._thread.is_alive() and not self._failed
+
+
+def start_process(child: Path, environment: dict[str, str]) -> subprocess.Popen[bytes]:
+    process = start_owned_session(
+        ("mix", "run", "--no-halt"), cwd=child,
+        env=dict(environment, CLEAN_ROOM_HTTP_SERVER="true"), stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True,
     )
-    process._clean_room_log_handle = handle  # type: ignore[attr-defined]
+    STARTED_HOST_PROCESSES.append(process)
+    process._clean_room_identity = _OWNED_IDENTITIES.get(process.pid)  # type: ignore[attr-defined]
+    if process.stdout is None:
+        stop_process(process)
+        raise PackageInputError("provider output counter could not start")
+    try:
+        process._clean_room_callback_counter = CallbackCounter(process.stdout)  # type: ignore[attr-defined]
+    except BaseException:
+        stop_process(process)
+        raise
     return process
 
 
-def stop_process(process: subprocess.Popen[bytes] | None) -> None:
+def stop_process(process: subprocess.Popen[bytes] | None) -> bool:
     if process is None:
-        return
-    if process.poll() is None:
-        os.killpg(process.pid, signal.SIGTERM)
+        return True
+    identity = getattr(process, "_clean_room_identity", None)
+    try:
+        stopped = stop_process_group(process, grace=5)
+    except Exception:
+        stopped = False
+    if not stopped and identity is not None:
         try:
-            process.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            os.killpg(process.pid, signal.SIGKILL)
-            process.wait(timeout=5)
-    process._clean_room_log_handle.close()  # type: ignore[attr-defined]
+            stopped = owned_session_state(identity) == "absent"
+        except Exception:
+            stopped = False
+    counter = getattr(process, "_clean_room_callback_counter", None)
+    counter_stopped = True
+    if stopped:
+        try:
+            if counter is not None and not counter.join(timeout=5):
+                counter_stopped = False
+        except Exception:
+            counter_stopped = False
+        finally:
+            if process.stdout is not None:
+                try:
+                    process.stdout.close()
+                except OSError:
+                    counter_stopped = False
+    return stopped and counter_stopped
+
+
+def stop_processes(processes: tuple[subprocess.Popen[bytes] | None, ...]) -> bool:
+    all_stopped = True
+    for process in processes:
+        try:
+            process_stopped = stop_process(process)
+        except Exception:
+            process_stopped = False
+        all_stopped = process_stopped and all_stopped
+    return all_stopped
+
+
+def stop_started_processes() -> bool:
+    return stop_processes(tuple(STARTED_HOST_PROCESSES))
+
+
+def cleanup_child_databases(
+    processes_stopped: bool,
+    client_child: Path | None,
+    client_environment: dict[str, str] | None,
+    provider_child: Path | None,
+    provider_environment: dict[str, str] | None,
+) -> bool:
+    if not processes_stopped:
+        return False
+    try:
+        if client_child is not None and client_environment is not None:
+            drop_child_database(client_child, client_environment, "client")
+        if provider_child is not None and provider_environment is not None:
+            drop_child_database(provider_child, provider_environment, "provider")
+    except (AssertionError, OSError, subprocess.SubprocessError):
+        return False
+    return True
 
 
 def drop_child_database(child: Path, environment: dict[str, str], label: str) -> None:
@@ -389,13 +568,9 @@ def decoded_secret_payload(body: object) -> dict[str, object]:
 
 
 def scan_evidence(run_root: Path, redactor: Redactor) -> None:
-    for path in sorted(run_root.glob("*.log")):
-        evidence = redactor.text(path.read_text(errors="replace"))
-        path.write_text(evidence, encoding="utf-8")
-        redactor.assert_safe(evidence)
-        if re.search(r"(?i)(authorization|cookie|set-cookie)\s*[:=]\s*(?!\[REDACTED\])\S", evidence):
-            raise AssertionError(f"unsafe raw header value in {path.name}")
-    print("evidence scan complete")
+    if any(run_root.glob("*.log")):
+        raise AssertionError("raw child log files are not an allowed retained evidence format")
+    print("child output was not persisted")
 
 
 def browser_authorize(client: Browser, provider: Browser, *, account_id: str = "clean-room-user", before_callback=None, callback_transform=None) -> tuple[dict[str, object], str]:
@@ -1047,7 +1222,7 @@ def run_dcr_lifetime(
     provider_child: Path,
     provider_environment: dict[str, str],
     handoff: Path,
-    provider_log: Path,
+    provider_process: subprocess.Popen[bytes],
     *,
     custom: bool = False,
 ) -> list[dict[str, object]]:
@@ -1139,7 +1314,8 @@ def run_dcr_lifetime(
         replacement = json.loads(str(replaced["body"]))
         register_secret(replacement.get("registration_access_token"))
         replacement_status = 200
-    callback_counts = callback_counts_from_log(provider_log) if is_custom else {}
+    callback_counter = getattr(provider_process, "_clean_room_callback_counter", None)
+    callback_counts = callback_counter.snapshot(wait_for_all=True) if is_custom and callback_counter is not None else {}
     if is_custom and not all(
         callback_counts.get(callback, 0) > 0
         for callback in ("lifetime_contract", "transaction_authority", "register_client", "lock_clients", "replace_client_registration", "transact")
@@ -1441,11 +1617,6 @@ def run_expired_and_disabled_app(
         "audit_counts": {"host_disable": disabled_audit_after - disabled_audit_before},
         "counts": {"executed": 7, "passed": 7, "failed": 0, "skipped": 0},
     }
-
-
-def callback_counts_from_log(path: Path) -> dict[str, int]:
-    counts = Counter(re.findall(r"^LIFETIME_ADAPTER_CALLBACK ([a-z_]+)$", path.read_text(encoding="utf-8"), re.MULTILINE))
-    return dict(sorted(counts.items()))
 
 
 def run_packaged_adapter_example(package_root: Path, provider_child: Path, environment: dict[str, str]) -> None:
@@ -1829,8 +2000,9 @@ def run_dpop(
         raise AssertionError("dpop exact proof replay was not rejected")
     print("dpop exact proof replay rejected")
 
-    stop_process(provider_process)
-    provider_process = start_process(provider_child, provider_environment, run_root / "provider-restart.log")
+    if not stop_process(provider_process):
+        raise PackageInputError("provider process did not stop cleanly")
+    provider_process = start_process(provider_child, provider_environment)
     # Publish the replacement before readiness or replay assertions.  If either
     # fails, the outer teardown still owns this live process and can release the
     # database deterministically.
@@ -1904,7 +2076,7 @@ def assert_bare_mix_tasks(provider_child: Path, provider_environment: dict[str, 
 
 
 def main(argv: list[str]) -> int:
-    global ACTIVE_REDACTOR
+    global ACTIVE_REDACTOR, PROVIDER_ORIGIN, CLIENT_ORIGIN
     parser = argparse.ArgumentParser()
     parser.add_argument("--only", action="append", choices=("happy_path", "boundary", "lifecycle", "negative", "dpop", "dcr_lifetime", "selected_authorization_par"))
     parser.add_argument("--lifetime-leg", action="append", choices=("fresh", "custom", "legacy"))
@@ -1993,6 +2165,10 @@ def main(argv: list[str]) -> int:
     kek = base64.b64encode(os.urandom(32)).decode("ascii")
     os.environ["LOCKSPIRE_KEY_ENCRYPTION_KEY"] = kek
     register_secret(kek)
+    if STARTED_HOST_PROCESSES:
+        if not stop_started_processes():
+            return 1
+        STARTED_HOST_PROCESSES.clear()
     provider_process = client_process = None
     provider_child = client_child = None
     provider_environment = client_environment = None
@@ -2004,32 +2180,40 @@ def main(argv: list[str]) -> int:
     candidate: dict[str, str] | None = None
     candidate_binding: dict[str, object] | None = None
     source_revision = ""
-    with tempfile.TemporaryDirectory(prefix="lockspire-clean-room-journey-") as temporary:
+    run_directory = RetainableTemporaryDirectory(prefix="lockspire-clean-room-journey-")
+    with run_directory as temporary:
         run_root = Path(temporary)
-        run_root_owner = claim_run_root(run_root)
+        run_root_owner = None
         runner_tmpdir = run_root / "mix-tmp"
-        runner_tmpdir.mkdir(mode=0o700)
         previous_tmpdir = os.environ.get("TMPDIR")
-        # Mix Sync lock files live below TMPDIR.  Every acceptance run gets an
-        # owned directory so a concurrent Mix process cannot race its lock-file
-        # replacement or cleanup against this run.
-        os.environ["TMPDIR"] = str(runner_tmpdir)
-        provider_port, client_port = configure_origins()
-        # The router overlay captures its audience while the child host compiles
-        # during prepare_provider, so these origins must be inherited before
-        # that call rather than added only to the later server environment.
-        os.environ.update({
-            "CLEAN_ROOM_PROVIDER_ORIGIN": PROVIDER_ORIGIN,
-            "CLEAN_ROOM_CLIENT_ORIGIN": CLIENT_ORIGIN,
-        })
-        provider_database = clean_room_database_url("provider")
-        client_database = clean_room_database_url("client")
+        previous_provider_origin = os.environ.get("CLEAN_ROOM_PROVIDER_ORIGIN")
+        previous_client_origin = os.environ.get("CLEAN_ROOM_CLIENT_ORIGIN")
+        previous_provider_origin_value = PROVIDER_ORIGIN
+        previous_client_origin_value = CLIENT_ORIGIN
+        provider_port = client_port = None
+        provider_database = client_database = None
 
         def track_provider_process(process: subprocess.Popen[bytes]) -> None:
             nonlocal provider_process
             provider_process = process
 
         try:
+            run_root_owner = claim_run_root(run_root)
+            runner_tmpdir.mkdir(mode=0o700)
+            # Mix Sync lock files live below TMPDIR. Every acceptance run gets an
+            # owned directory so a concurrent Mix process cannot race its lock-file
+            # replacement or cleanup against this run.
+            os.environ["TMPDIR"] = str(runner_tmpdir)
+            provider_port, client_port = configure_origins()
+            # The router overlay captures its audience while the child host compiles
+            # during prepare_provider, so these origins must be inherited before
+            # that call rather than added only to the later server environment.
+            os.environ.update({
+                "CLEAN_ROOM_PROVIDER_ORIGIN": PROVIDER_ORIGIN,
+                "CLEAN_ROOM_CLIENT_ORIGIN": CLIENT_ORIGIN,
+            })
+            provider_database = clean_room_database_url("provider")
+            client_database = clean_room_database_url("client")
             assert_owned_run_root(run_root, run_root_owner)
             probe_environment()
             assert_redaction_guard(redactor)
@@ -2037,8 +2221,13 @@ def main(argv: list[str]) -> int:
             package_root, _package_inventory, package_identity = prepare_package(run_root, selected_source)
             source_revision = package_identity.source_revision or ""
             current_head = subprocess.check_output(("git", "rev-parse", "HEAD"), cwd=Path(__file__).resolve().parents[2], text=True).strip()
-            if not source_revision or source_revision != current_head:
-                raise PackageInputError("package source revision differs from the current committed source")
+            expected_source = selected_package_source_revision(current_head)
+            if not source_revision or source_revision != expected_source:
+                raise PackageInputError("package source revision differs from its independently selected source")
+            if package_identity.kind == "frozen" and not package_identity.source_proof:
+                raise PackageInputError("frozen package source lacks authenticated owner proof")
+            if package_identity.kind == "checkout" and source_revision != current_head:
+                raise PackageInputError("checkout package source differs from the current committed source")
             if "selected_authorization_par" in args.only and subprocess.check_output(
                 ("git", "status", "--porcelain"), cwd=Path(__file__).resolve().parents[2], text=True
             ).strip():
@@ -2089,7 +2278,9 @@ def main(argv: list[str]) -> int:
                     "resolved_dependency_verified": provenance["resolved_dependency_verified"],
                 }
             auth_time_root = run_root
-            provider_environment = locked_environment(provider_child, "provider_host", dependency_cache_root(run_root))
+            provider_environment = prepared_provider_environment(
+                run_root, provider_child, cache_root=dependency_cache_root(run_root)
+            )
             provider_environment.update({"DATABASE_URL": provider_database, "PORT": str(provider_port), "LOCKSPIRE_ISSUER": PROVIDER_ORIGIN + "/lockspire", "CLEAN_ROOM_PROVIDER_ORIGIN": PROVIDER_ORIGIN, "CLEAN_ROOM_CLIENT_ORIGIN": CLIENT_ORIGIN, "CLEAN_ROOM_HANDOFF_DIR": str(handoff), "CLEAN_ROOM_SELECTED_AUTH_TIME_ROOT": str(auth_time_root), "CLEAN_ROOM_SELECTED_STALE_AUTH_TIME_FILE": str(auth_time_root / "selected-stale-auth-time-unix.txt"), "CLEAN_ROOM_SELECTED_FRESH_AUTH_TIME_FILE": str(auth_time_root / "selected-fresh-auth-time-unix.txt"), "SECRET_KEY_BASE": "clean-room-provider-secret-key-base-0123456789-abcdefghijklmnopqrstuvwxyz-0123456789"})
             if lifetime_leg == "custom":
                 provider_environment["CLEAN_ROOM_CUSTOM_LIFETIME_ADAPTER"] = "true"
@@ -2129,9 +2320,9 @@ def main(argv: list[str]) -> int:
                 client_child, client_environment = prepare_client(
                     run_root, client_database, handoff, client_port, package_root
                 )
-            provider_process = start_process(provider_child, provider_environment, run_root / "provider.log")
+            provider_process = start_process(provider_child, provider_environment)
             if client_child is not None and client_environment is not None:
-                client_process = start_process(client_child, client_environment, run_root / "client.log")
+                client_process = start_process(client_child, client_environment)
             wait_ready(PROVIDER_ORIGIN)
             if client_process is not None:
                 wait_ready(CLIENT_ORIGIN)
@@ -2144,7 +2335,7 @@ def main(argv: list[str]) -> int:
                     provider_child,
                     provider_environment,
                     handoff,
-                    run_root / "provider.log",
+                    provider_process,
                     custom=lifetime_leg == "custom",
                 )
             if "selected_authorization_par" in args.only:
@@ -2182,37 +2373,45 @@ def main(argv: list[str]) -> int:
             )), file=sys.stderr)
             result_code = 1
         finally:
-            try:
-                stop_process(client_process)
-                stop_process(provider_process)
-                cleanup["processes_stopped"] = all(process is None or process.poll() is not None for process in (client_process, provider_process))
-            except (OSError, subprocess.SubprocessError):
+            cleanup["processes_stopped"] = stop_started_processes()
+            if not cleanup["processes_stopped"]:
                 result_code = 1
-                cleanup["processes_stopped"] = False
                 print("clean-room process cleanup failed", file=sys.stderr)
-            try:
-                assert_owned_run_root(run_root, run_root_owner)
-            except AssertionError as error:
-                print(str(safe_failure_summary(
-                    stage="saas_journey", scenario="cleanup", event="runner_failure",
-                    field=type(error).__name__, count=1,
-                )), file=sys.stderr)
+            if run_root_owner is None:
+                cleanup["databases_removed"] = provider_child is None and client_child is None
             else:
                 try:
-                    if client_child is not None and client_environment is not None:
-                        drop_child_database(client_child, client_environment, "client")
-                    if provider_child is not None and provider_environment is not None:
-                        drop_child_database(provider_child, provider_environment, "provider")
-                    cleanup["databases_removed"] = True
-                except (AssertionError, OSError, subprocess.SubprocessError):
+                    assert_owned_run_root(run_root, run_root_owner)
+                except AssertionError as error:
                     result_code = 1
-                    cleanup["databases_removed"] = False
-                    print("clean-room database cleanup failed", file=sys.stderr)
+                    print(str(safe_failure_summary(
+                        stage="saas_journey", scenario="cleanup", event="runner_failure",
+                        field=type(error).__name__, count=1,
+                    )), file=sys.stderr)
+                else:
+                    cleanup["databases_removed"] = cleanup_child_databases(
+                        cleanup["processes_stopped"], client_child, client_environment,
+                        provider_child, provider_environment,
+                    )
+                    if not cleanup["databases_removed"]:
+                        result_code = 1
+                        print("clean-room database cleanup failed", file=sys.stderr)
             if previous_tmpdir is None:
                 os.environ.pop("TMPDIR", None)
             else:
                 os.environ["TMPDIR"] = previous_tmpdir
+            if previous_provider_origin is None:
+                os.environ.pop("CLEAN_ROOM_PROVIDER_ORIGIN", None)
+            else:
+                os.environ["CLEAN_ROOM_PROVIDER_ORIGIN"] = previous_provider_origin
+            if previous_client_origin is None:
+                os.environ.pop("CLEAN_ROOM_CLIENT_ORIGIN", None)
+            else:
+                os.environ["CLEAN_ROOM_CLIENT_ORIGIN"] = previous_client_origin
+            PROVIDER_ORIGIN = previous_provider_origin_value
+            CLIENT_ORIGIN = previous_client_origin_value
             print("cleanup complete")
+        run_directory.preserve = not (cleanup["processes_stopped"] and cleanup["databases_removed"])
     cleanup["temporary_roots_removed"] = not run_root.exists()
     if "selected_authorization_par" in args.only and args.selected_receipt is not None and candidate_binding is not None:
         if selected_scenarios is None:

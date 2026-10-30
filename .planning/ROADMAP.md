@@ -2,7 +2,8 @@
 
 ## Milestones
 
-- 🚧 **v1.47 OAuth/OIDC Core Interoperability & Hardening** — Phases 171–174; planning, with product execution gated on reviewed prior delivery and fresh accepted main.
+- 🚧 **v1.48 Client Authentication Key Isolation & Rotation** — Phases 175–177 independently verified complete; Phase 178 VPROOF-02 is locally qualified after accepted C50 attribution correction and fresh H175 source, lifetime, verifier-pair and installed current/minimum host proof; prior failed/old-contract results and custody limitations remain historical and unwaived. VDELIV-01/02 remain pending: PR #141 required candidate CI is incomplete, and main/delivery acceptance is unobserved. Non-authoritative edge/prohibition flags remain visible.
+- ✅ [v1.47 OAuth/OIDC Core Interoperability & Hardening](milestones/v1.47-ROADMAP.md) — completed 2026-10-25; Phases171–174, 10 plans, 14/14 requirements; accepted main173059a1; package publication separate.
 - ✅ [v1.46 Embedded Host Integration Reliability](milestones/v1.46-ROADMAP.md) — completed 2026-10-24; Phases 167–170, 16 plans, 15/15 requirements; package publication separate.
 - ✅ [v1.45 DCR Lifetime Enforcement](milestones/v1.45-ROADMAP.md) — completed 2026-10-22; Phases 162–166, 40 plans, 18/18 requirements; package publication separate.
 - ✅ [v1.44 Adopter Polish & Verified 1.6.0](milestones/v1.44-ROADMAP.md) — completed 2026-10-20; Phases 158–161; shipped in Lockspire 1.6.0.
@@ -14,48 +15,22 @@
 - ✅ [v1.38 Repository Baseline & Reconciliation](milestones/v1.38-ROADMAP.md) — completed 2026-10-06; planning closeout, no package publication.
 - ✅ [v1.37 Prime-Time Readiness Ratchet](milestones/v1.37-ROADMAP.md) — shipped 2026-08-28 as Lockspire 1.5.0.
 
-Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and preserved under `.planning/milestones/`.
+## Current Milestone: v1.48 Client Authentication Key Isolation & Rotation
 
-## v1.47 OAuth/OIDC Core Interoperability & Hardening
+**Selected 2026-10-25:** The owner accepted the recommended SEC-01-first order. A Phoenix host can protect and rotate `client_secret_jwt` verifier material independently of endpoint/session secrets while preserving existing clients through an explicit upgrade path.
 
-Clients using the supported embedded Phoenix surface receive secure, standards-grounded authorization and PAR/profile behavior, with reproducible evidence for each selected outcome. First reconcile accumulated prior delivery and qualify a finite set of current findings; then deliver only the supported authorization and conditional PAR/profile cases that survive qualification, followed by packaged proof and a verifiable delivery handoff. The four phases map all 14 v1.47 requirements once. No current protocol defect, accepted implementation baseline or public release is asserted by this roadmap.
+**Planning status:** Focused research is complete and the owner approved all 18 requirements with “lgtm” on 2026-10-25. The owner approved the four-phase roadmap on 2026-10-25. Preserve historical Phase 142/143 directories. [Planning baseline and implementation-entry gate](research/v1.48-client-auth-key-isolation/BASELINE.md), [requirements](REQUIREMENTS.md), [research](research/v1.48-client-auth-key-isolation/SUMMARY.md).
 
-**Scope authority:** [requirements](REQUIREMENTS.md), [scope and decisions](research/v1.47-core-hardening/SCOPE.md), [research synthesis](research/v1.47-core-hardening/SUMMARY.md), [dated baseline](research/v1.47-core-hardening/BASELINE.md), [standing guide](MILESTONE-GUIDE.txt) and [rolling milestone ranking](MILESTONE-ARC.md).
+**Next candidate:** UI Stories & Continuous Quality follows SEC-01, preserving its completed Q1–Q10 interview and confirmed final summary. No UI version/phases are reserved. [Ranking and triggers](MILESTONE-ARC.md), [UI proposal](research/ui-quality-engine/MILESTONE-PROPOSAL.md).
 
 ## Phases
 
-- [x] **Phase 171: Accepted Baseline & Finding Qualification** - Establish delivery readiness and freeze the finite, attributable case ledger before dependent plans. (completed 2026-10-24)
-- [x] **Phase 172: Authorization Responses** - Deliver the qualified safe-callback, error/state, response-mode and silent-auth outcomes. (completed 2026-10-24)
-- [x] **Phase 173: Conditional PAR & Profile Boundaries** - Deliver only qualified pushed-request and profile cases after transport and harness attribution. (completed 2026-10-24)
-- [x] **Phase 174: Packaged Proof & Delivery Handoff** - Prove all selected behavior, pass required gates and leave an exact, resumable delivery record. (completed 2026-10-25)
+- [x] **Phase 175: Accepted Baseline & Verifier Compatibility Contract** - Establish fresh implementation entry and freeze the finite custody, legacy, rollout and store contract. (completed 2026-10-25)
+- [x] **Phase 176: Dedicated Verifier Custody & Compatible Runtime** - Wire independent keys through every production reader/writer and prove the supported rolling transition. (completed 2026-10-25)
+- [x] **Phase 177: Safe Verifier Maintenance & Recovery** - Deliver atomic rewrap/check/status and key rotation/loss recovery without changing client credentials. (completed 2026-10-26)
+- [x] **Phase 178: Packaged Upgrade Proof & Delivery Handoff** - Prove the selected journeys, pass review/gates and leave exact delivery/main-acceptance custody.
 
 ## Phase Details
-
-### Phase 171: Accepted Baseline & Finding Qualification
-
-**Goal**: Maintainers can identify an accepted implementation base and a finite set of current, supported cases whose expected outcomes and owners are settled before dependent planning.
-**Depends on**: Nothing (first phase of v1.47).
-**Requirements**: BASE-01, BASE-02, FIND-01, FIND-02
-**Success Criteria** (what must be TRUE):
-  1. Before product implementation, the maintainer can inspect reviewed disposition of accumulated prior delivery and unknown work, plus a fresh receipt from the existing exact-main acceptance gate identifying synchronized main, complete local contributor checks, matching canonical CI and Release no-publish evidence, warning dispositions and explicit edit/worktree ownership.
-  2. The maintainer can invoke the selected existing conformance profiles with recorded provider/package, suite, image/helper and plan identities; missing or obsolete inputs fail visibly, unavailable history stays unavailable, and any input refresh is reviewed separately from a protocol correction.
-  3. The maintainer can inspect one finite, redacted case ledger with source/date and exact identities, normative/support references, observed and expected outcomes, deterministic repro commands, regression owners and dispositions distinguishing protocol, harness/transport/browser, infrastructure, unsupported and already-correct/not-reproduced cases.
-  4. Downstream implementers can use the frozen AUTHR/PARB case matrix before dependent plans are created or executed; unresolved security/API/support decisions block that planning, current proof is reused for correct cases, and invalidated slices explicitly narrow/replan requirements and roadmap rather than receive a fabricated pass.
-
-**Plans**: 4/4 plans complete; awaiting independent Phase 171 verification
-
-Plans:
-**Wave 1**
-- [x] 171-01-PLAN.md — Reviewed delivery/exact-main entry and one end-to-end qualification tracer.
-
-**Wave 2** *(blocked on Wave 1 completion)*
-- [x] 171-02-PLAN.md — Exact immutable profile observations and finite attributable case ledger.
-
-**Wave 3** *(blocked on Wave 2 completion)*
-- [x] 171-03-PLAN.md — Qualified matrix freeze and explicit downstream scope reconciliation.
-
-**Wave 4** *(after Wave 3; verification-gap closure)*
-- [x] 171-04-PLAN.md — Closed downstream planning states and qualified the unlaunched-profile evidence boundary.
 
 ### Phase 172: Authorization Responses
 
@@ -136,6 +111,168 @@ Plans:
 ## Next Milestone
 
 No later phase numbers are reserved. [MILESTONE-ARC.md](MILESTONE-ARC.md) ranks SEC-01 verifier-key isolation/rotation as preferred provisional v1.48; it remains outside v1.47. Refresh the ranking at each start/close against fresh evidence. Token lifecycle work requires a current gap, OPS-03 requires scale evidence and KEK-04 requires a concrete adopter custody need; existing deferred work keeps its owners.
+
+## Completed Backlog Scope
+
+### Completed scope: Repository Readability & Docs Polish
+
+**Goal:** Make Lockspire's repository a joy to navigate: clarify what each major directory is for, remove only verified stale clutter, and give adopters and maintainers a clear, accurate route through the README and canonical documentation.
+**Requirements:** LANG-01, LANG-02, LANG-03, DOC-01, DOC-02, DOC-03, REPO-01, REPO-02 (scheduled in Phases 148–150).
+**Status:** Delivered in v1.41 through Phases 148–150. Retain this entry as history; do not schedule the scope again.
+
+**Captured direction:**
+
+- Audit the top-level and nested directory tree by ownership and lifecycle. Review agent-managed worktree folders such as `.claude/worktrees/agent-ace643b0f744cfe0b`, scratch/output directories, and the long compatibility-fixture path before deciding whether anything should move, be renamed, ignored, or removed. Check active worktree/agent ownership and all CI/test references before changing paths.
+- Reshape the README around adopter and maintainer jobs: evaluate Lockspire's fit and boundaries, install it into an existing Phoenix app, follow the supported-surface contract, and operate or maintain a deployment. Use LatticeStripe's reader-first docs ladder and JTBD route map as inspiration while keeping Lockspire's product scope and voice.
+- Audit guide navigation, links, setup steps, and claims against the current code and `docs/supported-surface.md`; keep generated outputs, fixtures, brand assets, planning records, and maintained documentation clearly distinguished.
+
+### Phase 175: Accepted Baseline & Verifier Compatibility Contract
+
+**Goal**: Maintainer can identify a fresh accepted implementation base and a finite, reviewable verifier-custody/compatibility contract before dependent implementation is planned.
+**Depends on**: Nothing (first phase of v1.48); uses completed v1.47 evidence without restamping it.
+**Requirements**: VBASE-01, VBASE-02
+**Success Criteria** (what must be TRUE):
+  1. Maintainer can inspect reviewed retained-delivery/worktree disposition and a fresh receipt from the existing exact-main helper binding synchronized main, local contributor checks, matching canonical CI/Release no-publish and explicit warning/resource dispositions before product implementation.
+  2. Maintainer can reproduce the qualified legacy-age behavior through its actual caller/lifecycle seam and inspect distinct dispositions for usable, aged, malformed and configured-expired credentials; no age override or security-policy change is silently selected.
+  3. Implementers can inspect a frozen finite ledger covering every writer/reader, stable client-identity sealing, text format/key configuration, missing-key behavior, supported custom-store transaction/capability contract, rollout/rollback states, expected outcomes and automated proof owners.
+  4. Unresolved material policy/API/support changes stop dependent planning; evidence that invalidates the recommended no-schema/no-new-dependency scope produces an explicit GSD revision rather than an unreviewed expansion. Historical Phase 142/143 and immutable receipts remain intact.
+
+**Plans**: 3/3 plans complete
+
+Plans:
+**Wave 1**
+- [x] 175-01-PLAN.md — Reconcile retained lineage and custody; establish fresh exact-main baseline.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 175-02-PLAN.md — Qualify persisted legacy age, public metadata and helper compatibility; resolve material policy gates.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 175-03-PLAN.md — Freeze the finite custody/compatibility contract and reconcile the qualified candidate with accepted entry main.
+
+### Phase 176: Dedicated Verifier Custody & Compatible Runtime
+
+**Goal**: Host can use independent verifier keys across existing credential creation, rotation and authentication paths, with deliberate legacy compatibility and safe reader-first rollout.
+**Depends on**: Phase 175; accepted-main entry and frozen contract must pass before dependent implementation planning.
+**Requirements**: SEC-01, SEC-02, SEC-03, SEC-04, SEC-05, VUP-01, VUP-02
+**Success Criteria** (what must be TRUE):
+  1. Host explicitly configures independent verifier read/write keys and transition mode; dedicated writes use the current key without endpoint/signing-key fallback, while malformed/missing required configuration fails through the qualified redacted contract without a surprise unrelated-auth boot failure.
+  2. Direct registration, DCR and operator secret rotation persist coherent hash/verifier pairs bound to canonical client identity; new text-safe envelopes reject key/version/header/tag/client/purpose tampering, and existing signing-envelope bytes and key behavior remain compatible.
+  3. Supported token, introspection, revocation, device-authorization and CIBA paths accept valid dedicated verifiers and reject invalid ones while preserving existing HS256, audience, JTI/replay, configured lifetimes and PAR/FAPI boundaries.
+  4. Qualified usable legacy rows read only within the explicit compatibility policy and fail under legacy rejection; aged/unreadable rows follow the frozen disposition, with no silent credential-expiry or authority change.
+  5. Maintainer can execute the finite reader-first/writer-activation/rollback cases: old code is never exposed to unsupported writes in the supported sequence, and after activation the documented rollback boundary is truthful.
+
+**Plans**: 7/7 plans complete, 14 tasks; independent verification passed 28/28 truths and all seven requirements on 2026-10-25. Security review closed 22/22 planned threats.
+
+Plans:
+**Wave 1**
+- [x] 176-01-PLAN.md — Persisted native-verifier tracer and strict envelope parsing.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 176-02-PLAN.md — Immutable node configuration and operation-local failure isolation.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 176-03-PLAN.md — Compatible helpers and final-ID direct registration.
+- [x] 176-04-PLAN.md — Legacy/migrated age and configured lifecycle boundaries.
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 176-05-PLAN.md — Final-ID DCR and operator secret rotation.
+- [x] 176-06-PLAN.md — Supported endpoints and ciphertext-sensitive guarded issuance.
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [x] 176-07-PLAN.md — Local reader-first rollout, runtime guidance and candidate gate.
+
+### Phase 177: Safe Verifier Maintenance & Recovery
+
+**Goal**: Operator can inspect, rewrap and rotate verifier-key custody safely, and recover affected clients after key loss, without changing partner secrets or hiding failed work.
+**Depends on**: Phase 176.
+**Requirements**: VUP-03, VOPS-01, VOPS-02, VOPS-03, VOPS-04, VPROOF-01
+**Success Criteria** (what must be TRUE):
+  1. Maintainer can run repo-safe preview/apply/check and retry a partial run idempotently; failures/conflicts are distinct and requested readiness/completion fails when unfulfilled, with accurate operator guidance and bare-Mix startup behavior.
+  2. Actual PostgreSQL contention/rollback cases prove verifier-only writes and audit atomicity through the selected supported store/transaction authority, preserving concurrent secret/hash/client updates, lifetimes and rotation timestamps; unsupported adapter capability fails before mutation.
+  3. Status accounts for all stored material, including inactive/expired/non-JWT-method clients, and distinguishes legacy/current/old-key/unknown/malformed/unreadable/uninspected states. No partial/local check claims complete/fleet-wide readiness.
+  4. Operator can introduce/read a new key, activate writes, rewrap and safely retire the old key; missing/lost-key cases identify affected clients and demonstrate valid-key restoration or existing authorized secret rotation/reprovision while affected JWT auth fails closed.
+  5. Sentinel-based proof across crypto/runtime/task/storage failures shows no verifier plaintext, encryption key or ciphertext in logs/SQL diagnostics, telemetry, audit, operator reports or protocol responses. Endpoint/session secrets, signing custody and unrelated supported methods remain intact.
+
+**Plans**: 9/9 plans complete in 7 waves; independently verified 2026-10-26 (47/47 truths, six requirements). Package-installed proof and delivery remain Phase 178.
+
+Plans:
+**Wave 1**
+- [x] 177-01-PLAN.md — Native persisted rewrap tracer, selected authority and exact CAS.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 177-02-PLAN.md — Authenticated custody, preserved migrated age and qualified legacy promotion.
+- [x] 177-07-PLAN.md — Existing-path nested inspection and dual query-channel disclosure controls.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 177-03-PLAN.md — Exhaustive bytewise inventory, safe status and complete-mode outcomes.
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 177-04-PLAN.md — Task-local configuration, bare Mix modes and Repo ownership.
+- [x] 177-05-PLAN.md — Independent PostgreSQL contention, rollback and retry proof.
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [x] 177-06-PLAN.md — Real guarded issuance, key rotation and key-loss recovery.
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [x] 177-08-PLAN.md — Forced-failure sentinel matrix and executable operator guidance.
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [x] 177-09-PLAN.md — Exact source acceptance, coverage audit and Phase 178 handoff.
+
+Execution waves: 1: 01; 2: 02 + 07; 3: 03; 4: 04 + 05; 5: 06; 6: 08; 7: 09.
+
+### Phase 178: Packaged Upgrade Proof & Delivery Handoff
+
+**Goal**: Maintainer can reproduce the complete selected adoption/upgrade/rotation story and assess a reviewed delivery with accurate guidance and intentional resource custody.
+**Depends on**: Phase 177 and all prior selected acceptance outcomes.
+**Requirements**: VPROOF-02, VDELIV-01, VDELIV-02
+**Success Criteria** (what must be TRUE):
+  1. Source/package-bound fresh and legacy-installed hosts on both existing dependency pairs reproduce the selected upgrade, mixed-version/key, writer activation, rewrap/rotation, legacy rejection, rollback limits and recovery cases, including the declared configured-store composition. Missing/unavailable proof stays a blocker, not a pass.
+  2. Reviewer can inspect required actual PostgreSQL concurrency/rollback evidence, focused security/code review, all 18 verified requirements and the milestone audit, plus passing full contributor and canonical candidate CI gates at exact identities.
+  3. Fresh-install, generator, upgrade, diagnostic and support guidance matches verified behavior without changing public protocol scope, signing format, host ownership, schema or runtime dependencies unless explicitly re-scoped through GSD.
+  4. A dated handoff records reviewed integration and fresh exact-main acceptance or explicit unresolved delivery blockers, resource owners/purpose/next actions and preserved unknown work; UI quality remains the next substantial candidate with the completed interview intact. No package publication is inferred.
+
+**Plans**: 12/12 plans executed in 8 waves; premerge delivery complete, integration/main pending under D-19; the normal milestone PR and protected release train remain distinct.
+
+Plans:
+**Wave 1**
+- [x] 178-01-PLAN.md — Installed tracer, honest package attribution and generic pair selection.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 178-02-PLAN.md — Four fresh core cells, declared delegation and installed preview/apply/check.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 178-03-PLAN.md — Actual predecessor/shared-store rollout and pinned public legacy control.
+- [x] 178-04-PLAN.md — Five HTTP endpoints per pair and booted release RPC.
+- [x] 178-05-PLAN.md — Real PostgreSQL lock orders, reached audit INSERT and outer rollback.
+- [x] 178-06-PLAN.md — Preservation, exact age/retry/recovery and stale-issuance/JTI witnesses.
+- [x] 178-07-PLAN.md — Installed success/failure disclosure channels and sentinel rejection.
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 178-08-PLAN.md — Closed aggregate and existing locked/floor CI integration.
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [x] 178-09-PLAN.md — Observed install/generator/upgrade/support/release guidance.
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [x] 178-10-PLAN.md — Independent reviews, frozen inputs and final local/package gates.
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [x] 178-11-PLAN.md — Single reviewed candidate and actual complete hosted graph.
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [x] 178-12-PLAN.md — Canonical audit, dated custody/ranking and pending-or-accepted main handoff.
+
+## Progress
+
+| Phase | Plans Complete | Status | Completed |
+|---|---|---|---|
+| 175. Accepted Baseline & Verifier Compatibility Contract | 3/3 | Complete    | 2026-10-25 |
+| 176. Dedicated Verifier Custody & Compatible Runtime | 7/7 | Complete    | 2026-10-25 |
+| 177. Safe Verifier Maintenance & Recovery | 9/9 | Complete    | 2026-10-26 |
+| 178. Packaged Upgrade Proof & Delivery Handoff | 12/12 | Complete — premerge; main pending | 2026-10-29 |
+
+**Coverage:** 18/18 approved requirements map exactly once; 4/4 phases and31/31plans executed. Phase178 completed all12plans with independent4/4goal verification and37/37declaredsecuritymitigations closed (0open/0acceptedrisks). Actual CI40954208717attempt2 at reviewedc465/executed3c7bd2a passed all7jobs and strict26receipt/64case artifact validation. The canonical milestone audit records all18verifiedoutcomes and non-blocking formal coverage PARTIAL/advisory debt; original generic/null/prohibition flags and failed/unknown observations remain unwaived. Integration and accepted main remain explicitlypending underD19; no main receipt, publication or next-milestone implementation is inferred. See Phase178Summary12 and the canonical v1.48milestoneaudit. Roadmap approved2026-10-25; premerge phase completion2026-10-29.
 
 ## Completed Backlog Scope
 

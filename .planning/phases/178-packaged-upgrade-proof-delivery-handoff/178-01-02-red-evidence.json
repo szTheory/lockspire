@@ -1,0 +1,10 @@
+{
+  "command": "python3 -m unittest discover -s test/acceptance -p 'client_verifier_tracer_test.py'",
+  "exitCode": 1,
+  "output": ".F..F.....\n======================================================================\nFAIL: test_locked_receipt_rejects_framework_versions_from_floor_pair (client_verifier_tracer_test.InstalledReceiptTest.test_locked_receipt_rejects_framework_versions_from_floor_pair)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/Users/jon/projects/lockspire/test/acceptance/client_verifier_tracer_test.py\", line 73, in test_locked_receipt_rejects_framework_versions_from_floor_pair\n    with self.assertRaises(ReceiptError):\n         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^\nAssertionError: ReceiptError not raised\n\n======================================================================\nFAIL: test_tracer_rejects_missing_token_and_assertion_outcomes (client_verifier_tracer_test.InstalledReceiptTest.test_tracer_rejects_missing_token_and_assertion_outcomes)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/Users/jon/projects/lockspire/test/acceptance/client_verifier_tracer_test.py\", line 79, in test_tracer_rejects_missing_token_and_assertion_outcomes\n    with self.assertRaises(ReceiptError):\n         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^\nAssertionError: ReceiptError not raised\n\n----------------------------------------------------------------------\nRan 10 tests in 0.022s\n\nFAILED (failures=2)\n",
+  "targetTest": "test_locked_receipt_rejects_framework_versions_from_floor_pair",
+  "targetFile": "test/acceptance/client_verifier_tracer_test.py",
+  "expected": "The strict receipt validator rejects a locked-pair receipt carrying the floor Phoenix version.",
+  "actual": "Validation accepts Phoenix 1.8.5 for the locked pair.",
+  "semanticAssessment": "The target unittest method executed and failed because no ReceiptError was raised. The failure is an assertion on the planned pair-identity behavior; test discovery and setup succeeded."
+}

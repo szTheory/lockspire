@@ -11,8 +11,8 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
 
   schema "lockspire_clients" do
     field(:client_id, :string)
-    field(:client_secret_hash, :string)
-    field(:client_secret_jwt_verifier_encrypted, :string)
+    field(:client_secret_hash, :string, redact: true)
+    field(:client_secret_jwt_verifier_encrypted, :string, redact: true)
     field(:client_type, Ecto.Enum, values: [:public, :confidential])
     field(:name, :string)
     field(:redirect_uris, {:array, :string}, default: [])
@@ -88,7 +88,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
     # Two-value form (:operator | :self_registered); the 3-value form is deferred.
     # The text-column and Ecto.Enum pairing is mandatory.
     field(:provenance, Ecto.Enum, values: [:operator, :self_registered], default: :operator)
-    field(:registration_access_token_hash, :string)
+    field(:registration_access_token_hash, :string, redact: true)
     field(:registration_client_uri, :string)
     field(:initial_access_token_id, :integer)
     field(:client_id_issued_at, :utc_datetime_usec)

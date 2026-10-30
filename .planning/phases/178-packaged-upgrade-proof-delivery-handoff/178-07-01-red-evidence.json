@@ -1,0 +1,10 @@
+{
+  "command": "PYTHONPATH=test/acceptance PYTHONDONTWRITEBYTECODE=1 python3 -m unittest client_verifier_disclosure_test.VerifierDisclosureContracts.test_disclosure_group_owns_a_real_host_capture_fixture",
+  "exitCode": 1,
+  "output": "F\n======================================================================\nFAIL: test_disclosure_group_owns_a_real_host_capture_fixture (client_verifier_disclosure_test.VerifierDisclosureContracts.test_disclosure_group_owns_a_real_host_capture_fixture)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/Users/jon/projects/lockspire/test/acceptance/client_verifier_disclosure_test.py\", line 30, in test_disclosure_group_owns_a_real_host_capture_fixture\n    self.assertTrue(\n    ~~~~~~~~~~~~~~~^\n        fixture.is_file(),\n        ^^^^^^^^^^^^^^^^^^\n        \"disclosure proof must capture owned runtime channels in the generated host\",\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\nAssertionError: False is not true : disclosure proof must capture owned runtime channels in the generated host\n\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nFAILED (failures=1)\n",
+  "targetTest": "client_verifier_disclosure_test.VerifierDisclosureContracts.test_disclosure_group_owns_a_real_host_capture_fixture",
+  "targetFile": "test/acceptance/client_verifier_disclosure_test.py",
+  "expected": "Generated host contains the disclosure capture fixture selected by the installed disclosure group.",
+  "actual": "Assertion failed because verifier_disclosure.ex is absent from the host source tree.",
+  "semanticAssessment": "The named unittest executed and failed at the intended fixture-presence assertion; discovery/import/setup succeeded. This is a task-01 RED for the missing owned capture fixture."
+}

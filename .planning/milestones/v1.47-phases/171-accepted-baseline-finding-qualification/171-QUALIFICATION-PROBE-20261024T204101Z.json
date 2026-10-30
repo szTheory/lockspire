@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "observation_id": "phase171-probe-20261024T204101Z",
+  "observed_at": "2026-10-24T20:41:01Z",
+  "operator": "Codex gsd-executor (Phase 171 Plan 03)",
+  "execution": {
+    "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration .planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs --seed 0",
+    "mix_exit_code": 2,
+    "test_count": 2,
+    "failure_count": 2,
+    "skipped_count": 0,
+    "positive_controls_passed": true,
+    "execution_result": "completed_two_named_normative_assertions_failed",
+    "protocol_result": "two_counterexamples; zero protocol passes"
+  },
+  "runtime": {
+    "elixir": "1.19.5",
+    "otp": "28.5",
+    "database_identity": "lockspire_171_main_20261024b"
+  },
+  "source_identity": {
+    "source_sha_before": "3561a51d032e86dc10607b37f78c14313dcb1872",
+    "source_sha_after": "3561a51d032e86dc10607b37f78c14313dcb1872",
+    "changed_during_observation": false,
+    "probe_path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
+    "probe_sha256": "0f1b9dcf5f4a5e5eca75befd2c87bff9865ef515b151a6b93b066cd4e0389207",
+    "runtime_and_fixture_inputs": [
+      {"path": "test/test_helper.exs", "sha256": "3be10d296761d2e91637603b62a9004bb274ea8abc920f20a930cbdc054bc5d2"},
+      {"path": "test/support/config_case.ex", "sha256": "69a01e44089d3b5a52a16625d6de144d9ad20e442506a2b2b9b18530c7a5e743"},
+      {"path": "test/support/test_account_resolver.ex", "sha256": "bd8e9f723a67b3bd719084ea9a37cb6df52aebefa38da9bc209737b3bc3fe6f8"},
+      {"path": "test/lockspire/web/authorize_controller_test.exs", "sha256": "382ce013af67d40df21f12d49e4918a9442b8bae52d788becdd92ebc8edd6590"},
+      {"path": "test/integration/phase15_par_authorization_e2e_test.exs", "sha256": "a1529fd15509347e9ea76fdcc3d603182c3582d9cb105c47e18d2bf0b5df69be"},
+      {"path": "lib/lockspire/domain/interaction.ex", "sha256": "e73d92d80bb26e2ee654fb1b54b00747ec298ba96d89a0720bbfce64913d2c38"},
+      {"path": "lib/lockspire/protocol/authorization_request.ex", "sha256": "941e92750677f815243ca9b40792f878693983bbcbd14ae5d738cd102c05aa82"},
+      {"path": "lib/lockspire/web/controllers/authorize_controller.ex", "sha256": "e474fb45a0295d45717333716342ef44d490418f9963f59bf8cb27c6172f96e7"},
+      {"path": "lib/lockspire/web/router.ex", "sha256": "57849f8a6be5b2e38c9fcf7dfbf8b166fb32ce82b3ec0ff35e332747818dd5ae"},
+      {"path": "config/test.exs", "sha256": "309e54ff66fd907b97a2aa25ac6d02b3615f78daaaf929e574ecdd309bd576c1"}
+    ]
+  },
+  "cases": [
+    {
+      "case_id": "A171-003",
+      "condition_id": "unsupported-response-mode",
+      "assertion_id": "A171-003:http-error-disposition",
+      "test_name": "A171-003 valid direct consent control then requires unsupported mode to be HTTP 400 without OAuth error parameters",
+      "test_count": 1,
+      "failure_count": 1,
+      "controls": [
+        {"id": "A171-003:query-mode-consent", "status": "pass", "observed": {"status_class": "redirect", "location_kind": "host_consent", "scopes": ["email", "openid"], "state_matches": true, "nonce_matches": true, "client_matches": true}}
+      ],
+      "expected_projection": {"status": 400, "location_kind": "none", "error_parameter_names": []},
+      "observed_projection": {"status": 302, "location_kind": "registered_callback", "error_parameter_names": ["error", "error_description", "iss", "state"]},
+      "protocol_assertion_status": "counterexample",
+      "failure_reason": "The controlled request reached the named final assertion; the source returned a registered-callback redirect with OAuth error parameters instead of HTTP 400 without them."
+    },
+    {
+      "case_id": "P171-005",
+      "condition_id": "par-reference-plus-conflicting-front-channel-scope",
+      "assertion_id": "P171-005:pushed-scope-authority",
+      "test_name": "P171-005 valid pushed-reference control requires pushed scopes to remain authoritative over front-channel scope",
+      "test_count": 1,
+      "failure_count": 1,
+      "controls": [
+        {"id": "P171-005:form-par-post", "status": "pass", "observed": {"status": 201, "reference_issued": true}},
+        {"id": "P171-005:reference-only-consent", "status": "pass", "observed": {"status_class": "redirect", "location_kind": "host_consent", "scopes": ["email", "openid"], "state_matches": true, "nonce_matches": true, "client_matches": true}},
+        {"id": "P171-005:independent-candidate-par-post", "status": "pass", "observed": {"status": 201, "reference_issued": true}}
+      ],
+      "expected_projection": {"status_class": "redirect", "location_kind": "host_consent", "scopes": ["email", "openid"], "state_matches": true, "nonce_matches": true, "client_matches": true},
+      "observed_projection": {"status": 400, "status_class": "other", "location_kind": "none", "scopes": null, "state_matches": false, "nonce_matches": false, "client_matches": false},
+      "protocol_assertion_status": "counterexample",
+      "failure_reason": "Both independent PAR POSTs and the reference-only consent control passed; the conflicting outer scope request was rejected with HTTP 400 before consent instead of using the pushed scope."
+    }
+  ]
+}

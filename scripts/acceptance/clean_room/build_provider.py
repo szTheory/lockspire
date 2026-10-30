@@ -39,6 +39,8 @@ from package_input import (
     sha256,
     run,
     source_revision,
+    start_owned_session,
+    stop_process_group,
     verify_candidate_host,
     verify_child,
 )
@@ -55,7 +57,7 @@ PROOF_PAIR_LOCKS = {
     "locked": PROVIDER_TEMPLATE / "mix.lock",
     "floor": FLOOR_TEMPLATE / "mix.lock",
 }
-PROOF_PAIR_MARKER = ".lockspire-admin-proof-pair"
+PROOF_PAIR_MARKER = ".lockspire-dependency-pair"
 FORBIDDEN = (
     "Lockspire.Protocol.",
     "Lockspire.Storage.",
@@ -64,12 +66,66 @@ FORBIDDEN = (
     "Router.call(",
     "forward(\"/lockspire\", CleanRoomProvider",
 )
+GROUP_HOST_FIXTURE_INPUTS = {
+    "rollout": ("verifier_rollout.exs",),
+    "legacy-control": ("verifier_rollout.exs",),
+    "endpoints": ("verifier_endpoints.exs",),
+    "contention": ("lib/clean_room_provider/verifier_transactions.ex",),
+    "atomicity": ("lib/clean_room_provider/verifier_transactions.ex",),
+    "recovery": ("lib/clean_room_provider/verifier_recovery.ex",),
+    "issuance": ("lib/clean_room_provider/verifier_recovery.ex",),
+    "disclosure": ("lib/clean_room_provider/verifier_disclosure.ex",),
+}
+
+
+def selected_host_fixture_sources(
+    groups: set[str] | frozenset[str], *, source_root: Path | None = None
+) -> tuple[Path, ...]:
+    """Return only the fixed host-owned inputs selected by installed proof groups."""
+    selected = set(groups)
+    if selected - set(GROUP_HOST_FIXTURE_INPUTS) - {"core", "tracer", "release-rpc"}:
+        raise PackageInputError("unsupported verifier proof group input")
+    root = source_root or PROVIDER_TEMPLATE
+    paths = tuple(
+        root / relative
+        for group in sorted(selected)
+        for relative in GROUP_HOST_FIXTURE_INPUTS.get(group, ())
+    )
+    missing = [path for path in paths if not path.is_file()]
+    if missing:
+        raise PackageInputError("selected provider proof source is missing")
+    return paths
+
+
+def copy_selected_host_fixture_sources(child: Path, groups: set[str] | frozenset[str]) -> tuple[Path, ...]:
+    copied: list[Path] = []
+    for source in selected_host_fixture_sources(groups):
+        if source.suffix == ".exs":
+            relative = Path("test/clean_room") / source.name
+        else:
+            relative = source.relative_to(PROVIDER_TEMPLATE)
+        destination = child / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
+        copied.append(destination)
+    return tuple(copied)
+
+
+def clear_unselected_host_fixture_sources(child: Path, groups: set[str] | frozenset[str]) -> None:
+    selected = {path.name for path in selected_host_fixture_sources(groups)}
+    for name in {name for values in GROUP_HOST_FIXTURE_INPUTS.values() for name in values}:
+        if name in selected:
+            continue
+        for directory in (child / "test" / "clean_room", child / "lib" / "clean_room_provider"):
+            candidate = directory / Path(name).name
+            if candidate.is_file():
+                candidate.unlink()
 
 
 def proof_pair_lock_hash(proof_pair: str) -> str:
     lock_path = PROOF_PAIR_LOCKS.get(proof_pair)
     if lock_path is None or not lock_path.is_file():
-        raise PackageInputError("admin proof dependency pair is unavailable")
+        raise PackageInputError("dependency pair is unavailable")
     return sha256(lock_path)
 
 
@@ -85,20 +141,15 @@ def configure_proof_pair(
     child: Path, proof_pair: str, *, admin_proof: bool, reused: bool = False
 ) -> str | None:
     if proof_pair not in PROOF_PAIR_VERSIONS:
-        raise PackageInputError("unsupported admin proof dependency pair")
-    if proof_pair != "locked" and not admin_proof:
-        raise PackageInputError("floor dependency selection requires admin proof opt-in")
-    if not admin_proof:
-        return None
+        raise PackageInputError("unsupported dependency pair")
 
     lock_path = PROOF_PAIR_LOCKS[proof_pair]
     if not lock_path.is_file():
-        raise PackageInputError("admin proof dependency lock is missing")
+        raise PackageInputError("dependency pair lock is missing")
     lock_hash = sha256(lock_path)
     manifest_path = child / "mix.exs"
     lock_target = child / "mix.lock"
     marker_path = child / PROOF_PAIR_MARKER
-    manifest = manifest_path.read_text(encoding="utf-8")
     marker = f"pair={proof_pair}\nlock_sha256={lock_hash}\n"
     phoenix_version, live_view_version = PROOF_PAIR_VERSIONS[proof_pair]
 
@@ -107,7 +158,13 @@ def configure_proof_pair(
             raise PackageInputError("reused provider proof pair does not match selected pair")
         if not lock_target.is_file() or sha256(lock_target) != lock_hash:
             raise PackageInputError("reused provider proof lock does not match selected pair")
+        if not manifest_path.is_file():
+            raise PackageInputError("reused provider manifest is missing")
+        manifest = manifest_path.read_text(encoding="utf-8")
     else:
+        if not manifest_path.is_file():
+            raise PackageInputError("provider manifest is missing")
+        manifest = manifest_path.read_text(encoding="utf-8")
         for dependency, expected in (("phoenix", "1.8.13"), ("phoenix_live_view", "1.2.10")):
             locked_pin = f'{{:{dependency}, "== {expected}"}}'
             if manifest.count(locked_pin) != 1:
@@ -153,7 +210,8 @@ config :clean_room_provider, CleanRoomProviderWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: String.to_integer(System.get_env(\"PORT\", \"4100\"))],
   secret_key_base: System.get_env(\"SECRET_KEY_BASE\", \"clean-room-provider-secret-key-base-0123456789-abcdefghijklmnopqrstuvwxyz-0123456789\"),
   live_view: [signing_salt: \"clean-room-provider-test-live-view-salt\"],
-  server: true
+  debug_errors: true,
+  server: System.get_env("CLEAN_ROOM_HTTP_SERVER", "false") == "true"
 config :lockspire,
   repo: CleanRoomProvider.Repo,
   account_resolver: CleanRoomProvider.Lockspire.AccountResolver,
@@ -209,6 +267,25 @@ config :lockspire, :key_encryption,
     children = [CleanRoomProvider.Repo, {Phoenix.PubSub, name: CleanRoomProvider.PubSub}, CleanRoomProviderWeb.Endpoint]
     with {:ok, supervisor} <- Supervisor.start_link(children, strategy: :one_for_one, name: CleanRoomProvider.Supervisor),
          {:ok, _started} <- Application.ensure_all_started(:lockspire) do
+      if System.get_env("LOCKSPIRE_RECOVERY_CONTEXT_WITNESS") == "true" do
+        context = Lockspire.Config.client_secret_verifier_context()
+        valid = context.state == :valid
+        has_protecting_key = is_map(context.keys) and Map.has_key?(context.keys, "verifier-new")
+        if directory = System.get_env("LOCKSPIRE_RECOVERY_STARTUP_DIRECTORY") do
+          nonce = System.fetch_env!("LOCKSPIRE_RECOVERY_STARTUP_NONCE")
+          true = String.match?(nonce, ~r/\\A[0-9a-f]{64}\\z/)
+          temporary = Path.join(directory, "witness.tmp")
+          destination = Path.join(directory, "witness")
+          payload = Enum.join([
+            "lockspire-startup-v1", "nonce=" <> nonce, "pid=" <> System.pid(),
+            "context_valid=" <> to_string(valid), "protecting_key=" <> to_string(has_protecting_key)
+          ], "\\n") <> "\\n"
+          File.write!(temporary, payload, [:binary, :exclusive])
+          File.chmod!(temporary, 0o600)
+          File.ln!(temporary, destination)
+          File.rm!(temporary)
+        end
+      end
       {:ok, supervisor}
     end
   end
@@ -332,7 +409,9 @@ def apply_host_overlays(child: Path, *, admin_proof: bool = False, mount_path: s
         router.write_text(content.replace(anchor, control_routes + session_routes + "\n" + anchor), encoding="utf-8")
 
 
-def audit_boundary(child: Path, package_root: Path) -> None:
+def audit_boundary(
+    child: Path, package_root: Path, *, scenario_groups: set[str] | frozenset[str] | None = None
+) -> None:
     vendor = child / "vendor" / "lockspire"
     if inventory(vendor) != inventory(package_root):
         raise PackageInputError("provider vendor inventory drifted after installation")
@@ -348,6 +427,13 @@ def audit_boundary(child: Path, package_root: Path) -> None:
         child / "lib" / "clean_room_provider_web" / "endpoint.ex",
         child / "lib" / "clean_room_provider_web" / "router.ex",
     ]
+    group_sources = {
+        PROVIDER_TEMPLATE / relative
+        for relatives in GROUP_HOST_FIXTURE_INPUTS.values()
+        for relative in relatives
+    }
+    selected_sources = set(selected_host_fixture_sources(scenario_groups)) if scenario_groups is not None else set()
+    unselected_sources = group_sources - selected_sources if scenario_groups is not None else set()
 
     for source in OVERLAY_ROOT.rglob("*"):
         if source.is_file():
@@ -359,7 +445,13 @@ def audit_boundary(child: Path, package_root: Path) -> None:
             if source.name == "router_patch.exs":
                 destination = destination.with_name("router.ex")
 
+            if source in unselected_sources and not destination.is_file():
+                continue
             host_sources.append(destination)
+
+    for source in selected_sources:
+        relative = Path("test/clean_room") / source.name if source.suffix == ".exs" else source.relative_to(PROVIDER_TEMPLATE)
+        host_sources.append(child / relative)
 
     host_sources.extend(
         path
@@ -369,20 +461,39 @@ def audit_boundary(child: Path, package_root: Path) -> None:
         )
         if path.is_file()
     )
+    host_sources.extend(
+        path
+        for path in (
+            child / "test" / "clean_room" / "verifier_rollout.exs",
+            child / "test" / "clean_room" / "verifier_endpoints.exs",
+            child / "lib" / "clean_room_provider" / "verifier_transactions.ex",
+            child / "lib" / "clean_room_provider" / "verifier_recovery.ex",
+            child / "lib" / "clean_room_provider" / "verifier_disclosure.ex",
+        )
+        if path.is_file()
+    )
 
     adapter_source = child / "lib" / "clean_room_provider" / "lifetime_client_store.ex"
     adapter_text = adapter_source.read_text() if adapter_source.is_file() else ""
-    allowed_refs = {
+    required_refs = {
         "Lockspire.Storage.ClientStore",
         "Lockspire.Storage.TransactionStore",
         "Lockspire.Storage.Ecto.Repository",
         "Lockspire.Domain.Client",
     }
+    optional_ref_groups = (
+        {"Lockspire.Storage.ClientVerifierMaintenance"},
+        {"Lockspire.Storage.UsedJtiStore", "Lockspire.Domain.UsedJti"},
+    )
+    allowed_refs = required_refs.union(*optional_ref_groups)
     adapter_refs = set(re.findall(r"Lockspire\.(?:Storage|Domain)(?:\.[A-Za-z0-9_]+)+", adapter_text))
     if adapter_refs - allowed_refs:
         raise PackageInputError("provider boundary audit found forbidden lifetime-adapter reference")
-    if adapter_text and adapter_refs != allowed_refs:
+    if adapter_text and not required_refs.issubset(adapter_refs):
         raise PackageInputError("provider lifetime adapter is missing a documented public seam")
+    for optional_group in optional_ref_groups:
+        if adapter_refs.intersection(optional_group) and not optional_group.issubset(adapter_refs):
+            raise PackageInputError("provider lifetime adapter is missing a documented public seam")
 
     sources = "\n".join(path.read_text() for path in host_sources if path != adapter_source)
     adapter_sources = adapter_text
@@ -438,6 +549,19 @@ def patch_jose_record_extractors(child: Path, environment: dict[str, str]) -> No
             raise PackageInputError(f"locked JOSE extractor shape changed: {relative}")
 
 
+def provider_environment(
+    run_root: Path, child: Path, *, cache_root: Path | None = None, proof_pair: str = "locked"
+) -> dict[str, str]:
+    """Compose the dependency selection and private homes shared by provider consumers."""
+    dependency_cache = proof_pair_cache_root(cache_root or run_root / "deps-cache", proof_pair)
+    environment = locked_environment(child, "provider_host", dependency_cache)
+    for name, directory in (("HEX_HOME", "hex-home"), ("MIX_HOME", "mix-home")):
+        home = run_root / directory
+        home.mkdir(mode=0o700, parents=True, exist_ok=True)
+        environment[name] = str(home)
+    return environment
+
+
 def prepare_provider(
     run_root: Path,
     database_url: str,
@@ -452,6 +576,7 @@ def prepare_provider(
     admin_proof: bool = False,
     proof_pair: str = "locked",
     mount_path: str = "/lockspire",
+    scenario_groups: set[str] | frozenset[str] = frozenset(),
 ) -> Path:
     probe_environment()
     if not re.fullmatch(r"[a-z][a-z0-9_]{0,39}", storage_prefix):
@@ -459,9 +584,7 @@ def prepare_provider(
     if mount_path not in {"/lockspire", "/teams/ops/identity", "/"}:
         raise PackageInputError("invalid admin proof mount path")
     if proof_pair not in PROOF_PAIR_VERSIONS:
-        raise PackageInputError("unsupported admin proof dependency pair")
-    if proof_pair != "locked" and not admin_proof:
-        raise PackageInputError("floor dependency selection requires admin proof opt-in")
+        raise PackageInputError("unsupported dependency pair")
     if package_root is None:
         package_root, _ = build_package(run_root)
     if candidate_identity is None:
@@ -474,6 +597,7 @@ def prepare_provider(
         )
     child = run_root / "provider_host"
     reuse = child.is_dir()
+    selected_host_fixture_sources(scenario_groups)
     if reuse:
         vendor = child / "vendor" / "lockspire"
         if not vendor.is_dir():
@@ -491,6 +615,7 @@ def prepare_provider(
             custom_lifetime_adapter=custom_lifetime_adapter,
             mount_path=mount_path,
         )
+    clear_unselected_host_fixture_sources(child, scenario_groups)
     proof_lock_hash = configure_proof_pair(
         child, proof_pair, admin_proof=admin_proof, reused=reuse
     )
@@ -502,26 +627,15 @@ def prepare_provider(
         # A reused child bypasses the installer that normally leads to the host
         # overlay audit. Re-audit its current host-owned sources before any Mix
         # resolver or compile command can inspect the child.
-        audit_boundary(child, package_root)
+        copy_selected_host_fixture_sources(child, scenario_groups)
+        audit_boundary(child, package_root, scenario_groups=scenario_groups)
     # The host's config/runtime.exs raises without a KEK, and verify_child probes with mix,
     # so a standalone caller needs one in the inherited environment before any child runs.
     os.environ.setdefault("LOCKSPIRE_KEY_ENCRYPTION_KEY", base64.b64encode(os.urandom(32)).decode("ascii"))
-    dependency_cache = cache_root or run_root / "deps-cache"
-    if admin_proof:
-        dependency_cache = proof_pair_cache_root(dependency_cache, proof_pair)
-    isolated_hex_home = run_root / "hex-home"
-    isolated_mix_home = run_root / "mix-home"
-    isolated_hex_home.mkdir(mode=0o700, parents=True, exist_ok=True)
-    isolated_mix_home.mkdir(mode=0o700, parents=True, exist_ok=True)
-    isolated_environment = {
-        "HEX_HOME": str(isolated_hex_home),
-        "MIX_HOME": str(isolated_mix_home),
-    }
-    resolved = verify_child("provider_host", child, dependency_cache, isolated_environment)
+    environment = provider_environment(run_root, child, cache_root=cache_root, proof_pair=proof_pair)
+    resolved = verify_child("provider_host", child, None, environment)
     print("provider dependency provenance verified", flush=True)
     verify_candidate_host(package_root, child, candidate_identity, vendor, resolved)
-    environment = locked_environment(child, "provider_host", dependency_cache)
-    environment.update(isolated_environment)
     environment.setdefault("LOCKSPIRE_KEY_ENCRYPTION_KEY", os.environ["LOCKSPIRE_KEY_ENCRYPTION_KEY"])
     environment.update(
         {
@@ -560,8 +674,10 @@ def prepare_provider(
     if install_result.returncode != 0:
         raise PackageInputError("provider installer failed")
     apply_host_overlays(child, admin_proof=admin_proof, mount_path=mount_path)
+    clear_unselected_host_fixture_sources(child, scenario_groups)
+    copy_selected_host_fixture_sources(child, scenario_groups)
     print("provider host overlays applied", flush=True)
-    audit_boundary(child, package_root)
+    audit_boundary(child, package_root, scenario_groups=scenario_groups)
     print("provider boundary audit complete", flush=True)
     run(("mix", "compile"), cwd=child, env=environment)
     built_apps = sorted(
@@ -585,6 +701,35 @@ def prepare_provider(
     return child
 
 
+def _compile_source_locations(child: Path, output: bytes) -> tuple[str, ...]:
+    """Keep only locations whose child bytes match an existing tracked source."""
+    candidates = re.findall(rb"\b(lib/[A-Za-z0-9_./-]+\.exs?):([1-9][0-9]{0,8})", output)
+    if not candidates:
+        return ()
+    try:
+        observed = bounded_run(("git", "ls-files", "-z"), cwd=PROJECT_ROOT,
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=20)
+        if observed.returncode:
+            return ()
+        tracked = set(observed.stdout.split(b"\0"))
+        locations = set()
+        for relative, raw_line in candidates:
+            path = Path(relative.decode("ascii"))
+            for source, candidate in ((PROVIDER_TEMPLATE / path, child / path),
+                                      (PROJECT_ROOT / path, child / "vendor/lockspire" / path)):
+                name = source.relative_to(PROJECT_ROOT).as_posix()
+                if name.encode() not in tracked or not source.is_file() or not candidate.is_file():
+                    continue
+                content = source.read_bytes()
+                line = int(raw_line)
+                if (source.resolve().is_relative_to(PROJECT_ROOT.resolve())
+                        and candidate.read_bytes() == content and line <= len(content.splitlines())):
+                    locations.add(f"{name}:{line}")
+        return tuple(sorted(locations))[:16]
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return ()
+
+
 def _run_mix(child: Path, environment: dict[str, str], command: tuple[str, ...]) -> bytes:
     completed = bounded_run(
         ("mix", *command),
@@ -597,11 +742,43 @@ def _run_mix(child: Path, environment: dict[str, str], command: tuple[str, ...])
     )
 
     if completed.returncode != 0:
-        # lockspire.client.create prints client_secret=...; never let it reach an exception message
-        # or CI log if the task exits nonzero after printing. Scrub before slicing the tail.
-        lines = completed.stdout.decode(errors="replace").splitlines()
-        details = [re.sub(r"client_secret=\S*", "client_secret=[REDACTED]", line) for line in lines][-16:]
-        raise PackageInputError(f"provider {' '.join(command)} failed: {' '.join(details)}")
+        output = completed.stdout.decode(errors="replace")
+        safe_stages = {
+            "expired_apply", "expired_http", "expired_install_migrated",
+            "expired_http_connect", "expired_http_timeout", "expired_http_transport",
+            "expired_code_interaction", "expired_code_token", "expired_assertion", "expired_request",
+            "expired_request_argument", "expired_request_case", "expired_request_function_clause",
+            "expired_request_match", "expired_request_erlang", "expired_request_error",
+            "expired_request_undefined_httpc", "expired_request_undefined", "expired_request_runtime",
+            "expired_request_key", "expired_request_bad_map", "expired_request_bad_arity",
+            "expired_request_system_limit",
+            "expired_metadata", "expired_migrated_ciphertext", "expired_seed",
+            "issuance_endpoint_ready", "issuance_auth_barrier", "issuance_maintenance",
+            "issuance_replay_fresh", "issuance_same_jti_replay", "issuance_fresh_jti_retry",
+            "issuance_seed", "recovery_apply", "recovery_expired_migration",
+            "recovery_indeterminate", "recovery_interrupt", "recovery_repeat",
+            "recovery_restore_rotation", "recovery_seed",
+            "recovery_interrupt_lock_start", "recovery_interrupt_lock_held",
+            "recovery_interrupt_apply_start", "recovery_interrupt_blocked",
+            "recovery_interrupt_not_blocked", "recovery_interrupt_kill",
+            "recovery_interrupt_lock_release", "recovery_interrupt_observe",
+            "recovery_interrupt_cleanup",
+        }
+        safe_stage = next((
+            stage for stage in re.findall(r"\bSAFE_FAILURE_STAGE=([^\s;]+)", output)
+            if stage in safe_stages
+        ), None)
+        command_stage = {
+            "ecto.create": "database_create", "ecto.migrate": "database_migrate",
+            "compile": "compile", "lockspire.verify": "verify", "ecto.drop": "database_drop",
+        }.get(command[0] if command else "", "other")
+        diagnostic = "provider Mix command failed; child diagnostics withheld; command_stage=" + command_stage
+        if command_stage == "compile":
+            for location in _compile_source_locations(child, completed.stdout):
+                diagnostic += "; source_location=" + location
+        if safe_stage is not None:
+            diagnostic += f"; SAFE_FAILURE_STAGE={safe_stage}"
+        raise PackageInputError(diagnostic)
     return completed.stdout
 
 
@@ -620,13 +797,15 @@ def allocate_port() -> int:
 
 
 def assert_live_discovery(child: Path, environment: dict[str, str], issuer: str) -> None:
-    process = subprocess.Popen(
+    live_environment = dict(environment, CLEAN_ROOM_HTTP_SERVER="true")
+    process = start_owned_session(
         ("mix", "run", "--no-halt"),
         cwd=child,
-        env=environment,
+        env=live_environment,
         stdin=subprocess.DEVNULL,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
+        start_new_session=True,
     )
 
     try:
@@ -646,9 +825,8 @@ def assert_live_discovery(child: Path, environment: dict[str, str], issuer: str)
 
         raise PackageInputError("provider discovery did not become available")
     finally:
-        if process.poll() is None:
-            process.terminate()
-            process.wait(timeout=5)
+        if not stop_process_group(process):
+            raise PackageInputError("provider discovery process cleanup could not be confirmed")
 
 
 def self_test() -> None:
@@ -662,7 +840,7 @@ def self_test() -> None:
             database_url,
             port=port,
         )
-        environment = locked_environment(child, "provider_host", Path(temporary) / "deps-cache")
+        environment = provider_environment(Path(temporary), child)
         environment.update({"DATABASE_URL": database_url, "PORT": str(port), "LOCKSPIRE_ISSUER": issuer})
 
         try:
@@ -752,7 +930,7 @@ def check_gen_kek() -> None:
     """Prove `mix lockspire.gen.kek` runs cold in a host whose runtime.exs raises without a key."""
     with tempfile.TemporaryDirectory(prefix="lockspire-clean-room-gen-kek-") as temporary:
         child = prepare_provider(Path(temporary), clean_room_database_url("provider"), install=False)
-        environment = locked_environment(child, "provider_host", Path(temporary) / "deps-cache")
+        environment = provider_environment(Path(temporary), child)
         patch_jose_record_extractors(child, environment)
         run_child_command(child, environment, "compile")
 
@@ -819,6 +997,21 @@ def main(argv: list[str]) -> int:
         raise PackageInputError("choose --self-test, --check-bootstrap or --check-gen-kek")
     except PackageInputError as error:
         print(f"clean-room provider build failed: {error}", file=sys.stderr)
+        return 1
+    except (OSError, ValueError, TypeError, KeyError, RuntimeError, AssertionError,
+            subprocess.SubprocessError) as error:
+        families = (OSError, ValueError, TypeError, KeyError, RuntimeError, AssertionError,
+                    subprocess.TimeoutExpired, subprocess.SubprocessError)
+        family = next(kind.__name__ for kind in families if isinstance(error, kind))
+        diagnostic = "clean-room provider build failed: family=" + family
+        trusted = {Path(__file__).resolve(), PROJECT_ROOT / "scripts/acceptance/clean_room/package_input.py"}
+        frame = error.__traceback__
+        while frame is not None:
+            path = Path(frame.tb_frame.f_code.co_filename).resolve()
+            if path in trusted:
+                diagnostic += f"; source_location={path.relative_to(PROJECT_ROOT).as_posix()}:{frame.tb_lineno}"
+            frame = frame.tb_next
+        print(diagnostic, file=sys.stderr)
         return 1
 
 

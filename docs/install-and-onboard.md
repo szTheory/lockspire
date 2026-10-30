@@ -10,6 +10,11 @@ If you plan to authenticate confidential clients with `private_key_jwt`, read `d
 
 If you plan to authenticate confidential clients with `client_secret_jwt`, read `docs/client-secret-jwt-host-guide.md` for the shipped `HS256`-only direct-client slice, issuer-string `aud` requirement, required `jti`, replay prevention, and explicit non-claims.
 
+The `mix lockspire.install` generator does not provision verifier keys or add
+verifier-key settings to `config/lockspire.exs`. When you choose
+`client_secret_jwt`, add the dedicated key configuration owned by your host
+from [`docs/client-secret-verifier-configuration.md`](client-secret-verifier-configuration.md).
+
 If you configure finite DCR app, shared-secret, or app management-token
 lifetimes, follow the [lifetime storage upgrade guide](upgrading/client-lifetimes.md)
 for policy snapshots, the additive migration, custom-storage composition, and

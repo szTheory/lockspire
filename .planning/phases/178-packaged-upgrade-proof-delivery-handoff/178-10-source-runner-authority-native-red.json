@@ -1,0 +1,11 @@
+{
+  "command": "python3 in-memory native unittest.TextTestRunner target owned_source_tests_test.OwnedSourceGuardTests.test_real_source_child_has_owned_authority_before_started_callback",
+  "exitCode": 1,
+  "targetTest": "test_real_source_child_has_owned_authority_before_started_callback",
+  "targetFile": "test/acceptance/owned_source_tests_test.py",
+  "sourceCommit": "f809a40b823379e177b8beba1dad964cfcd8eacb",
+  "output": "F\n======================================================================\nFAIL: test_real_source_child_has_owned_authority_before_started_callback (owned_source_tests_test.OwnedSourceGuardTests.test_real_source_child_has_owned_authority_before_started_callback)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/Users/jon/projects/lockspire/test/acceptance/owned_source_tests_test.py\", line 309, in test_real_source_child_has_owned_authority_before_started_callback\n    self.assertTrue(observed.get(\"registered\") is True,\n    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n                    \"source child launch bypassed owned session authority\")\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: False is not true : source child launch bypassed owned session authority\n\n----------------------------------------------------------------------\nRan 1 test in 0.052s\n\nFAILED (failures=1)\n",
+  "expected": "Real source child has cached owned authority before callback and confirmed cleanup forgets that exact authority",
+  "actual": "Fixed behavioral assertion fails for direct Popen source runner",
+  "semanticAssessment": "Native actual production launch executed; no import/API/load error; no child data or exception values retained"
+}

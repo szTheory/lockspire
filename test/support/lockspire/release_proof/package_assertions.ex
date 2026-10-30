@@ -74,24 +74,41 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       assert script =~ "#{helper}()"
     end
 
-    assert script =~ ~S(trap 'rm -f -- "$output_file"' EXIT)
+    assert script =~ "--run-main-source-gate --expected-runner"
+    refute script =~ "lockspire-mix-ci."
 
     receipt = Jason.decode!(output)
 
     assert Map.keys(receipt) == [
              "baseline_sha",
+             "helper",
              "hygiene",
+             "integration_authorization",
              "local_gate",
+             "observed_at",
              "release_no_publish",
+             "repository",
              "required_ci",
              "schema",
              "supplemental_oidf",
+             "synchronized_refs",
              "warn_dispositions"
            ]
 
     assert receipt["schema"] == "lockspire-phase-" <> @next_phase_number <> "-acceptance-v1"
     assert receipt["baseline_sha"] == acceptance_sha()
-    assert receipt["local_gate"] == %{"exunit_tests" => 1, "status" => "pass"}
+    assert receipt["local_gate"]["exunit_tests"] == 3
+    assert receipt["local_gate"]["status"] == "pass"
+    assert receipt["repository"] == "szTheory/lockspire"
+
+    assert receipt["synchronized_refs"] == %{
+             "head" => acceptance_sha(),
+             "local_main" => acceptance_sha(),
+             "refreshed_origin_main" => acceptance_sha()
+           }
+
+    assert receipt["integration_authorization"]["status"] == "pending"
+    assert receipt["required_ci"]["run_attempt"] == 1
     assert receipt["hygiene"]["block"] == 0
     assert receipt["required_ci"]["run_id"] == 1001
     assert receipt["release_no_publish"]["outcome"] == "no_publish"
@@ -113,12 +130,28 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
     assert Enum.all?(
              receipt["required_ci"]["jobs"],
-             &(Map.keys(&1) == ["conclusion", "name", "status"])
+             &(Map.keys(&1) == [
+                 "conclusion",
+                 "head_sha",
+                 "id",
+                 "name",
+                 "run_attempt",
+                 "run_id",
+                 "status"
+               ])
            )
 
     assert Enum.all?(
              receipt["release_no_publish"]["jobs"],
-             &(Map.keys(&1) == ["conclusion", "name", "status"])
+             &(Map.keys(&1) == [
+                 "conclusion",
+                 "head_sha",
+                 "id",
+                 "name",
+                 "run_attempt",
+                 "run_id",
+                 "status"
+               ])
            )
   end
 
@@ -404,6 +437,9 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       {"interrupted mix ci", "mix-signal", []},
       {"zero ExUnit tests", "mix-zero-tests", []},
       {"malformed ExUnit proof", "mix-malformed", []},
+      {"one canonical suite only", "mix-one-suite", []},
+      {"two canonical suites only", "mix-two-suites", []},
+      {"nonzero canonical suite failures", "mix-failing-suite", []},
       {"empty workflow candidates", "ci-runs-empty", []},
       {"ambiguous workflow candidates", "ci-runs-duplicate", []},
       {"malformed workflow JSON", "ci-runs-malformed", []},
@@ -421,6 +457,12 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       {"polling identity replacement", "ci-run-replaced", [wait_seconds: 2]},
       {"main advancement during polling", "main-advances-during-poll", [wait_seconds: 2]},
       {"incomplete job pagination", "ci-jobs-incomplete", []},
+      {"wrong CI job run owner", "ci-job-owner", []},
+      {"wrong CI job run attempt", "ci-job-attempt", []},
+      {"wrong CI job source", "ci-job-source", []},
+      {"wrong Release job run owner", "release-job-owner", []},
+      {"wrong Release job run attempt", "release-job-attempt", []},
+      {"wrong Release job source", "release-job-source", []},
       {"successful publication job", "release-published", []},
       {"missing publication job", "release-job-missing", []},
       {"duplicated publication job", "release-job-duplicate", []},
@@ -450,7 +492,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       {output, status} = run_exact_sha_hygiene_fixture!(scenario, options)
 
       assert status != 0, "#{label} unexpectedly passed: #{output}"
-      assert output =~ "[BLOCK]", "#{label} did not emit a BLOCK category: #{output}"
+      expected_block = exact_hygiene_expected_block(scenario, options)
+
+      assert output =~ "[BLOCK] #{expected_block}:",
+             "#{label} did not reject at #{expected_block}: #{output}"
+
       refute output =~ "fixture-credential-sentinel", "#{label} leaked fixture credentials"
       refute output =~ ~s({"workflow_runs"), "#{label} leaked a raw workflow response"
     end)
@@ -467,6 +513,86 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
            ]
   end
 
+  defp exact_hygiene_expected_block(scenario, options) do
+    stages = [
+      {"acceptance identity",
+       [
+         "head-mismatch",
+         "main-mismatch",
+         "remote-mismatch",
+         "fetch-failure",
+         "main-moves",
+         "main-advances-during-poll",
+         "docker-main-race"
+       ]},
+      {"acceptance checkout", ["status-failure"]},
+      {"local gate",
+       [
+         "head-moves",
+         "mix-failure",
+         "mix-signal",
+         "mix-secret-failure",
+         "mix-zero-tests",
+         "mix-malformed",
+         "mix-one-suite",
+         "mix-two-suites",
+         "mix-failing-suite"
+       ]},
+      {"workflow evidence",
+       [
+         "ci-runs-empty",
+         "ci-runs-duplicate",
+         "ci-runs-malformed",
+         "ci-queued-timeout",
+         "ci-run-replaced",
+         "ci-secret-response"
+       ]},
+      {"required CI jobs", ["ci-job-owner", "ci-job-attempt", "ci-job-source"]},
+      {"workflow jobs", ["ci-jobs-incomplete"]},
+      {"workflow identity",
+       [
+         "ci-wrong-repository",
+         "ci-wrong-workflow-id",
+         "ci-wrong-name",
+         "ci-wrong-path",
+         "ci-wrong-event",
+         "ci-wrong-branch",
+         "ci-wrong-sha",
+         "ci-failed",
+         "ci-missing-url",
+         "ci-cancelled"
+       ]},
+      {"release no-publish",
+       [
+         "release-job-owner",
+         "release-job-attempt",
+         "release-job-source",
+         "release-published",
+         "release-job-missing",
+         "release-job-duplicate",
+         "release-job-terminal-missing",
+         "release-job-terminal-success",
+         "release-job-terminal-failure",
+         "release-job-terminal-unexpected",
+         "release-job-terminal-duplicate"
+       ]},
+      {"adoption demo Docker",
+       [
+         "docker-running-list-failure",
+         "docker-stopped-list-failure",
+         "docker-volume-list-failure"
+       ]}
+    ]
+
+    if Keyword.has_key?(options, :accept_sha) do
+      "acceptance SHA"
+    else
+      Enum.find_value(stages, "WARN dispositions", fn {stage, scenarios} ->
+        if scenario in scenarios, do: stage
+      end)
+    end
+  end
+
   defp unique_tmp_fixture(prefix) do
     suffix = "#{System.os_time(:nanosecond)}-#{System.unique_integer([:positive])}"
     Path.join(System.tmp_dir!(), "#{prefix}-#{suffix}")
@@ -479,13 +605,12 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     jq = System.find_executable("jq") || flunk("jq is required for the exact-SHA fixture")
 
     repository =
-      if Keyword.has_key?(options, :release_train_contents),
-        do:
-          prepare_release_train_fixture_repo!(
-            fixture,
-            Keyword.fetch!(options, :release_train_contents)
-          ),
-        else: Paths.path(".")
+      prepare_release_train_fixture_repo!(
+        fixture,
+        Keyword.get_lazy(options, :release_train_contents, fn ->
+          Paths.read!(".planning/RELEASE-TRAIN.md")
+        end)
+      )
 
     try do
       File.mkdir_p!(bin)
@@ -493,10 +618,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       File.write!(Path.join(bin, "git"), exact_hygiene_git_script())
       File.write!(Path.join(bin, "gh"), exact_hygiene_gh_script())
       File.write!(Path.join(bin, "mix"), exact_hygiene_mix_script())
+      File.write!(Path.join(bin, "psql"), exact_hygiene_psql_script())
       File.write!(Path.join(bin, "docker"), exact_hygiene_docker_script())
       File.write!(Path.join(bin, "jq"), "#!/usr/bin/env bash\nexec #{jq} \"$@\"\n")
 
-      for command <- ["git", "gh", "mix", "docker", "jq"] do
+      for command <- ["git", "gh", "mix", "psql", "docker", "jq"] do
         File.chmod!(Path.join(bin, command), 0o755)
       end
 
@@ -561,6 +687,14 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       end
 
       refute Enum.any?(File.ls!(state), &String.starts_with?(&1, "lockspire-mix-ci."))
+
+      refute Enum.any?(File.ls!(state), &String.starts_with?(&1, "catalog-")),
+             "the real owned guard must clean the fixture database after every path"
+
+      if elem(result, 1) == 0 do
+        assert_owned_fixture_receipt!(repository, elem(result, 0))
+      end
+
       result
     after
       File.rm_rf(fixture)
@@ -579,7 +713,9 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       "node_modules",
       "coverage",
       ".elixir_ls",
-      "tmp"
+      "tmp",
+      ".artifacts",
+      "scripts"
     ]
 
     File.mkdir_p!(Path.join(repository, ".planning"))
@@ -588,8 +724,30 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       File.ln_s!(Path.join(source_root, entry), Path.join(repository, entry))
     end
 
+    # Copy the actual collector and guard so their ROOT is the isolated fixture.
+    # Only external commands are faked; receipt construction/validation is real.
+    File.cp_r!(Path.join(source_root, "scripts"), Path.join(repository, "scripts"))
     File.write!(Path.join(repository, ".planning/RELEASE-TRAIN.md"), release_train_contents)
     repository
+  end
+
+  defp assert_owned_fixture_receipt!(repository, output) do
+    receipt = Jason.decode!(output)
+    gate = receipt["local_gate"]
+    path = Path.join(repository, gate["manifest_path"])
+    bytes = File.read!(path)
+    manifest = Jason.decode!(bytes)
+    assert Base.encode16(:crypto.hash(:sha256, bytes), case: :lower) == gate["manifest_sha256"]
+    assert manifest["state"] == "passed"
+    assert manifest["create_witness"] == true
+    assert manifest["owned_oid"] == 412
+    assert manifest["cleanup"] == "independently_absent"
+    assert manifest["source_sha"] == acceptance_sha()
+    assert manifest["source_sha_after"] == acceptance_sha()
+    ci = Enum.filter(manifest["commands"], &(&1["stage"] == "ci"))
+    assert length(ci) == 1
+    assert Enum.map(hd(ci)["exunit_counts"], & &1["tests"]) == [1, 1, 1]
+    assert gate["exunit_tests"] == 3
   end
 
   defp acceptance_sha, do: String.duplicate("a", 40)
@@ -598,6 +756,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     keys = [
       "schema",
       "baseline_sha",
+      "repository",
+      "observed_at",
+      "helper",
+      "synchronized_refs",
+      "integration_authorization",
       "local_gate",
       "hygiene",
       "required_ci",
@@ -642,7 +805,9 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         fi ;;
       "rev-parse origin/main")
         [ "$scenario" = "remote-mismatch" ] && printf '%s\n' "$other_sha" || printf '%s\n' "$FAKE_HYGIENE_SHA" ;;
-      "status --porcelain") [ "$scenario" = "status-failure" ] && exit 93 || : ;;
+      "status --porcelain" | "status --porcelain=v1 --untracked-files=all")
+        [ "$scenario" = "status-failure" ] && exit 93 || : ;;
+      "ls-tree -r -z --name-only HEAD") printf 'mix.exs\0' ;;
       "fetch --no-tags origin refs/heads/main:refs/remotes/origin/main")
         printf '%s\n' "$*" >> "$FAKE_HYGIENE_STATE/fetch.argv"
         [ "$scenario" = "fetch-failure" ] && exit 94 || exit 0 ;;
@@ -653,17 +818,78 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
   defp exact_hygiene_mix_script do
     ~S"""
-    #!/usr/bin/env bash
-    set -eu
-    [ "$*" = "ci" ] || exit 91
-    case "${FAKE_HYGIENE_SCENARIO:-success}" in
-      mix-failure) printf 'partial success\n'; exit 95 ;;
-      mix-signal) kill -TERM "$$" ;;
-      mix-secret-failure) printf 'fixture-credential-sentinel\n'; exit 95 ;;
-      mix-zero-tests) printf '0 tests, 0 failures\n' ;;
-      mix-malformed) printf 'tests allegedly passed\n' ;;
-      *) printf '1 test, 0 failures\n' ;;
-    esac
+    #!/usr/bin/env python3
+    import json, os, re, signal, sys
+    from pathlib import Path
+
+    args = sys.argv[1:]
+    database = os.environ["PGDATABASE"]
+    if not re.fullmatch(r"lockspire_owned_[0-9a-f]{32}", database):
+        raise SystemExit(91)
+    catalog = Path(os.environ["FAKE_HYGIENE_STATE"]) / ("catalog-" + database)
+    if args[:3] == ["run", "--no-start", "-e"] and len(args) == 4:
+        print("LOCKSPIRE_OWNED_PREFLIGHT=" + json.dumps({
+            "env": os.environ["MIX_ENV"], "repo": "Lockspire.TestRepo",
+            "ecto_repos": ["Lockspire.TestRepo"], "database": database,
+            "hostname": os.environ["PGHOST"], "port": int(os.environ["PGPORT"]),
+            "credentials_match": (os.environ["PGUSER"] == os.environ["LOCKSPIRE_TEST_DB_USER"]
+                and os.environ["PGPASSWORD"] == os.environ["LOCKSPIRE_TEST_DB_PASSWORD"]),
+        }))
+    elif args == ["ecto.create", "-r", "Lockspire.TestRepo"]:
+        with catalog.open("x") as output:
+            output.write("412")
+        print("The database for Lockspire.TestRepo has been created")
+    elif args == ["ecto.migrate", "-r", "Lockspire.TestRepo"]:
+        assert catalog.read_text() == "412"
+    elif args == ["ecto.drop", "-r", "Lockspire.TestRepo"]:
+        catalog.unlink()
+    elif args == ["ci"]:
+        scenario = os.environ["FAKE_HYGIENE_SCENARIO"]
+        if scenario in {"mix-failure", "mix-secret-failure"}:
+            print("fixture-credential-sentinel" if scenario == "mix-secret-failure" else "partial success")
+            raise SystemExit(95)
+        if scenario == "mix-signal":
+            os.kill(os.getpid(), signal.SIGTERM)
+        if scenario == "mix-zero-tests":
+            print("0 tests, 0 failures")
+        elif scenario == "mix-malformed":
+            print("tests allegedly passed")
+        elif scenario == "mix-one-suite":
+            print("1 test, 0 failures")
+        elif scenario == "mix-two-suites":
+            print("1 test, 0 failures\n1 test, 0 failures")
+        elif scenario == "mix-failing-suite":
+            print("1 test, 0 failures\n1 test, 1 failure\n1 test, 0 failures")
+        else:
+            print("1 test, 0 failures\n1 test, 0 failures\n1 test, 0 failures")
+    else:
+        raise SystemExit(91)
+    """
+  end
+
+  defp exact_hygiene_psql_script do
+    ~S"""
+    #!/usr/bin/env python3
+    import json, os, re, sys
+    from pathlib import Path
+
+    args = sys.argv[1:]
+    database = os.environ["PGDATABASE"]
+    if not re.fullmatch(r"lockspire_owned_[0-9a-f]{32}", database):
+        raise SystemExit(91)
+    catalog = Path(os.environ["FAKE_HYGIENE_STATE"]) / ("catalog-" + database)
+    sql = args[args.index("-c") + 1]
+    connected = args[args.index("-d") + 1]
+    assert os.environ["PGOPTIONS"] == "-c default_transaction_read_only=on"
+    if connected == "postgres" and "SELECT oid::text FROM pg_catalog.pg_database" in sql:
+        assert database in sql
+        if catalog.exists():
+            print(catalog.read_text())
+    elif connected == database and "current_database()" in sql:
+        print(json.dumps({"database": database, "oid": int(catalog.read_text()),
+                          "server_address": "127.0.0.1", "server_port": int(os.environ["PGPORT"])}))
+    else:
+        raise SystemExit(91)
     """
   end
 
@@ -747,7 +973,20 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     ci_run() {
       id="${1:-1001}"; status="${2:-completed}"; conclusion="${3:-success}"
       repository="${4:-szTheory/lockspire}"; workflow_id="${5:-101}"; head_sha="${6:-$sha}"
-      printf '{"id":%s,"run_number":10,"name":"CI","path":".github/workflows/ci.yml","workflow_id":%s,"event":"push","head_branch":"main","status":"%s","conclusion":"%s","head_sha":"%s","html_url":"https://example.test/actions/runs/%s","repository":{"full_name":"%s"}}' "$id" "$workflow_id" "$status" "$conclusion" "$head_sha" "$id" "$repository"
+      printf '{"id":%s,"run_attempt":1,"run_number":10,"name":"CI","path":".github/workflows/ci.yml","workflow_id":%s,"event":"push","head_branch":"main","status":"%s","conclusion":"%s","head_sha":"%s","html_url":"https://example.test/actions/runs/%s","repository":{"full_name":"%s"}}' "$id" "$workflow_id" "$status" "$conclusion" "$head_sha" "$id" "$repository"
+    }
+    job_page() {
+      jq -cn --argjson run "$1" --argjson total "$2" --argjson jobs "$3" \
+        --arg sha "$sha" --arg scenario "$scenario" '
+        {total_count: $total, jobs: ($jobs | to_entries | map(
+          .value + {id: (.key + 1), run_id: $run, run_attempt: 1, head_sha: $sha}
+          | if ($scenario == "ci-job-owner" and $run == 1001) or ($scenario == "release-job-owner" and $run == 2001)
+            then .run_id = 999
+            elif ($scenario == "ci-job-attempt" and $run == 1001) or ($scenario == "release-job-attempt" and $run == 2001)
+            then .run_attempt = 2
+            elif ($scenario == "ci-job-source" and $run == 1001) or ($scenario == "release-job-source" and $run == 2001)
+            then .head_sha = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            else . end))}'
     }
     case "$*" in
       "auth status") exit 0 ;;
@@ -783,17 +1022,17 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
           *) printf '{"workflow_runs":['; ci_run; printf ']}\n' ;;
         esac ;;
       "api repos/szTheory/lockspire/actions/workflows/release.yml/runs?branch=main&event=push&head_sha="*)
-        printf '{"workflow_runs":[{"id":2001,"run_number":20,"name":"Release","path":".github/workflows/release.yml","workflow_id":202,"event":"push","head_branch":"main","status":"completed","conclusion":"success","head_sha":"%s","html_url":"https://example.test/actions/runs/2001","repository":{"full_name":"szTheory/lockspire"}}]}\n' "$sha" ;;
+        printf '{"workflow_runs":[{"id":2001,"run_attempt":1,"run_number":20,"name":"Release","path":".github/workflows/release.yml","workflow_id":202,"event":"push","head_branch":"main","status":"completed","conclusion":"success","head_sha":"%s","html_url":"https://example.test/actions/runs/2001","repository":{"full_name":"szTheory/lockspire"}}]}\n' "$sha" ;;
       "api repos/szTheory/lockspire/actions/runs/1001/jobs?per_page=100&page=1")
         total=7; [ "$scenario" = "ci-jobs-incomplete" ] && total=8
-        printf '{"total_count":%s,"jobs":%s}\n' "$total" '[{"name":"Dialyzer","status":"completed","conclusion":"success"},{"name":"Release Hygiene Drift","status":"completed","conclusion":"success"},{"name":"Fast Checks","status":"completed","conclusion":"success"},{"name":"Minimum Supported Elixir/OTP","status":"completed","conclusion":"success"},{"name":"Integration Checks","status":"completed","conclusion":"success"},{"name":"Complete Coverage Evidence","status":"completed","conclusion":"success"},{"name":"Adoption Demo Smoke","status":"completed","conclusion":"success"}]' ;;
+        job_page 1001 "$total" '[{"name":"Dialyzer","status":"completed","conclusion":"success"},{"name":"Release Hygiene Drift","status":"completed","conclusion":"success"},{"name":"Fast Checks","status":"completed","conclusion":"success"},{"name":"Minimum Supported Elixir/OTP","status":"completed","conclusion":"success"},{"name":"Integration Checks","status":"completed","conclusion":"success"},{"name":"Complete Coverage Evidence","status":"completed","conclusion":"success"},{"name":"Adoption Demo Smoke","status":"completed","conclusion":"success"}]' ;;
       "api repos/szTheory/lockspire/actions/runs/1001/jobs?per_page=100&page=2")
         printf '%s\n' '{"total_count":8,"jobs":[]}' ;;
       "api repos/szTheory/lockspire/actions/runs/2001/jobs?per_page=100&page=1")
         case "$scenario" in
-          release-published) publication=success; total=6; tail='' ;;
-          release-job-missing) publication=skipped; total=4; tail='' ;;
-          release-job-duplicate) publication=skipped; total=7; tail=',{"name":"Publish verified release to Hex","status":"completed","conclusion":"skipped"}' ;;
+          release-published) publication=success; total=6; tail=',{"name":"Record terminal release outcome","status":"completed","conclusion":"skipped"}' ;;
+          release-job-missing) publication=skipped; total=5; tail=',{"name":"Record terminal release outcome","status":"completed","conclusion":"skipped"}' ;;
+          release-job-duplicate) publication=skipped; total=7; tail=',{"name":"Record terminal release outcome","status":"completed","conclusion":"skipped"},{"name":"Publish verified release to Hex","status":"completed","conclusion":"skipped"}' ;;
           release-job-terminal-missing) publication=skipped; total=5; tail='' ;;
           release-job-terminal-success) publication=skipped; total=6; tail=',{"name":"Record terminal release outcome","status":"completed","conclusion":"success"}' ;;
           release-job-terminal-failure) publication=skipped; total=6; tail=',{"name":"Record terminal release outcome","status":"completed","conclusion":"failure"}' ;;
@@ -802,8 +1041,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
           *) publication=skipped; total=6; tail=',{"name":"Record terminal release outcome","status":"completed","conclusion":"skipped"}' ;;
         esac
         jobs='[{"name":"Maintain Release Please PR","status":"completed","conclusion":"success"},{"name":"Validate exact main head and CI evidence","status":"completed","conclusion":"skipped"},{"name":"Prove exact package before publication","status":"completed","conclusion":"skipped"},{"name":"Publish verified release to Hex","status":"completed","conclusion":"'"$publication"'"},{"name":"Verify public install truth","status":"completed","conclusion":"skipped"}'
-        [ "$scenario" = "release-job-missing" ] && jobs='[{"name":"Maintain Release Please PR","status":"completed","conclusion":"success"},{"name":"Validate exact main head and CI evidence","status":"completed","conclusion":"skipped"},{"name":"Prove exact package before publication","status":"completed","conclusion":"skipped"},{"name":"Publish verified release to Hex","status":"completed","conclusion":"skipped"}'
-        printf '{"total_count":%s,"jobs":%s%s]}\n' "$total" "$jobs" "$tail" ;;
+        [ "$scenario" = "release-job-missing" ] && jobs='[{"name":"Maintain Release Please PR","status":"completed","conclusion":"success"},{"name":"Validate exact main head and CI evidence","status":"completed","conclusion":"skipped"},{"name":"Prove exact package before publication","status":"completed","conclusion":"skipped"},{"name":"Verify public install truth","status":"completed","conclusion":"skipped"}'
+        job_page 2001 "$total" "$jobs$tail]" ;;
       *) printf 'unexpected fake gh command\n' >&2; exit 92 ;;
     esac
     """

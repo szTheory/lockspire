@@ -17,6 +17,7 @@ permissions:
 env:
   ELIXIR_VERSION: "1.19.5"
   OTP_VERSION: "28"
+  HEX_VERSION: "2.6.0"
   MIN_ELIXIR_VERSION: "1.18.4"
   MIN_OTP_VERSION: "27"
 
@@ -35,6 +36,10 @@ jobs:
         with:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
+          install-hex: false
+
+      - name: Install reviewed Hex package builder
+        run: mix local.hex "$HEX_VERSION" --force
 
       - name: Restore Dialyzer cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -119,6 +124,10 @@ jobs:
         with:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
+          install-hex: false
+
+      - name: Install reviewed Hex package builder
+        run: mix local.hex "$HEX_VERSION" --force
 
       - name: Restore Mix cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -189,7 +198,9 @@ jobs:
   compatibility:
     name: Minimum Supported Elixir/OTP
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # The floor verifier partition took 1,020s for its raw scenario receipts;
+    # allow the existing compile/test/proof graph plus the bounded 25m wrapper.
+    timeout-minutes: 45
 
     services:
       postgres:
@@ -230,9 +241,14 @@ jobs:
         with:
           elixir-version: ${{ env.MIN_ELIXIR_VERSION }}
           otp-version: ${{ env.MIN_OTP_VERSION }}
+          install-hex: false
+
+      - name: Install reviewed Hex package builder
+        run: mix local.hex "$HEX_VERSION" --force
 
       - name: Restore Mix cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: mix-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             deps
@@ -245,6 +261,17 @@ jobs:
 
       - name: Install dependencies
         run: mix deps.get --check-locked
+
+      - name: Provision authenticated verifier candidate inputs
+        id: verifier-candidate
+        env:
+          EXPECTED_RUNNER_REVISION: ${{ github.sha }}
+        run: >-
+          python3 scripts/ci/provision_verifier_candidate.py
+          --expected-runner "$EXPECTED_RUNNER_REVISION"
+          --reviewed-candidate-source
+          --manifest-path .artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json
+          --github-output "$GITHUB_OUTPUT"
 
       - name: Wait for PostgreSQL
         run: |
@@ -269,6 +296,20 @@ jobs:
         working-directory: compatibility/phoenix_1_8_live_view_1_1
         run: mix compile --warnings-as-errors
 
+      - name: Verify prepared minimum cache inputs
+        run: git diff --exit-code -- mix.lock compatibility/phoenix_1_8_live_view_1_1/mix.lock
+
+      - name: Save prepared minimum Mix cache before host proof
+        if: steps.mix-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            deps
+            _build
+            tmp/lockspire-compatibility-fixture/deps
+            tmp/lockspire-compatibility-fixture/_build
+          key: ${{ steps.mix-cache.outputs.cache-primary-key }}
+
       - name: Restore floor host proof dependency cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -278,6 +319,34 @@ jobs:
       - name: Run exact-floor packaged host proof
         id: host-proof-floor
         run: bash scripts/ci/run_host_integration_proof.sh --pair floor --receipt-dir .artifacts/ci/host-integration/floor
+
+      - name: Run exact-floor installed verifier upgrade proof
+        id: verifier-proof-floor
+        env:
+          EXPECTED_RUNNER: ${{ steps.verifier-candidate.outputs.expected_runner }}
+          EXPECTED_CANDIDATE_SOURCE: ${{ steps.verifier-candidate.outputs.expected_candidate_source }}
+          EXPECTED_ARCHIVE_SHA256: ${{ steps.verifier-candidate.outputs.expected_archive_sha256 }}
+          EXPECTED_TREE_SHA256: ${{ steps.verifier-candidate.outputs.expected_tree_sha256 }}
+          EXPECTED_MANIFEST_SHA256: ${{ steps.verifier-candidate.outputs.expected_manifest_sha256 }}
+        run: >-
+          bash scripts/ci/run_verifier_upgrade_proof.sh --pair floor
+          --receipt-dir .artifacts/phase178/ci-floor
+          --expected-runner "$EXPECTED_RUNNER"
+          --toolchain-profile hosted-minimum
+          --expected-candidate-source "$EXPECTED_CANDIDATE_SOURCE"
+          --expected-archive-sha256 "$EXPECTED_ARCHIVE_SHA256"
+          --expected-tree-sha256 "$EXPECTED_TREE_SHA256"
+          --frozen-manifest .artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json
+          --expected-manifest-sha256 "$EXPECTED_MANIFEST_SHA256"
+
+      - name: Upload validated exact-floor verifier upgrade receipts
+        if: always() && steps.verifier-proof-floor.outcome == 'success'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: lockspire-verifier-upgrade-${{ github.sha }}-floor
+          path: .artifacts/phase178/ci-floor/validated/**
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Upload validated exact-floor host proof receipts
         if: always() && steps.host-proof-floor.outcome == 'success'
@@ -294,10 +363,10 @@ jobs:
   integration:
     name: Integration Checks
     runs-on: ubuntu-latest
-    # The canonical local matrix measured 649s; the new locked host proof measured
-    # 143s. Those known partitions total 792s, leaving 1,008s in the existing
-    # 30-minute cap for setup and variance. Keep the cap; remote headroom is unobserved.
-    timeout-minutes: 30
+    # Run 40927824424 spent 20m before the locked verifier, which exhausted its
+    # former 25m total in release RPC. Reserve its bounded 40m proof window plus
+    # setup, source/host checks, uploads and cleanup without clipping that window.
+    timeout-minutes: 75
 
     services:
       postgres:
@@ -330,15 +399,22 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
 
       - name: Set up Elixir and Erlang
         uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
         with:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
+          install-hex: false
+
+      - name: Install reviewed Hex package builder
+        run: mix local.hex "$HEX_VERSION" --force
 
       - name: Restore Mix cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: mix-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             deps
@@ -364,6 +440,31 @@ jobs:
       - name: Install dependencies
         run: mix deps.get --check-locked
 
+      - name: Compile current source and verify prepared cache inputs
+        run: |
+          mix compile --warnings-as-errors
+          git diff --exit-code -- mix.lock
+
+      - name: Save prepared integration Mix cache before tests
+        if: steps.mix-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ steps.mix-cache.outputs.cache-primary-key }}
+
+      - name: Provision authenticated verifier candidate inputs
+        id: verifier-candidate
+        env:
+          EXPECTED_RUNNER_REVISION: ${{ github.sha }}
+        run: >-
+          python3 scripts/ci/provision_verifier_candidate.py
+          --expected-runner "$EXPECTED_RUNNER_REVISION"
+          --reviewed-candidate-source
+          --manifest-path .artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json
+          --github-output "$GITHUB_OUTPUT"
+
       - name: Wait for PostgreSQL
         run: |
           for _attempt in $(seq 1 30); do
@@ -374,11 +475,55 @@ jobs:
           exit 1
 
       - name: Run integration suite including onboarding and OIDC E2E proof
+        env:
+          LOCKSPIRE_FROZEN_INPUTS: .artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json
+          LOCKSPIRE_EXPECTED_FROZEN_MANIFEST_SHA256: ${{ steps.verifier-candidate.outputs.expected_manifest_sha256 }}
+          LOCKSPIRE_EXPECTED_FROZEN_RUNNER_REVISION: ${{ steps.verifier-candidate.outputs.expected_runner }}
+          LOCKSPIRE_EXPECTED_CANDIDATE_SOURCE_REVISION: ${{ steps.verifier-candidate.outputs.expected_candidate_source }}
+          LOCKSPIRE_EXPECTED_CANDIDATE_ARCHIVE_SHA256: ${{ steps.verifier-candidate.outputs.expected_archive_sha256 }}
+          LOCKSPIRE_EXPECTED_CANDIDATE_TREE_SHA256: ${{ steps.verifier-candidate.outputs.expected_tree_sha256 }}
         run: CLEAN_ROOM_CACHE_ROOT="$GITHUB_WORKSPACE/tmp/clean-room-cache" bash scripts/ci/run_test_matrix.sh --integration .artifacts/ci/integration-timings.json .artifacts/ci/coverage/integration "${{ github.sha }}"
+
+      - name: Upload integration test timing
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: integration-test-timings-${{ github.sha }}
+          path: .artifacts/ci/integration-timings.json
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Run locked packaged host proof
         id: host-proof-locked
         run: bash scripts/ci/run_host_integration_proof.sh --pair locked --receipt-dir .artifacts/ci/host-integration/locked
+
+      - name: Run locked installed verifier upgrade proof
+        id: verifier-proof-locked
+        env:
+          EXPECTED_RUNNER: ${{ steps.verifier-candidate.outputs.expected_runner }}
+          EXPECTED_CANDIDATE_SOURCE: ${{ steps.verifier-candidate.outputs.expected_candidate_source }}
+          EXPECTED_ARCHIVE_SHA256: ${{ steps.verifier-candidate.outputs.expected_archive_sha256 }}
+          EXPECTED_TREE_SHA256: ${{ steps.verifier-candidate.outputs.expected_tree_sha256 }}
+          EXPECTED_MANIFEST_SHA256: ${{ steps.verifier-candidate.outputs.expected_manifest_sha256 }}
+        run: >-
+          bash scripts/ci/run_verifier_upgrade_proof.sh --pair locked
+          --receipt-dir .artifacts/phase178/ci-locked
+          --expected-runner "$EXPECTED_RUNNER"
+          --toolchain-profile hosted-current
+          --expected-candidate-source "$EXPECTED_CANDIDATE_SOURCE"
+          --expected-archive-sha256 "$EXPECTED_ARCHIVE_SHA256"
+          --expected-tree-sha256 "$EXPECTED_TREE_SHA256"
+          --frozen-manifest .artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json
+          --expected-manifest-sha256 "$EXPECTED_MANIFEST_SHA256"
+
+      - name: Upload validated locked verifier upgrade receipts
+        if: always() && steps.verifier-proof-locked.outcome == 'success'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: lockspire-verifier-upgrade-${{ github.sha }}-locked
+          path: .artifacts/phase178/ci-locked/validated/**
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Upload validated locked host proof receipts
         if: always() && steps.host-proof-locked.outcome == 'success'
@@ -393,7 +538,7 @@ jobs:
         id: validate-client-lifetime-receipt
         if: always()
         env:
-          EXPECTED_SOURCE_REVISION: ${{ github.sha }}
+          EXPECTED_SOURCE_REVISION: ${{ steps.verifier-candidate.outputs.expected_candidate_source }}
         run: |
           test -s .artifacts/ci/client-lifetimes/receipt.json
           test -s .artifacts/ci/client-lifetimes/validation.json
@@ -473,6 +618,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
+    env:
+      MIX_ENV: test
+
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -482,9 +630,26 @@ jobs:
         with:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
+          install-hex: false
+
+      - name: Install reviewed Hex package builder
+        run: mix local.hex "$HEX_VERSION" --force
+
+      - name: Restore compatible test Mix cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-fast-v2-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-${{ hashFiles('mix.lock') }}
 
       - name: Install dependencies
         run: mix deps.get --check-locked
+
+      - name: Compile current source before importing coverage
+        run: |
+          mix compile --warnings-as-errors
+          git diff --exit-code -- mix.lock
 
       - name: Download SHA-bound fast coverage evidence
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
@@ -539,6 +704,10 @@ jobs:
         with:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
+          install-hex: false
+
+      - name: Install reviewed Hex package builder
+        run: mix local.hex "$HEX_VERSION" --force
 
       - name: Restore adoption demo Mix cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

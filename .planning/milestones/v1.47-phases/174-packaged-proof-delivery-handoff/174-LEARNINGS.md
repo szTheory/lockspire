@@ -1,0 +1,18 @@
+# Phase 174 execution lessons
+
+These observations come from the actual selected-proof and delivery work; they authorize no new product or infrastructure work.
+
+- Finish formatting, the complete source review and negative-test quality review before the expensive candidate gate. The partial Plan 02 review missed two formatter changes and a digest-test weakness, causing justified proof/candidate refreshes later. Keep review scope explicit and include fixtures and CI bridges.
+- A substitution test must first accept the alternate artifact without the original digest, then reject it specifically under the original digest. Invalid schema data can otherwise make a broken digest guard appear covered.
+- Start long commands with a durable, run-owned log and exit marker. Losing the tool-session completion required a justified complete CI rerun; final test output alone was not proof of the alias exit.
+- Keep evidence references directed: source inputs feed proof, proper owners assess proof, and derivative audits reference final reports. A report covering the audit that hashes that report creates a circular freshness dependency. Growing downstream operations notes should not become upstream source inputs without a material reason. Coverage changes require the actual verification owner and an explicit rationale.
+- Keep package, frozen checkpoint, candidate, hosted attempt, reviewed PR head and accepted-main identities distinct. A real test change invalidates the affected candidate; tracking-only updates require scoped applicability review rather than restamping or arbitrary repeated proof.
+- Required PR CI runs only after opening the implementation-complete milestone PR. Audit and final verification remain merge conditions; treating them as unspoken prerequisites to opening would create a cycle.
+- Preserve failed attempts. One bounded retry at the same SHA was justified only after the exact installed floor and all three browser mounts passed locally; the local result did not substitute for hosted proof. A repeat failure needs diagnosis rather than blind retries.
+- Existing floor-browser failure cleanup erased its private diagnostic log, and successful-only artifact upload retained no cause. Retain safe, redacted failure diagnostics in a future narrowly scoped harness repair if this recurs; do not claim that the successful retry explained the original failure.
+- Sandbox browser startup and Hex/git cache permissions are distinct from product failures. Use authorized run-owned resources or scoped escalation, preserve exact runtime floors, and avoid dependency or platform changes as a diagnostic shortcut.
+- Mark requirements complete only when their actual downstream gates pass. A plan's requirement labels describe contributions, not automatic proof that the whole requirement is complete.
+
+The later lifecycle failure recurred before a cause could be recovered, so the bounded diagnostic repair was completed in this phase: existing summary helpers, allowlisted fields/count caps, original-exit preservation and ten focused wrapper tests. Independent code/security reviews closed both implementation findings, and the hosted minimum-runtime success path passed at candidate9b8cf54d. This improves future diagnosis without claiming the earlier opaque failures were explained.
+
+- Derive warning dispositions from the exact acceptance mode. Broad hygiene observations can be informational in exact mode; extra dispositions are correctly rejected. Preserve the failed invocation and its real exit, correct only the arguments, and obtain the full successful receipt without weakening or bypassing any gate.

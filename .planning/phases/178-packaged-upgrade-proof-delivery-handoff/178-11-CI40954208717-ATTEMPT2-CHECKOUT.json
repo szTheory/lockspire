@@ -1,0 +1,57 @@
+{
+  "candidate_acceptance": "pending all7pass/sameattemptartifacts/nativevalidation",
+  "checkout_parents": [
+    "173059a166e9ade0f5f57c9980b7b2400a98538c",
+    "c465f2b8156c2f17db82910452dbcdf16aa8353b"
+  ],
+  "checkout_tree": "57df3f8ec0fcfb69ca647fdc2793ab3df84f5b4c",
+  "completed_job_log_proofs": [
+    {
+      "checkout_sha": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+      "job_id": 123736063322,
+      "log_utf8_sha256": "0264338a86ef9432fdf2e6a6d7c9aed468d23e05e41c29b5ced1a5fe072d1dab",
+      "name": "Dialyzer"
+    },
+    {
+      "checkout_sha": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+      "job_id": 123736063167,
+      "log_utf8_sha256": "2c57e99c4caac3d912159d145abc10ee4c66a0cc76e3c2a22dbcacebde4c6831",
+      "name": "Fast Checks",
+      "raw_log_persisted": false,
+      "test_summaries": [
+        {
+          "failures": 0,
+          "tests": 15
+        },
+        {
+          "failures": 0,
+          "tests": 2187
+        }
+      ]
+    },
+    {
+      "checkout_sha": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+      "job_id": 123736063134,
+      "log_utf8_sha256": "144252a759fac4f4d0aaebaae902f71d124f50adf96819871317e0b69a561c21",
+      "name": "Release Hygiene Drift",
+      "raw_log_persisted": false,
+      "test_summaries": []
+    },
+    {
+      "checkout_sha": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+      "job_id": 123736063582,
+      "log_utf8_sha256": "102c074a24dfe887112797d263753300bdb7c7e47efcf34d19164243be780473",
+      "name": "Adoption Demo Smoke",
+      "raw_log_persisted": false,
+      "test_summaries": []
+    }
+  ],
+  "executed_checkout": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+  "package_source": "e7ad5e67b7c6d00f97ce347b2576b671ddafd811",
+  "raw_logs_persisted": false,
+  "recorded_at": "2026-10-29T21:33:22.051637+00:00",
+  "reviewed_head": "c465f2b8156c2f17db82910452dbcdf16aa8353b",
+  "run_attempt": 2,
+  "run_id": 40954208717,
+  "schema": "lockspire-phase178-attempt2-checkout-evidence-v1"
+}

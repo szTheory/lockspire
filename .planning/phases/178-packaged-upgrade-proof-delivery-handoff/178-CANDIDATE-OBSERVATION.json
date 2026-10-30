@@ -1,0 +1,17 @@
+{
+  "checkout_parents": [
+    "173059a166e9ade0f5f57c9980b7b2400a98538c",
+    "c465f2b8156c2f17db82910452dbcdf16aa8353b"
+  ],
+  "checkout_ref": "refs/pull/141/merge",
+  "checkout_tree": "57df3f8ec0fcfb69ca647fdc2793ab3df84f5b4c",
+  "event": "pull_request",
+  "executed_checkout_sha": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+  "pull_request_base_sha": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+  "pull_request_head_sha": "c465f2b8156c2f17db82910452dbcdf16aa8353b",
+  "pull_request_number": 141,
+  "run_attempt": 2,
+  "run_id": "40954208717",
+  "schema": "lockspire-phase178-candidate-observation-v1",
+  "workflow_head_sha": "c465f2b8156c2f17db82910452dbcdf16aa8353b"
+}

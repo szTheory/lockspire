@@ -11,6 +11,21 @@ defmodule Lockspire.InstallGeneratorTest do
   @runtime_fixture_root Path.expand("../support/generated_host_app_web", __DIR__)
 
   setup_all do
+    previous_env =
+      Enum.map(
+        [
+          GeneratedHostAppWeb.Endpoint,
+          :repo,
+          :issuer,
+          :mount_path,
+          :known_scopes,
+          :account_resolver
+        ],
+        &{&1, Application.fetch_env(:lockspire, &1)}
+      )
+
+    on_exit(fn -> Enum.each(previous_env, &restore_env/1) end)
+
     Application.put_env(:lockspire, GeneratedHostAppWeb.Endpoint,
       secret_key_base: String.duplicate("a", 64),
       server: false,
@@ -769,6 +784,9 @@ defmodule Lockspire.InstallGeneratorTest do
     File.mkdir_p!(@fixture_root)
     File.write!(Path.join(@fixture_root, ".keep"), "")
   end
+
+  defp restore_env({key, {:ok, value}}), do: Application.put_env(:lockspire, key, value)
+  defp restore_env({key, :error}), do: Application.delete_env(:lockspire, key)
 
   defp generated_files(root) do
     root

@@ -1,0 +1,776 @@
+{
+  "builder_requalification": {
+    "bytes": 10055,
+    "path": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-11-HEX260-PREDECESSOR-REQUALIFICATION.json",
+    "sha256": "c6895a01b00d80abb392e637d9c616972a6f101725707b182ecccaf778f6c07b"
+  },
+  "cache_materialization": {
+    "active_scopes": [
+      "dev",
+      "test"
+    ],
+    "environment_seal_required": true,
+    "independent_static_acceptance": true,
+    "initial_transport_only": {
+      "bytes": 1475,
+      "path": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/materialization.json",
+      "sha256": "6adecdbf013f9d3d511674b39b65ec14a3a89d7e102b07f7d582e00a954c557d"
+    },
+    "original_canonical_cache_unchanged": true,
+    "scoped_active_cache": {
+      "bytes": 2284,
+      "path": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/materialization-scoped.json",
+      "sha256": "638b0e1ed4191c046cc3e793fe6d27c28958ae00247870f514a62a20bdd4d45f"
+    },
+    "unscoped_stale_copy_preserved_outside_active_repo": true
+  },
+  "canonical_source": {
+    "architecture": 15,
+    "data_retained": true,
+    "database_cleanup": "independently_absent",
+    "failures": 0,
+    "fast": 2180,
+    "integration": 261,
+    "journal": {
+      "bytes": 14462,
+      "path": "/private/tmp/lockspire178-canonical-a7jt46k5/events.json",
+      "sha256": "ed6107f59158e152a8673186599ad8a024a8ddfba9fa669d29a19b6e7b5da340"
+    },
+    "launcher_limitation": "return_in_finally SyntaxWarning surfaced; actual canonical exit/native gates independently verified, canonical stderr empty",
+    "native_owned_source_validator": "passed",
+    "original_inner_outer_and_pg_groups_confirmed_stopped": true,
+    "original_manifest": {
+      "bytes": 13385,
+      "path": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-owned-source-tests-syn0w_87/manifest.json",
+      "sha256": "31b42f51a47fb6eaba752342528b7f241f79700ae33ef4038bc093ddabd41ab4"
+    },
+    "outer_result": {
+      "bytes": 4025,
+      "path": "/private/tmp/lockspire178-canonical-launcher-98b79e54.json",
+      "sha256": "65b8b90b3cf33f1270c7913109b7842fb3205f1d44cd73ff01650c40d86c1317"
+    },
+    "properties": 2,
+    "source_root": "/private/tmp/lockspire178-canonical-a7jt46k5/source",
+    "tests": 2456
+  },
+  "commit_whitespace_check": {
+    "immutable_report": "178-SOURCE-REVIEW-98b79e54.md",
+    "initial_full_staged_check": "failed solely immutable authored source-review extra blank line at EOF, line22",
+    "report_sha256": "626bf9c4ce8cd1d7b4ef46d240e893862ad3b0c602922a484ce7bf6646cad0b1",
+    "resolution": "retain author bytes/hash; standard diff-check other files; only blank-at-eof rule disabled for that report",
+    "source_code_modified": false
+  },
+  "final_checker_versions": {
+    "v1": "preserved_unrun; same-byte loader and custody-before-import fixed in v2",
+    "v2": "preserved_unrun; subprocess input PIPE fixed in v3",
+    "v3": "accepted_preserved_unrun; conflict ValueError semantic parity changed in v4",
+    "v4": {
+      "helper": {
+        "bytes": 9140,
+        "path": "/private/tmp/lockspire178-base-semantic-check-v4.py",
+        "sha256": "37f2bc7a8642ee4b184b5cf34f595dd6190763a0a15a8b266b4b399d0a246d9e"
+      },
+      "status": "exact_hash_accepted_then_run_passed"
+    }
+  },
+  "final_metadata_security_audit": {
+    "audited_index_sha256": "c3a4d0c4169b697f68e2ddd22ed5d92b914968393a72dc87db927f58c808cee5",
+    "audited_progress_sha256_before_this_judgment": "019f5cfba23af20f2d50f0570462587395b70f7dd14060fd6a633462dfefa19c",
+    "auditor_writes_or_runtime": false,
+    "author": "Codex security auditor /root/correction_security",
+    "global_verdict": "OPEN_THREATS",
+    "hosted_main_phase_closure": false,
+    "later_owner_high_pending": [
+      "T-178-31",
+      "T-178-32",
+      "T-178-35",
+      "T-178-36"
+    ],
+    "local_judgment": "local metadata-transfer and retained-result security audit ACCEPTED",
+    "serialization": "parent transcription of author-authorized judgment",
+    "threats_open": 4,
+    "verified_progress_references": 52,
+    "verified_retained_files": 46
+  },
+  "frozen_provision": {
+    "owner_pins": {
+      "expected_archive_sha256": "08f16c479f2a5c8ae9c6cc20889ba8420e100d3adaa6d30587e331672a2e3ea4",
+      "expected_candidate_source": "98b79e540cebddfdb8a27ce16c133b54d7213970",
+      "expected_manifest_sha256": "0ef81be5e59e84b5fd9f97322dfcab0627194d8a6d30429da1a9bb74b3db687b",
+      "expected_runner": "98b79e540cebddfdb8a27ce16c133b54d7213970",
+      "expected_tree_sha256": "5e2984c981cb85526e1ca99e6f0e8c6f833538d8f6858d2ba7746b3dc4b7827b"
+    },
+    "record": {
+      "bytes": 2379,
+      "path": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/work-98b79e54-H98b79e54/collect-provision-_eqbe1oy/result.json",
+      "sha256": "7005d07b3a3094aca7045ce750264fc98fb4ab2c64759c8a86ec06ebb4bee077"
+    },
+    "status": "passed"
+  },
+  "harness": {
+    "acceptance_and_zero_selection_record": {
+      "bytes": 699,
+      "path": "/private/tmp/lockspire178-python-98b79e54.json",
+      "sha256": "9c8016e4adca30addc92afbb90672649055f37418ce8fb629bc3b9bf1c5aec7b"
+    },
+    "acceptance_tests": 291,
+    "clean_room_tests": 56,
+    "corrected_clean_room_record": {
+      "bytes": 353,
+      "path": "/private/tmp/lockspire178-python-clean-room-98b79e54.json",
+      "sha256": "f8eeac08278d18feae544552dac87d62d854dbb8119ef1c57583543875c69fe2"
+    },
+    "failures": 0,
+    "wrong_clean_room_glob_retained_as_zero_tests_exit5": true
+  },
+  "hosted_ci": "new_candidate_not_published; old cc61 CI40792440885 failed",
+  "installed_current_and_minimum": {
+    "current": {
+      "actual_elixir": "1.19.5",
+      "actual_otp": "28.5",
+      "candidate_archive_sha256": "08f16c479f2a5c8ae9c6cc20889ba8420e100d3adaa6d30587e331672a2e3ea4",
+      "candidate_tree_sha256": "5e2984c981cb85526e1ca99e6f0e8c6f833538d8f6858d2ba7746b3dc4b7827b",
+      "data_and_root_retained": true,
+      "events": {
+        "bytes": 11685,
+        "path": "/private/tmp/lockspire178-host-final-zbw390hu/events.json",
+        "sha256": "40f91265ccf2204ff49f3740bef60db1b061d14625166ae41355db17dc8f0fe9"
+      },
+      "journals": [
+        {
+          "bytes": 5337,
+          "path": "/private/tmp/lockspire178-host-final-zbw390hu/journal-0.jsonl",
+          "sha256": "1a0733998a08a1f49b93a1471e4c93d4c206c8deb65741030a91b46ca363565f"
+        },
+        {
+          "bytes": 5335,
+          "path": "/private/tmp/lockspire178-host-final-zbw390hu/journal-1.jsonl",
+          "sha256": "ccde48f2449477a1b08df027b573b47ffa23baa1f4b1aa19d918a96f6cdd7737"
+        },
+        {
+          "bytes": 5337,
+          "path": "/private/tmp/lockspire178-host-final-zbw390hu/journal-2.jsonl",
+          "sha256": "ad5da33d722c073ace64819915d273153c0ec54b7ce3656575073502b098ada3"
+        }
+      ],
+      "launch": {
+        "bytes": 2031,
+        "path": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/host-current-launch-result.json",
+        "sha256": "f7b960ef23c8979c64f70847625bce1f0e412defd9184a3b103dc3c88e7c5eeb"
+      },
+      "mounts": 3,
+      "native_receipt_and_original_custody_independently_audited": true,
+      "original_groups_stopped": true,
+      "receipts": [
+        {
+          "bytes": 12986,
+          "path": "/private/tmp/lockspire178-host-final-zbw390hu/receipt-0.json",
+          "sha256": "fb8cf82f7894ce767f59e83ce8d6df8f225e0667f8e6335505c69e276b3388c1"
+        },
+        {
+          "bytes": 12996,
+          "path": "/private/tmp/lockspire178-host-final-zbw390hu/receipt-1.json",
+          "sha256": "f5de0395d748c86e56411a6582d1c8c89a4c6ae3f711ebf76a470b9198f6374d"
+        },
+        {
+          "bytes": 12977,
+          "path": "/private/tmp/lockspire178-host-final-zbw390hu/receipt-2.json",
+          "sha256": "65cca980e15bc4a6fece97805cd60a95a13ed65f83b3c175d9ae18df6a5a52c0"
+        }
+      ],
+      "scenarios": 48,
+      "status": "passed"
+    },
+    "final_security_audit": "accepted_local_scope; global later-owner threats remain open",
+    "minimum": {
+      "actual_elixir": "1.18.4",
+      "actual_otp": "27.3.4.15",
+      "candidate_archive_sha256": "08f16c479f2a5c8ae9c6cc20889ba8420e100d3adaa6d30587e331672a2e3ea4",
+      "candidate_tree_sha256": "5e2984c981cb85526e1ca99e6f0e8c6f833538d8f6858d2ba7746b3dc4b7827b",
+      "data_and_root_retained": true,
+      "events": {
+        "bytes": 11663,
+        "path": "/private/tmp/lockspire178-host-final-lr48qmz5/events.json",
+        "sha256": "53e8ff507802044a7472386ce16c8decd7298d944e1a9ca95f834d66cb06b217"
+      },
+      "journals": [
+        {
+          "bytes": 5331,
+          "path": "/private/tmp/lockspire178-host-final-lr48qmz5/journal-0.jsonl",
+          "sha256": "536c653420525f6a72c33f93f97173c44c2d3f87d6d619a4b596d24ccc48a75e"
+        },
+        {
+          "bytes": 5333,
+          "path": "/private/tmp/lockspire178-host-final-lr48qmz5/journal-1.jsonl",
+          "sha256": "9d8766890374dbb595d60a11d469c3fe26f8b2c29946b3224894816dc83e827e"
+        },
+        {
+          "bytes": 5235,
+          "path": "/private/tmp/lockspire178-host-final-lr48qmz5/journal-2.jsonl",
+          "sha256": "8b111ec85ca14bad013c7a013fe680cbea55904b37fe76f100a81160840c018f"
+        }
+      ],
+      "launch": {
+        "bytes": 2028,
+        "path": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/host-minimum-launch-result.json",
+        "sha256": "cc1d2fe7bdc7ea4783e823a26d54014499bcc1ec833b5dd69efb76cc7b966e7f"
+      },
+      "mounts": 3,
+      "native_receipt_and_original_custody_independently_audited": true,
+      "original_groups_stopped": true,
+      "receipts": [
+        {
+          "bytes": 12986,
+          "path": "/private/tmp/lockspire178-host-final-lr48qmz5/receipt-0.json",
+          "sha256": "74d750db900128e580d2fd413917864b9f18d0c5e8bf7778ed7bed79e2d9d552"
+        },
+        {
+          "bytes": 12994,
+          "path": "/private/tmp/lockspire178-host-final-lr48qmz5/receipt-1.json",
+          "sha256": "2017c862d62780a372aff9e542c1f0a0d0c3d25b3753c9cf33dd0995c6a17759"
+        },
+        {
+          "bytes": 12976,
+          "path": "/private/tmp/lockspire178-host-final-lr48qmz5/receipt-2.json",
+          "sha256": "9d46404019c61554b88d3d48db61903138f606d0000d3619f76395165c770381"
+        }
+      ],
+      "scenarios": 48,
+      "status": "passed"
+    },
+    "preparation": {
+      "bytes": 5129,
+      "path": "/private/tmp/lockspire178-host-hex260-v4-preparation.json",
+      "sha256": "4eaf65d6d116113fa00c665248315b75865d7c0b68cfd7c74639f8da24150de9"
+    },
+    "prior_helpers_v1_v2_v3": "preserved_unrun",
+    "pure_fixtures": {
+      "bytes": 615,
+      "path": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/host-fixture-result-v4.json",
+      "sha256": "7d127e4dc21605f3aea425e4037f6712608b8664f798d78e1179c43cbbfd4395"
+    },
+    "static_v4_acceptance": true,
+    "total_scenarios": 96
+  },
+  "lifetimes": {
+    "checks": 47,
+    "data_retained": true,
+    "database_cleanup": "independently_absent",
+    "exunit_tests": 3,
+    "failed": 0,
+    "independent_recomposition_byte_identical": true,
+    "launch": {
+      "bytes": 837,
+      "path": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/work-98b79e54-H98b79e54/launch-lifetimes-jdknj_u3/result.json",
+      "sha256": "776317da2bd2ace20ff3cb3f3281d66b02ead77a710b86f8076b51c880456f9a"
+    },
+    "native": {
+      "bytes": 22482,
+      "path": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/work-98b79e54-H98b79e54/collect-lifetimes-76xdh6ji/result.json",
+      "sha256": "5cfea4135b172a3c515be2ee1faee4030ca39e1a4899a99e5c96da6133527502"
+    },
+    "original_inner_outer_and_pg_groups_confirmed_stopped": true,
+    "receipt": {
+      "bytes": 4738,
+      "path": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/repo/.artifacts/phase178/lifetime-receipts-98b79e54-H98b79e54/composed.json",
+      "sha256": "42ca77d072ae05855f971e12b71c06d4090ebcd007531e4edd675e4a136f3344"
+    },
+    "scenarios": 9,
+    "skipped": 0,
+    "source_revision": "98b79e540cebddfdb8a27ce16c133b54d7213970",
+    "validation": {
+      "bytes": 468,
+      "path": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/repo/.artifacts/phase178/lifetime-receipts-98b79e54-H98b79e54/validation.json",
+      "sha256": "6d5497045848934282996462cf5bca50d6a0b1dc354a0a6418d7e35f1f864c05"
+    }
+  },
+  "main_delivery_acceptance": "pending",
+  "native_complete_matrix": {
+    "cases": 64,
+    "failures": 0,
+    "independent_composition": {
+      "bytes": 31618,
+      "path": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/work-98b79e54-H98b79e54/composed-matrix-98b79e54.json",
+      "sha256": "2387c121d96ff98a9bb884d16e51733836023455f895b098b64f8ea8fc33b0b7"
+    },
+    "receipts": 26,
+    "status": "passed"
+  },
+  "native_epoch": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs",
+  "phase_plan11_complete": false,
+  "phase_plan12": "not_ready",
+  "preparation": {
+    "bytes": 10529,
+    "path": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/preparation.json",
+    "sha256": "6b22653f70b656780a0c93e2f15cb730a714189415b5be5b9d0a007e8644a696"
+  },
+  "prior_evidence_limits": "All prior C50/H175/e13 failed attempts, unknown closures/causes, retractions, root-tar incident and E09/E10/generic descriptor flags remain applicable to their original epochs. No new pass restamps them.",
+  "recorded_at": "2026-10-29T13:21:52.510572+00:00",
+  "remote_mutations_performed": false,
+  "remote_readonly_observation": {
+    "base": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+    "body_sha256": "eaf0ad6a6f6d8b6733356af2ec799da59a8506e743296bbd0f2acd8c4fa90fe3",
+    "draft": false,
+    "head": "cc61cffc563fc8df141313c26442186c0b4645a3",
+    "merged": false,
+    "observed_at": "2026-10-29T13:11:37.517Z",
+    "pr_number": 141,
+    "remote_mutations": false,
+    "retained_snapshot": ".artifacts/phase178/98-correction/remote-readonly-snapshot.json",
+    "runs": [
+      {
+        "conclusion": "failure",
+        "id": 40792440885,
+        "jobs_url": "https://api.github.com/repos/szTheory/lockspire/actions/runs/40792440885/jobs",
+        "logs_url": "https://api.github.com/repos/szTheory/lockspire/actions/runs/40792440885/logs",
+        "name": "CI",
+        "run_number": 415,
+        "status": "completed",
+        "workflow_id": 265468428
+      },
+      {
+        "conclusion": "success",
+        "id": 40792440963,
+        "jobs_url": "https://api.github.com/repos/szTheory/lockspire/actions/runs/40792440963/jobs",
+        "logs_url": "https://api.github.com/repos/szTheory/lockspire/actions/runs/40792440963/logs",
+        "name": "Dependency Review",
+        "run_number": 250,
+        "status": "completed",
+        "workflow_id": 265468429
+      }
+    ],
+    "snapshot_sha256": "8154b382949821cd4cacc669399e490032ed12c446d29785914e4ad969dbdbd6",
+    "state": "open",
+    "url": "https://github.com/szTheory/lockspire/pull/141"
+  },
+  "retained_evidence_index": {
+    "bytes": 14072,
+    "path": ".artifacts/phase178/98-correction/retained-index.json",
+    "sha256": "c3a4d0c4169b697f68e2ddd22ed5d92b914968393a72dc87db927f58c808cee5"
+  },
+  "retained_evidence_records": [
+    {
+      "bytes": 10529,
+      "original": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/preparation.json",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/0-preparation.json",
+      "sha256": "6b22653f70b656780a0c93e2f15cb730a714189415b5be5b9d0a007e8644a696"
+    },
+    {
+      "bytes": 4632,
+      "original": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/epoch.json",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/1-epoch.json",
+      "sha256": "c023adba047e27a12adf0787524bc415a1bcd30d26ff8659b959effd28ffecc2"
+    },
+    {
+      "bytes": 1475,
+      "original": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/materialization.json",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/2-materialization.json",
+      "sha256": "6adecdbf013f9d3d511674b39b65ec14a3a89d7e102b07f7d582e00a954c557d"
+    },
+    {
+      "bytes": 2284,
+      "original": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/materialization-scoped.json",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/3-materialization-scoped.json",
+      "sha256": "638b0e1ed4191c046cc3e793fe6d27c28958ae00247870f514a62a20bdd4d45f"
+    },
+    {
+      "bytes": 2031,
+      "original": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/host-current-launch-result.json",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/4-host-current-launch-result.json",
+      "sha256": "f7b960ef23c8979c64f70847625bce1f0e412defd9184a3b103dc3c88e7c5eeb"
+    },
+    {
+      "bytes": 2028,
+      "original": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/host-minimum-launch-result.json",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/5-host-minimum-launch-result.json",
+      "sha256": "cc1d2fe7bdc7ea4783e823a26d54014499bcc1ec833b5dd69efb76cc7b966e7f"
+    },
+    {
+      "bytes": 615,
+      "original": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/host-fixture-result-v4.json",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/6-host-fixture-result-v4.json",
+      "sha256": "7d127e4dc21605f3aea425e4037f6712608b8664f798d78e1179c43cbbfd4395"
+    },
+    {
+      "bytes": 24932,
+      "original": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/canonical.py",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/7-canonical.py",
+      "sha256": "3e8e10673bafafadbfa3cdc64e5c09baf7c3e4d7475ded02d7316d38d4dd950d"
+    },
+    {
+      "bytes": 11208,
+      "original": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/collector.py",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/8-collector.py",
+      "sha256": "cd3235167391d41dca9ba9596e2f41650333dd218965bfa2f7fb0afedc405138"
+    },
+    {
+      "bytes": 20918,
+      "original": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/coordinator.py",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/9-coordinator.py",
+      "sha256": "92fb8793678e833cd7d3a7b29a3a77cb83229f26c0086e07057110b6b9665828"
+    },
+    {
+      "bytes": 109835,
+      "original": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/driver.py",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/10-driver.py",
+      "sha256": "5436bd05806dc8f2e96ad9a7f279e0068116edfb970135997d024a504ff29755"
+    },
+    {
+      "bytes": 30018,
+      "original": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/matrix.py",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/11-matrix.py",
+      "sha256": "78763edad10179674af8d85f5187835ea5e4a01deb794d09e18595bfa02bf2b1"
+    },
+    {
+      "bytes": 6338,
+      "original": "/private/tmp/lockspire178_host_custody_v4.py",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/12-lockspire178_host_custody_v4.py",
+      "sha256": "c072d94306578c8fd561eba11350c414fabcd0536509331afa99615babf233c4"
+    },
+    {
+      "bytes": 22892,
+      "original": "/private/tmp/lockspire178-host-hex260-current-v4.py",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/13-lockspire178-host-hex260-current-v4.py",
+      "sha256": "d1b2fb526f64049e5a3a2bfc13da0ddf21aec3cb484613db31c549b0bf618474"
+    },
+    {
+      "bytes": 22915,
+      "original": "/private/tmp/lockspire178-host-hex260-minimum-v4.py",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/14-lockspire178-host-hex260-minimum-v4.py",
+      "sha256": "da128c598cbe05eb8caa13b8a5723dfb0338802d4310ce390ff5f092cc132b3e"
+    },
+    {
+      "bytes": 8226,
+      "original": "/private/tmp/lockspire178-admin-journey-cleanup-observer-hex260-v4.py",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/15-lockspire178-admin-journey-cleanup-observer-hex260-v4.py",
+      "sha256": "cc29e8b18bc151efe0513d452d5a3829c06cb2f9de9c364d0f3e467c5803af7d"
+    },
+    {
+      "bytes": 8602,
+      "original": "/private/tmp/lockspire178-host-custody-behavioral-fixtures-v4.py",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/16-lockspire178-host-custody-behavioral-fixtures-v4.py",
+      "sha256": "96be0f18bc8cd3a568f10de58e295a2eb92fef8fceab6671187b12347dbb8afd"
+    },
+    {
+      "bytes": 5129,
+      "original": "/private/tmp/lockspire178-host-hex260-v4-preparation.json",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/17-lockspire178-host-hex260-v4-preparation.json",
+      "sha256": "4eaf65d6d116113fa00c665248315b75865d7c0b68cfd7c74639f8da24150de9"
+    },
+    {
+      "bytes": 699,
+      "original": "/private/tmp/lockspire178-python-98b79e54.json",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/18-lockspire178-python-98b79e54.json",
+      "sha256": "9c8016e4adca30addc92afbb90672649055f37418ce8fb629bc3b9bf1c5aec7b"
+    },
+    {
+      "bytes": 353,
+      "original": "/private/tmp/lockspire178-python-clean-room-98b79e54.json",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/19-lockspire178-python-clean-room-98b79e54.json",
+      "sha256": "f8eeac08278d18feae544552dac87d62d854dbb8119ef1c57583543875c69fe2"
+    },
+    {
+      "bytes": 4025,
+      "original": "/private/tmp/lockspire178-canonical-launcher-98b79e54.json",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/20-lockspire178-canonical-launcher-98b79e54.json",
+      "sha256": "65b8b90b3cf33f1270c7913109b7842fb3205f1d44cd73ff01650c40d86c1317"
+    },
+    {
+      "bytes": 11685,
+      "original": "/private/tmp/lockspire178-host-final-zbw390hu/events.json",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/21-events.json",
+      "sha256": "40f91265ccf2204ff49f3740bef60db1b061d14625166ae41355db17dc8f0fe9"
+    },
+    {
+      "bytes": 12986,
+      "original": "/private/tmp/lockspire178-host-final-zbw390hu/receipt-0.json",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/22-receipt-0.json",
+      "sha256": "fb8cf82f7894ce767f59e83ce8d6df8f225e0667f8e6335505c69e276b3388c1"
+    },
+    {
+      "bytes": 12996,
+      "original": "/private/tmp/lockspire178-host-final-zbw390hu/receipt-1.json",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/23-receipt-1.json",
+      "sha256": "f5de0395d748c86e56411a6582d1c8c89a4c6ae3f711ebf76a470b9198f6374d"
+    },
+    {
+      "bytes": 12977,
+      "original": "/private/tmp/lockspire178-host-final-zbw390hu/receipt-2.json",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/24-receipt-2.json",
+      "sha256": "65cca980e15bc4a6fece97805cd60a95a13ed65f83b3c175d9ae18df6a5a52c0"
+    },
+    {
+      "bytes": 5337,
+      "original": "/private/tmp/lockspire178-host-final-zbw390hu/journal-0.jsonl",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/25-journal-0.jsonl",
+      "sha256": "1a0733998a08a1f49b93a1471e4c93d4c206c8deb65741030a91b46ca363565f"
+    },
+    {
+      "bytes": 5335,
+      "original": "/private/tmp/lockspire178-host-final-zbw390hu/journal-1.jsonl",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/26-journal-1.jsonl",
+      "sha256": "ccde48f2449477a1b08df027b573b47ffa23baa1f4b1aa19d918a96f6cdd7737"
+    },
+    {
+      "bytes": 5337,
+      "original": "/private/tmp/lockspire178-host-final-zbw390hu/journal-2.jsonl",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/27-journal-2.jsonl",
+      "sha256": "ad5da33d722c073ace64819915d273153c0ec54b7ce3656575073502b098ada3"
+    },
+    {
+      "bytes": 11663,
+      "original": "/private/tmp/lockspire178-host-final-lr48qmz5/events.json",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/28-events.json",
+      "sha256": "53e8ff507802044a7472386ce16c8decd7298d944e1a9ca95f834d66cb06b217"
+    },
+    {
+      "bytes": 12986,
+      "original": "/private/tmp/lockspire178-host-final-lr48qmz5/receipt-0.json",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/29-receipt-0.json",
+      "sha256": "74d750db900128e580d2fd413917864b9f18d0c5e8bf7778ed7bed79e2d9d552"
+    },
+    {
+      "bytes": 12994,
+      "original": "/private/tmp/lockspire178-host-final-lr48qmz5/receipt-1.json",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/30-receipt-1.json",
+      "sha256": "2017c862d62780a372aff9e542c1f0a0d0c3d25b3753c9cf33dd0995c6a17759"
+    },
+    {
+      "bytes": 12976,
+      "original": "/private/tmp/lockspire178-host-final-lr48qmz5/receipt-2.json",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/31-receipt-2.json",
+      "sha256": "9d46404019c61554b88d3d48db61903138f606d0000d3619f76395165c770381"
+    },
+    {
+      "bytes": 5331,
+      "original": "/private/tmp/lockspire178-host-final-lr48qmz5/journal-0.jsonl",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/32-journal-0.jsonl",
+      "sha256": "536c653420525f6a72c33f93f97173c44c2d3f87d6d619a4b596d24ccc48a75e"
+    },
+    {
+      "bytes": 5333,
+      "original": "/private/tmp/lockspire178-host-final-lr48qmz5/journal-1.jsonl",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/33-journal-1.jsonl",
+      "sha256": "9d8766890374dbb595d60a11d469c3fe26f8b2c29946b3224894816dc83e827e"
+    },
+    {
+      "bytes": 5235,
+      "original": "/private/tmp/lockspire178-host-final-lr48qmz5/journal-2.jsonl",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/34-journal-2.jsonl",
+      "sha256": "8b111ec85ca14bad013c7a013fe680cbea55904b37fe76f100a81160840c018f"
+    },
+    {
+      "bytes": 14462,
+      "original": "/private/tmp/lockspire178-canonical-a7jt46k5/events.json",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/35-events.json",
+      "sha256": "ed6107f59158e152a8673186599ad8a024a8ddfba9fa669d29a19b6e7b5da340"
+    },
+    {
+      "bytes": 17810,
+      "original": "/private/tmp/lockspire178-generate-hex260-epoch-v3.py",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/36-lockspire178-generate-hex260-epoch-v3.py",
+      "sha256": "f77ac0dffecc9c843401ba94e7a43562918325851ab33578e68aeee41e6e13ad"
+    },
+    {
+      "bytes": 24782,
+      "original": "/private/tmp/lockspire178-canonical-safe-template-v3.py",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/37-lockspire178-canonical-safe-template-v3.py",
+      "sha256": "7a062669914a972ad2aee363e0a60c9fe681247c2a3f93b0cbde27caf91efb09"
+    },
+    {
+      "bytes": 3363,
+      "original": "/private/tmp/lockspire178-canonical-gate-fixtures-v3.py",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/38-lockspire178-canonical-gate-fixtures-v3.py",
+      "sha256": "5bf0f2a39c1a63d34946b387f0eb89c30642555befa44437da14470efc4f0802"
+    },
+    {
+      "bytes": 11367,
+      "original": "/private/tmp/lockspire178-canonical-behavioral-fixtures-v3.py",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/39-lockspire178-canonical-behavioral-fixtures-v3.py",
+      "sha256": "881f00b362f65b477c0e22c42a64246a0b7ab1a2abc4891d12b66ad299b59f0d"
+    },
+    {
+      "bytes": 564,
+      "original": "/private/tmp/lockspire178-canonical-v3-fixture-result.json",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/40-lockspire178-canonical-v3-fixture-result.json",
+      "sha256": "a97ae35d582972b99132d20710e4e2c07a44b2c56897dc840981b081309b5959"
+    },
+    {
+      "bytes": 8283,
+      "original": "/private/tmp/lockspire178-base-semantic-check-v1.py",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/41-lockspire178-base-semantic-check-v1.py",
+      "sha256": "a7aef8236b478f932837a6a132904fdb18be5ce73a278341de463dd218693aa0"
+    },
+    {
+      "bytes": 8932,
+      "original": "/private/tmp/lockspire178-base-semantic-check-v2.py",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/42-lockspire178-base-semantic-check-v2.py",
+      "sha256": "9e971498f02f5aaf02d8f747ceea9b5845d202a8a7ca1c883a98d2c68e8f879a"
+    },
+    {
+      "bytes": 9142,
+      "original": "/private/tmp/lockspire178-base-semantic-check-v3.py",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/43-lockspire178-base-semantic-check-v3.py",
+      "sha256": "9c1f7df11ac7eb32119a49a372b6b064550bbee777c3bca225b62da43058d4eb"
+    },
+    {
+      "bytes": 9140,
+      "original": "/private/tmp/lockspire178-base-semantic-check-v4.py",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/44-lockspire178-base-semantic-check-v4.py",
+      "sha256": "37f2bc7a8642ee4b184b5cf34f595dd6190763a0a15a8b266b4b399d0a246d9e"
+    },
+    {
+      "bytes": 14665,
+      "original": "/private/tmp/lockspire178-base-semantic-check-98b79e54.json",
+      "retained": ".artifacts/phase178/98-correction/retained-evidence/45-lockspire178-base-semantic-check-98b79e54.json",
+      "sha256": "4774199b8429d9734a591b6e79586b22c5dc06927809a088055bb76c9b95c500"
+    }
+  ],
+  "reviews": {
+    "authoritative_prior_packet_unchanged": false,
+    "closure_sha256": "751a4255e9ca7a9dbea6ab1fa69b124391c329a46e68d77ac8e36e3821a7992f",
+    "covered_files_per_lane": 1079,
+    "global_security": "OPEN_THREATS",
+    "integration": {
+      "bytes": 185214,
+      "path": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-INTEGRATION-REVIEW-98b79e54.md",
+      "sha256": "89fda3cfb42ad86226ad2b42ee6f76950083c5d7f75e44f4ae44c6a2c4fa1f69"
+    },
+    "later_owner_high_threats": [
+      "T-178-31",
+      "T-178-32",
+      "T-178-35",
+      "T-178-36"
+    ],
+    "native_three_lane_validator": "passed_private_native_and_promoted_byte_identically",
+    "packet": {
+      "bytes": 611570,
+      "path": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-INDEPENDENT-REVIEWS-98b79e54.json",
+      "sha256": "c45797292b9384135ae815272b597f578e4c705082cf687e46b18f270839e325"
+    },
+    "prior_packet_preserved": true,
+    "security": {
+      "bytes": 165818,
+      "path": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-SECURITY-REVIEW-98b79e54.md",
+      "sha256": "fdc15f8b3ea0932bf851b217155dcbbfeff25fe3f3d354608d9f66b59a30668b"
+    },
+    "source": {
+      "bytes": 157488,
+      "path": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-SOURCE-REVIEW-98b79e54.md",
+      "sha256": "626bf9c4ce8cd1d7b4ef46d240e893862ad3b0c602922a484ce7bf6646cad0b1"
+    }
+  },
+  "schema": "lockspire-phase178-ci-correction-progress-v2",
+  "source_and_package_acceptance_promotion": {
+    "final_BASE_native_validation": {
+      "app_pg_tests_started": false,
+      "checks": [
+        "reviews",
+        "frozen",
+        "package",
+        "source"
+      ],
+      "mix_env": "dev",
+      "original_groups_confirmed_stopped": 79,
+      "original_process_groups": 79,
+      "owned_manifest_preserved_0600": true,
+      "phase_records_unchanged": true,
+      "record": {
+        "bytes": 14665,
+        "path": "/private/tmp/lockspire178-base-semantic-check-98b79e54.json",
+        "sha256": "4774199b8429d9734a591b6e79586b22c5dc06927809a088055bb76c9b95c500"
+      },
+      "root_tar_preserved": true,
+      "status": "passed"
+    },
+    "final_private_native_validation_mix_env": "dev",
+    "first_ambient_frozen_validation_failure": "UNKNOWN cause; later pass is not diagnosis",
+    "promotion": {
+      "bytes": 1732,
+      "path": ".artifacts/phase178/98-correction/promotion.json",
+      "sha256": "eab64e0be49dc2b63c6f454bb468ba07db2a02594fe3617b83fcedf9372ec5bb"
+    },
+    "records": [
+      {
+        "bytes": 244361,
+        "path": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-FROZEN-INPUTS.json",
+        "sha256": "0ef81be5e59e84b5fd9f97322dfcab0627194d8a6d30429da1a9bb74b3db687b"
+      },
+      {
+        "bytes": 611570,
+        "path": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-INDEPENDENT-REVIEWS.json",
+        "sha256": "c45797292b9384135ae815272b597f578e4c705082cf687e46b18f270839e325"
+      },
+      {
+        "bytes": 179183,
+        "path": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-SOURCE-ACCEPTANCE.json",
+        "sha256": "493e00830dcd21aa56bc3958bf2c9a8007270e05d457ccd6c6a4b1594f1bc909"
+      },
+      {
+        "bytes": 13385,
+        "path": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-OWNED-SOURCE-MANIFEST.json",
+        "sha256": "31b42f51a47fb6eaba752342528b7f241f79700ae33ef4038bc093ddabd41ab4"
+      },
+      {
+        "bytes": 8156,
+        "path": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-PACKAGE-ACCEPTANCE.md",
+        "sha256": "e97fc1cea316edaff23e588d5b16fb694ca9f58f9680e4e286a84e0a65a18ea4"
+      }
+    ],
+    "source_record_construction_mix_env": "unset_default; explicit current ASDF/private homes",
+    "status": "promoted_byte_identically_from_native_C_construction"
+  },
+  "source_revision": "98b79e540cebddfdb8a27ce16c133b54d7213970",
+  "status": "local_acceptance_verified_exact_remote_proposal_ready",
+  "verifier_floor_final": {
+    "cases": 31,
+    "data_retained": true,
+    "failures": 0,
+    "index": {
+      "bytes": 12974,
+      "path": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/repo/.artifacts/phase178/final-floor/validated/index.json",
+      "sha256": "e05e7879e99f1140b01068c9f11e6eb11fe18da7fbf6bada20dcb4a6d970def7"
+    },
+    "launch": {
+      "bytes": 870,
+      "path": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/work-98b79e54-H98b79e54/launch-verifier-floor-final-6_vwy3ev/result.json",
+      "sha256": "722493b52a6153c1b23a7a0f01c119341c2599aba4b44fe5415fd236474940aa"
+    },
+    "native": {
+      "bytes": 6883,
+      "path": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/work-98b79e54-H98b79e54/collect-verifier-floor-final-jo9bbekk/result.json",
+      "sha256": "575b5b82413c61a98d16d71ece44aa3ab2e9a5a1301a64ce72e17d8e53830d06"
+    },
+    "original_inner_outer_and_pg_groups_confirmed_stopped": true,
+    "pair": "floor",
+    "receipts": 12,
+    "runtime_scope": "dependency floor on actual current Elixir1.19.5/OTP28, not minimum-runtime hosted proof",
+    "status": "passed"
+  },
+  "verifier_locked": {
+    "actual_elixir": "1.19.5",
+    "actual_otp_major": 28,
+    "cases": 33,
+    "data_retained": true,
+    "failures": 0,
+    "index": {
+      "bytes": 14910,
+      "path": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/repo/.artifacts/phase178/ci-locked/validated/index.json",
+      "sha256": "090aa386d0f7a1f303d363acb5a7e1d1aee60b77af8f41b6c894de1fe5ab831b"
+    },
+    "launch": {
+      "bytes": 855,
+      "path": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/work-98b79e54-H98b79e54/launch-verifier-locked-uguo2esy/result.json",
+      "sha256": "bcb66abb7747bd4c234e7c17b39ea48938d0763339d215a2502402cbc5ab2b1b"
+    },
+    "native": {
+      "bytes": 6861,
+      "path": "/private/tmp/lockspire178-native-hex260-98b79e54-qrqp09hs/work-98b79e54-H98b79e54/collect-verifier-locked-g4nthioi/result.json",
+      "sha256": "12b885221e7662b30ea4d87ecc97e19cf8faf16488910032e38f26840b975b64"
+    },
+    "original_inner_outer_and_pg_groups_confirmed_stopped": true,
+    "pair": "locked",
+    "receipts": 14,
+    "status": "passed"
+  }
+}

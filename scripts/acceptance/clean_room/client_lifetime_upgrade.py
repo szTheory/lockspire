@@ -11,12 +11,11 @@ from pathlib import Path
 import re
 import subprocess
 import sys
-import tempfile
 import time
 from urllib.parse import parse_qs, urlencode, urlparse
 from urllib.request import urlopen
 
-from build_provider import prepare_provider
+from build_provider import prepare_provider, provider_environment
 from package_input import (
     candidate_host_provenance,
     PackageInputError,
@@ -28,7 +27,11 @@ from package_input import (
 )
 from lifetime_receipts import validate_candidate_identity_agreement
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from clean_room_saas_journey import Browser, _run_host_control, basic, csrf, redirect, safe_oauth_error_code, s256, start_process, stop_process, wait_ready
+from clean_room_saas_journey import (
+    Browser, RetainableTemporaryDirectory, _run_host_control, basic, csrf,
+    redirect, safe_oauth_error_code, s256, start_process,
+    stop_started_processes, wait_ready,
+)
 from redaction import Redactor, SentinelSet, safe_failure_summary
 from processes import allocate_loopback_port
 
@@ -69,6 +72,14 @@ OLD_PACKAGE_FIELDS = frozenset({
     "tree_sha256", "source_revision",
 })
 SAFE_COMMANDS = frozenset({"ecto.create", "ecto.migrate", "run", "lockspire.client.create", "ecto.drop"})
+
+
+class LegacyRunnerFailure(PackageInputError):
+    """A redacted child failure with its existing finite stage/event witness."""
+
+    def __init__(self, summary: dict[str, object]):
+        self.summary = summary
+        super().__init__("legacy package child failed; diagnostics withheld")
 
 
 SENSITIVE_OUTPUT = re.compile(
@@ -113,26 +124,26 @@ def run_process(
     try:
         redactor.assert_safe("\0".join(args))
     except RuntimeError:
-        raise PackageInputError(str(safe_failure_summary(
+        raise LegacyRunnerFailure(safe_failure_summary(
             stage=stage, scenario=scenario, event="child_start", field="argv", count=1
-        ))) from None
+        )) from None
     try:
         process = subprocess.Popen(
             ("mix", *args), cwd=child, env=env, stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         )
     except OSError:
-        raise PackageInputError(str(safe_failure_summary(
+        raise LegacyRunnerFailure(safe_failure_summary(
             stage=stage, scenario=scenario, event="child_start", field="exception", count=1
-        ))) from None
+        )) from None
     try:
         stdout, stderr = process.communicate(timeout=timeout)
     except subprocess.TimeoutExpired:
         process.kill()
         process.communicate()
-        raise PackageInputError(str(safe_failure_summary(
+        raise LegacyRunnerFailure(safe_failure_summary(
             stage=stage, scenario=scenario, event="child_timeout", field="process", count=1
-        ))) from None
+        )) from None
     output = (stdout or b"").decode(errors="replace")
     error_output = (stderr or b"").decode(errors="replace")
     _register_output_material(redactor, output + "\n" + error_output)
@@ -142,7 +153,7 @@ def run_process(
             stage=stage, scenario=scenario, event="child_exit", field="stdout_stderr",
             count=len(output.splitlines()) + len(error_output.splitlines()),
         )
-        raise PackageInputError(str(summary))
+        raise LegacyRunnerFailure(summary)
     return {
         "pid": process.pid,
         "command": command,
@@ -152,19 +163,8 @@ def run_process(
 
 
 def mix_env(child: Path, run_root: Path, database_url: str, storage_prefix: str) -> dict[str, str]:
-    env = os.environ.copy()
-    dependency_root = run_root / "deps-cache" / "provider" / "deps"
-    hex_home = run_root / "hex-home"
-    mix_home = run_root / "mix-home"
-    dependency_root.mkdir(mode=0o700, parents=True, exist_ok=True)
-    hex_home.mkdir(mode=0o700, parents=True, exist_ok=True)
-    mix_home.mkdir(mode=0o700, parents=True, exist_ok=True)
+    env = provider_environment(run_root, child)
     env.update({
-        "MIX_ENV": "dev",
-        "MIX_BUILD_PATH": str(child / "_build"),
-        "MIX_DEPS_PATH": str(dependency_root),
-        "HEX_HOME": str(hex_home),
-        "MIX_HOME": str(mix_home),
         "DATABASE_URL": database_url,
         "LOCKSPIRE_STORAGE_PREFIX": storage_prefix,
         "LOCKSPIRE_KEY_ENCRYPTION_KEY": os.environ.get("LOCKSPIRE_KEY_ENCRYPTION_KEY", "") or "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
@@ -602,18 +602,17 @@ def run_scenario(
         raise PackageInputError("candidate signing key setup did not complete before the HTTP token flow")
     http_port = allocate_loopback_port(set())
     candidate_env.update({"PORT": str(http_port), "LOCKSPIRE_ISSUER": f"http://127.0.0.1:{http_port}/lockspire"})
-    http_process = start_process(candidate_host, candidate_env, run_root / f"candidate-http-{prefix}.log")
-    try:
-        origin = f"http://127.0.0.1:{http_port}"
-        wait_ready(origin)
+    def observe_legacy_http(origin: str) -> tuple[dict[str, object], tuple[dict[str, object], str]]:
         http_observation = exercise_legacy_http_use(origin, legacy_dcr_id, legacy_secret, redactor)
-        promotion_observation, promotion_marker = replace_legacy_authorities(
+        promotion = replace_legacy_authorities(
             origin, candidate_host, candidate_env, legacy_dcr_id, legacy_secret, legacy_rat, run_root, redactor
         )
-    finally:
-        stop_process(http_process)
-    if http_process.poll() is None:
-        raise PackageInputError("candidate HTTP process remained alive after legacy upgrade observation")
+        return http_observation, promotion
+
+    http_process, http_results = run_candidate_http_flow(
+        candidate_host, candidate_env, http_port, observe_legacy_http
+    )
+    http_observation, (promotion_observation, promotion_marker) = http_results
     if http_observation != {
         "par_http_status": 201, "authorize_http_status": 302, "login_http_status": 200, "token_http_status": 200,
         "lifetime_version": 0, "client_secret_date_kind": "past", "access_token_issued": True,
@@ -662,6 +661,29 @@ def run_scenario(
         "rollback_boundary": "retain schema and v1 state; fix forward or use lifetime-aware rollback",
     }
     return receipt
+
+
+def run_candidate_http_flow(
+    candidate_host: Path,
+    candidate_env: dict[str, str],
+    http_port: int,
+    flow,
+) -> tuple[subprocess.Popen[bytes], object]:
+    """Run the legacy HTTP observation and close its exact owned process group."""
+    http_process = None
+    try:
+        # Keep this call aligned with the two-argument provider start_process API.
+        http_process = start_process(candidate_host, candidate_env)
+        origin = f"http://127.0.0.1:{http_port}"
+        wait_ready(origin)
+        observation = flow(origin)
+    finally:
+        if not stop_started_processes():
+            raise PackageInputError("candidate HTTP process group cleanup is unconfirmed")
+
+    if http_process is None or http_process.poll() is None:
+        raise PackageInputError("candidate HTTP process remained alive after legacy upgrade observation")
+    return http_process, observation
 
 
 def validate_receipt(receipt: dict[str, object], expected_prefixes: set[str] | None = None) -> None:
@@ -794,6 +816,8 @@ def main() -> int:
             validate_receipt(json.loads(args.check_receipt.read_text()))
             print("lifetime upgrade receipt verified")
             return 0
+        if not stop_started_processes():
+            raise PackageInputError("an earlier candidate HTTP process group is still owned")
         selected = list(SCENARIOS) if args.scenario == "all" else [args.scenario]
         debug_root = str(args.work_root) if args.work_root else os.environ.get("LOCKSPIRE_UPGRADE_DEBUG_ROOT")
         if debug_root:
@@ -820,7 +844,8 @@ def main() -> int:
                 args.receipt.write_text(rendered + "\n")
             print(rendered)
         else:
-            with tempfile.TemporaryDirectory(prefix="lockspire-lifetime-upgrade-") as temporary:
+            run_directory = RetainableTemporaryDirectory(prefix="lockspire-lifetime-upgrade-")
+            with run_directory as temporary:
                 run_root = Path(temporary)
                 candidate_package, _entries, candidate_identity = prepare_package(
                     run_root, PackageSource("tar", str(args.package_tar), args.package_sha256)
@@ -842,9 +867,10 @@ def main() -> int:
                     args.receipt.parent.mkdir(parents=True, exist_ok=True)
                     args.receipt.write_text(rendered + "\n")
                 print(rendered)
+                run_directory.preserve = False
         return 0
     except (PackageInputError, OSError, ValueError) as error:
-        summary = safe_failure_summary(
+        summary = error.summary if isinstance(error, LegacyRunnerFailure) else safe_failure_summary(
             stage="legacy_upgrade", scenario="selected", event="runner_failure",
             field=type(error).__name__, count=1,
         )

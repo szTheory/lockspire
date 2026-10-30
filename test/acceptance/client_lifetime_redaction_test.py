@@ -79,8 +79,11 @@ class LifetimeRedactionTest(unittest.TestCase):
                 )
 
         diagnostic = str(raised.exception)
-        self.assertIn("legacy_upgrade", diagnostic)
-        self.assertIn("stdout_stderr", diagnostic)
+        self.assertEqual(diagnostic, "legacy package child failed; diagnostics withheld")
+        self.assertEqual(raised.exception.summary, {
+            "stage": "legacy_upgrade", "scenario": "public", "event": "child_exit",
+            "field": "stdout_stderr", "count": 3,
+        })
         self.assert_material_absent(credential, diagnostic)
         self.assert_material_absent(encoded, diagnostic)
         self.assertNotIn("raw response", diagnostic)
@@ -96,7 +99,11 @@ class LifetimeRedactionTest(unittest.TestCase):
                     stage="legacy_upgrade", scenario="public",
                 )
         diagnostic = str(raised.exception)
-        self.assertIn("argv", diagnostic)
+        self.assertEqual(diagnostic, "legacy package child failed; diagnostics withheld")
+        self.assertEqual(raised.exception.summary, {
+            "stage": "legacy_upgrade", "scenario": "public", "event": "child_start",
+            "field": "argv", "count": 1,
+        })
         self.assert_material_absent(credential, diagnostic)
         popen.assert_not_called()
 
@@ -111,7 +118,11 @@ class LifetimeRedactionTest(unittest.TestCase):
                     stage="legacy_upgrade", scenario="public",
                 )
         self.assertNotIn("raw secret body", str(raised.exception))
-        self.assertIn("child_start", str(raised.exception))
+        self.assertEqual(str(raised.exception), "legacy package child failed; diagnostics withheld")
+        self.assertEqual(raised.exception.summary, {
+            "stage": "legacy_upgrade", "scenario": "public", "event": "child_start",
+            "field": "exception", "count": 1,
+        })
 
     def test_upgrade_main_never_prints_untrusted_package_error_text(self) -> None:
         unregistered = "phase166-unregistered-client_secret=synthetic-987654"

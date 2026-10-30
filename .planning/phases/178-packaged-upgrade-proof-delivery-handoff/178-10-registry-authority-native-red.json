@@ -1,0 +1,11 @@
+{
+  "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 ERL_FLAGS='+S 4' PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s test/acceptance -p client_verifier_session_authority_test.py",
+  "exitCode": 1,
+  "executedTests": 1,
+  "output": "F\n======================================================================\nFAIL: test_injected_sibling_registry_row_never_authorizes_signalling (client_verifier_session_authority_test.ActualWrapperSessionAuthority.test_injected_sibling_registry_row_never_authorizes_signalling)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/Users/jon/projects/lockspire/test/acceptance/client_verifier_session_authority_test.py\", line 85, in test_injected_sibling_registry_row_never_authorizes_signalling\n    self.assertTrue(sibling.poll() is None, \"caller-written sibling PID authorized a foreign group signal\")\n    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: False is not true : caller-written sibling PID authorized a foreign group signal\n\n----------------------------------------------------------------------\nRan 1 test in 2.413s\n\nFAILED (failures=1)\n",
+  "stdoutBytes": 0,
+  "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderrBytes": 982,
+  "stderrSha256": "957e45e3c92d3d220a52d8ac7d302e803a7ecc6ac2dba87889f19947a6764b1e",
+  "semanticAssessment": "Actual wrapper receives caller-authored numeric sibling row. Sibling is separately sessioned, test-owned outside wrapper ancestry and TERM observer installed before wrapper launch; oracle requires no signal and sibling alive. All exact owned groups are reaped/probed absent before exact custody/root cleanup."
+}

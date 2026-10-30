@@ -13,7 +13,10 @@ CLEAN_ROOM = Path(__file__).resolve().parents[2] / "scripts" / "acceptance" / "c
 sys.path.insert(0, str(CLEAN_ROOM))
 
 from package_input import PackageIdentity, PackageInputError  # noqa: E402
-from build_provider import audit_boundary, prepare_provider  # noqa: E402
+from build_provider import (  # noqa: E402
+    PROOF_PAIR_LOCKS, PROOF_PAIR_MARKER, PROOF_PAIR_VERSIONS,
+    audit_boundary, prepare_provider, proof_pair_lock_hash,
+)
 
 
 class LifetimeBoundaryTest(unittest.TestCase):
@@ -53,6 +56,15 @@ end
         child_adapter.write_text(self.adapter.read_text())
         (self.package / "mix.exs").write_text("candidate package\n")
         shutil.copytree(self.package, self.child / "vendor" / "lockspire", dirs_exist_ok=True)
+        phoenix, live_view = PROOF_PAIR_VERSIONS["locked"]
+        (self.child / "mix.exs").write_text(
+            f'{{:phoenix, "== {phoenix}"}}\n{{:phoenix_live_view, "== {live_view}"}}\n',
+            encoding="utf-8",
+        )
+        shutil.copy2(PROOF_PAIR_LOCKS["locked"], self.child / "mix.lock")
+        (self.child / PROOF_PAIR_MARKER).write_text(
+            f"pair=locked\nlock_sha256={proof_pair_lock_hash('locked')}\n", encoding="utf-8"
+        )
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
@@ -63,6 +75,20 @@ end
                 audit_boundary(self.child, self.package)
             except PackageInputError as error:
                 self.fail(f"named public adapter was rejected: {type(error).__name__}")
+
+    def test_named_adapter_may_declare_optional_used_jti_seam_as_a_pair(self) -> None:
+        self._append_adapter_refs(
+            "Lockspire.Storage.UsedJtiStore",
+            "Lockspire.Domain.UsedJti",
+        )
+        self.assert_public_adapter_allowed()
+
+    def test_optional_used_jti_seam_requires_its_domain_pair(self) -> None:
+        self._append_adapter_refs("Lockspire.Storage.UsedJtiStore")
+
+        with patch("build_provider.OVERLAY_ROOT", self.overlay):
+            with self.assertRaises(PackageInputError):
+                audit_boundary(self.child, self.package)
 
     def test_protocol_internals_remain_forbidden_in_named_adapter(self) -> None:
         self._reject("Lockspire.Protocol.Internal.ClientStore")
@@ -91,9 +117,9 @@ end
             events.append("mix_probe")
             return str(self.child / "vendor" / "lockspire")
 
-        def observe_audit(child: Path, package: Path) -> None:
+        def observe_audit(child: Path, package: Path, **options: object) -> None:
             events.append("audit")
-            audit_boundary(child, package)
+            audit_boundary(child, package, **options)
 
         with (
             patch("build_provider.probe_environment"),
@@ -160,6 +186,20 @@ end
         with patch("build_provider.OVERLAY_ROOT", self.overlay):
             with self.assertRaises(PackageInputError):
                 audit_boundary(self.child, self.package)
+
+    def _append_adapter_refs(self, *references: str) -> None:
+        source = self.adapter.read_text().replace(
+            "end\n", "".join(f"  alias {reference}\n" for reference in references) + "end\n"
+        )
+        self.adapter.write_text(source)
+        (self.child / "lib" / "clean_room_provider" / self.adapter.name).write_text(source)
+
+    def assert_public_adapter_allowed(self) -> None:
+        with patch("build_provider.OVERLAY_ROOT", self.overlay):
+            try:
+                audit_boundary(self.child, self.package)
+            except PackageInputError as error:
+                self.fail(f"valid public adapter was rejected: {type(error).__name__}")
 
 
 if __name__ == "__main__":

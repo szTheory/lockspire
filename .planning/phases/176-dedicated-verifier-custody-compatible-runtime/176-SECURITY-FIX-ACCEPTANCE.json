@@ -1,0 +1,108 @@
+{
+  "record_type": "phase176_security_fix_candidate",
+  "tested_sha": "71627f27cdd996cba37122af86a033474e6cd1ff",
+  "command": "mix ci",
+  "environment": {
+    "LOCKSPIRE_TEST_DB_NAME": "lockspire_sf176_20261025",
+    "ERL_FLAGS": "+S 2",
+    "ASDF_ELIXIR_VERSION": "1.19.5-otp-28",
+    "ASDF_ERLANG_VERSION": "28.5",
+    "MIX_ENV": "unset at top level; mix ci selects per-stage environments",
+    "git_metadata_write_access": "require_escalated for test fixture FETCH_HEAD operations"
+  },
+  "exit_code": 0,
+  "stages": [
+    {
+      "name": "mix test.fast",
+      "exit_code": 0,
+      "properties": 2,
+      "tests": 2102,
+      "failures": 0,
+      "skipped": 6,
+      "excluded": 530
+    },
+    {
+      "name": "mix test.integration",
+      "exit_code": 0,
+      "tests": 231,
+      "failures": 0,
+      "excluded": 46
+    }
+  ],
+  "focused_security_run": {
+    "command": "LOCKSPIRE_TEST_DB_NAME=lockspire_sf176_20261025 ERL_FLAGS='+S 4' ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix test --include integration test/lockspire/config_client_secret_verifier_test.exs test/lockspire/security/client_secret_verifier_test.exs test/integration/client_secret_verifier_configuration_test.exs",
+    "exit_code": 0,
+    "tests": 26,
+    "failures": 0,
+    "log": "/tmp/lockspire-176-security-focused.ShTfsO"
+  },
+  "finding_regressions": {
+    "SF01": [
+      "test/lockspire/config_client_secret_verifier_test.exs:125 \u2014 only the documented verifier module key activates startup configuration",
+      "test/lockspire/config_client_secret_verifier_test.exs:135 \u2014 startup resolves each canonical configuration state including legacy rejection"
+    ],
+    "SF02": [
+      "test/lockspire/config_client_secret_verifier_test.exs:154 \u2014 complete context overrides reject hidden, missing, malformed, and extra key entries"
+    ],
+    "SF03": [
+      "test/lockspire/config_client_secret_verifier_test.exs:197 \u2014 improper configured key lists are retained as invalid without raising",
+      "test/integration/client_secret_verifier_configuration_test.exs:53 \u2014 malformed configuration remains local while persisted hash auth works"
+    ],
+    "SF04": [
+      "test/lockspire/security/client_secret_verifier_test.exs:185 \u2014 authenticated native and migrated secrets enforce the one MiB decoder cap"
+    ]
+  },
+  "phase175_frozen_inputs": {
+    "manifest": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-FINAL-SOURCE.json",
+    "expected_count": 13,
+    "matched_count": 13,
+    "mismatches": 0,
+    "verification_command": "python3 -c 'import hashlib,json; from pathlib import Path; f=json.loads(Path(\".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-FINAL-SOURCE.json\").read_text()); m=[x[\"path\"] for x in f[\"frozen_inputs\"] if hashlib.sha256(Path(x[\"path\"]).read_bytes()).hexdigest()!=x[\"sha256\"]]; print(\"frozen_count=%d mismatches=%d\" % (len(f[\"frozen_inputs\"]),len(m))); raise SystemExit(bool(m) or len(f[\"frozen_inputs\"])!=13)'"
+  },
+  "previous_candidate_preserved": {
+    "sha": "b8cd395dd25ac0918678553aad042e8fd8f05d3c",
+    "prior_ci_result": "passed",
+    "historical_record": ".planning/phases/176-dedicated-verifier-custody-compatible-runtime/176-07-SUMMARY.md",
+    "historical_records_rewritten": false
+  },
+  "attempts": [
+    {
+      "command": "mix ci with top-level MIX_ENV=test",
+      "exit_code": 1,
+      "summary": "22 ReleaseArtifactChainContractTest failures because the top-level environment forced dev-context checks into test mode.",
+      "log": "/tmp/lockspire-176-security-ci-71627f27.log"
+    },
+    {
+      "command": "mix ci without top-level MIX_ENV, default scheduler setting, unprivileged",
+      "exit_code": 1,
+      "summary": "22 ReleaseArtifactChainContractTest failures because fixture subprocesses could not write .git/FETCH_HEAD (Operation not permitted).",
+      "log": "/tmp/lockspire-176-security-ci-71627f27-corrected.log"
+    },
+    {
+      "command": "mix ci without top-level MIX_ENV, default scheduler setting, require_escalated",
+      "exit_code": 1,
+      "summary": "18 test.fast failures accompanied by PostgreSQL 53300 too_many_connections errors.",
+      "log": "/tmp/lockspire-176-security-ci-71627f27-escalated.log"
+    },
+    {
+      "command": "mix ci without top-level MIX_ENV, ERL_FLAGS='+S 2', require_escalated",
+      "exit_code": 0,
+      "summary": "Full gate passed. The log includes isolated PostgreSQL 53300 connection errors that did not fail tests.",
+      "log": "/tmp/lockspire-176-security-ci-71627f27-s2.log"
+    }
+  ],
+  "independent_reaudit": {
+    "status": "secured",
+    "source_sha": "71627f27cdd996cba37122af86a033474e6cd1ff",
+    "threats_closed": 22,
+    "threats_open": 0,
+    "report": ".planning/phases/176-dedicated-verifier-custody-compatible-runtime/176-SECURITY.md"
+  },
+  "security_findings_closed": true,
+  "phase_complete": false,
+  "residuals": [
+    "Independent security re-audit remains pending.",
+    "The successful full CI run used reduced scheduler concurrency (+S 2) after higher-concurrency attempts exhausted PostgreSQL connections."
+  ],
+  "independent_reaudit_at_receipt_creation": "pending"
+}

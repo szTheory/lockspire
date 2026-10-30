@@ -1,0 +1,10 @@
+{
+  "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 ERL_FLAGS='+S 4' python3 -m unittest discover -s test/acceptance -p 'client_verifier_delivery_test.py' -k test_reviews_reject_explicit_unresolved_blockers_for_unrelated_commit",
+  "exitCode": 1,
+  "output": "F\n======================================================================\nFAIL: test_reviews_reject_explicit_unresolved_blockers_for_unrelated_commit (client_verifier_delivery_test.SemanticDeliveryRejections.test_reviews_reject_explicit_unresolved_blockers_for_unrelated_commit)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"test/acceptance/client_verifier_delivery_test.py\", line 198, in test_reviews_reject_explicit_unresolved_blockers_for_unrelated_commit\n    with self.assertRaises(verifier_delivery.DeliveryError):\n         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: DeliveryError not raised\n\n----------------------------------------------------------------------\nRan 1 test in 0.008s\n\nFAILED (failures=1)",
+  "targetTest": "test_reviews_reject_explicit_unresolved_blockers_for_unrelated_commit",
+  "targetFile": "test/acceptance/client_verifier_delivery_test.py",
+  "expected": "validate_reviews rejects independent-looking reports that contain an unrelated reviewed commit and unresolved high/blocking findings",
+  "actual": "The target assertion failed because validate_reviews accepted all three reports",
+  "semanticAssessment": "Behavioral RED: fixtures were complete enough to pass the current heading/lane/date checks; the target failed exactly because semantic findings and reviewed-commit identity were not enforced."
+}

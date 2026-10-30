@@ -1,0 +1,868 @@
+{
+  "schema": "lockspire-phase-175-verifier-compatibility-v1",
+  "entry_accepted_sha": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+  "qualified_input": {
+    "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-QUALIFICATION.json",
+    "native_age_policy": "qualified",
+    "public_metadata_reader": "qualified",
+    "approved_policy_revision": "175-POLICY-REVISION.md",
+    "persisted_caller_tested_sha": "c7cedee9dddfd4a0f9085eac213411433ca4796e",
+    "metadata_reader_tested_sha": "e8aa26f587e1f12ea7722acea9de42188a3a7e6c",
+    "plug_crypto": "2.2.1"
+  },
+  "owners": {
+    "175": "baseline, persisted-caller qualification, finite contract and final-source reconciliation",
+    "176": "configuration, envelope, writers/readers, protocol compatibility and rollout behavior",
+    "177": "maintenance, PostgreSQL contention/rollback, recovery, status and disclosure proof",
+    "178": "both existing packaged dependency pairs, declared adapter composition, review and delivery"
+  },
+  "case_fields": [
+    "case_id",
+    "requirement",
+    "caller",
+    "lifecycle",
+    "stage",
+    "storage",
+    "operation",
+    "expected",
+    "mutation",
+    "preserves",
+    "redaction",
+    "owner_phase",
+    "evidence",
+    "status",
+    "blocking"
+  ],
+  "format_bounds": {
+    "max_client_id_bytes": 1048576,
+    "max_secret_bytes": 1048576,
+    "max_key_id_bytes": 32,
+    "key_id_pattern": "[A-Za-z0-9._-]{1,32}",
+    "key_bytes": 32,
+    "iv_bytes": 12,
+    "tag_bytes": 16,
+    "payload_prefix_bytes": 6,
+    "migrated_age_suffix_bytes": 16,
+    "max_plaintext_bytes": 1048598,
+    "max_payload_bytes": 1048626,
+    "max_payload_base64url_unpadded_bytes": 1398168,
+    "max_envelope_bytes": 1398207,
+    "reserved_family_prefix": "LSCV",
+    "rationale": "1 MiB is a new-format-only input and parser ceiling: it is generous relative to Lockspire-generated values (43-byte secret, 35-byte client ID), limits decode/allocation work, and does not narrow legacy helper inputs. The total bound is derived exactly from the 1 MiB secret plus 6-byte version/length/age prefix, 16-byte migrated timestamp/deadline suffix, 12-byte IV, 16-byte GCM tag, unpadded Base64URL expansion, and maximum 32-byte key ID. Oversized existing legacy values are not normalized, truncated, or fallback-read; migration/activation reports blocked and leaves them unchanged."
+  },
+  "cases": [
+    {
+      "case_id": "LEG175-AGED-23H",
+      "requirement": "VBASE-02",
+      "caller": "Lockspire.Protocol.ClientAuth.authenticate/3; persisted Client and replay/policy stores",
+      "lifecycle": "active client; authenticated legacy tuple payload; 23-hour age",
+      "stage": "legacy verifier decrypt before replay insertion",
+      "storage": "Ecto Repository over PostgreSQL; qualification-only persisted caller",
+      "operation": "authenticate client_secret_jwt",
+      "expected": "authenticated; distinct JTI inserted; no token, grant, or audit",
+      "mutation": "JTI insertion only",
+      "preserves": "client row and verifier bytes",
+      "redaction": "no plaintext, verifier ciphertext, client-secret hash, or JTI in evidence",
+      "owner_phase": 175,
+      "evidence": {
+        "status": "pass",
+        "ids": [
+          "LEG175-AGED-23H"
+        ],
+        "source_sha": "c7cedee9dddfd4a0f9085eac213411433ca4796e"
+      },
+      "status": "qualified",
+      "blocking": "none; native writes follow approved policy and migration retains this authenticated finite deadline"
+    },
+    {
+      "case_id": "LEG175-AGED-2D",
+      "requirement": "VBASE-02",
+      "caller": "Lockspire.Protocol.ClientAuth.authenticate/3",
+      "lifecycle": "active client; authentic finite legacy payload older than 24 hours",
+      "stage": "legacy verifier decrypt before replay insertion",
+      "storage": "Ecto Repository over PostgreSQL",
+      "operation": "authenticate client_secret_jwt",
+      "expected": "invalid_client / client_secret_verifier_unavailable; JTI absent; no token, grant, or audit",
+      "mutation": "none",
+      "preserves": "client row and verifier bytes",
+      "redaction": "failure exposes only allowlisted reason code",
+      "owner_phase": 175,
+      "evidence": {
+        "status": "pass",
+        "ids": [
+          "LEG175-AGED-2D"
+        ],
+        "source_sha": "c7cedee9dddfd4a0f9085eac213411433ca4796e"
+      },
+      "status": "qualified",
+      "blocking": "none; migration must not refresh the authenticated original deadline"
+    },
+    {
+      "case_id": "LEG175-FUTURE",
+      "requirement": "VBASE-02",
+      "caller": "Lockspire.Protocol.ClientAuth.authenticate/3 and public authenticated metadata reader",
+      "lifecycle": "future-dated authenticated legacy payload",
+      "stage": "legacy verifier decrypt / metadata classification",
+      "storage": "Ecto Repository over PostgreSQL; pinned Plug.Crypto 2.2.1",
+      "operation": "authenticate or assess migration readiness",
+      "expected": "authentication invalid_client; migration unsupported; no age reset",
+      "mutation": "none",
+      "preserves": "stored verifier bytes and row fields",
+      "redaction": "no authenticated payload or material in errors/evidence",
+      "owner_phase": 175,
+      "evidence": {
+        "status": "pass",
+        "ids": [
+          "LEG175-FUTURE"
+        ],
+        "source_sha": "c7cedee9dddfd4a0f9085eac213411433ca4796e"
+      },
+      "status": "qualified",
+      "blocking": "none; reject unchanged and recover only through authorized secret rotation/reprovision"
+    },
+    {
+      "case_id": "LEG175-METADATA-SHAPES",
+      "requirement": "VBASE-02",
+      "caller": "Plug.Crypto public authenticated decrypt and non_executable_binary_to_term/2 with [:safe]",
+      "lifecycle": "tuple-three, tuple-two, and Phoenix map historical payloads",
+      "stage": "authenticated bytes then safe term decode; before age decision",
+      "storage": "legacy endpoint-key encrypted verifier; Plug.Crypto 2.2.1 root and declared floor",
+      "operation": "read authenticated migration metadata",
+      "expected": "tuple-three preserves signed_ms and finite max_age; tuple-two/map use observed 86400-second default",
+      "mutation": "none",
+      "preserves": "original signed timestamp and finite deadline",
+      "redaction": "payload, endpoint key, verifier bytes excluded from evidence",
+      "owner_phase": 175,
+      "evidence": {
+        "status": "pass",
+        "ids": [
+          "LEG175-METADATA-TAMPER",
+          "LEG175-METADATA-SHAPE",
+          "LEG175-DEADLINE",
+          "LEG175-METADATA-UNITS",
+          "LEG175-METADATA-INFINITY",
+          "LEG175-AGE-CONTROLS"
+        ],
+        "source_sha": "e8aa26f587e1f12ea7722acea9de42188a3a7e6c"
+      },
+      "status": "qualified",
+      "blocking": "none; unsupported shapes, nonbinary data, invalid timestamps, unsafe terms, tampering and wrong keys remain unsupported"
+    },
+    {
+      "case_id": "LEG175-HASH-MISMATCH",
+      "requirement": "VBASE-02",
+      "caller": "migration readiness check comparing decrypted verifier to persisted client_secret_hash",
+      "lifecycle": "persisted legacy client with absent/invalid hash or verifier/hash disagreement",
+      "stage": "migration preflight before row lock/change",
+      "storage": "persisted client row; no per-request authentication check",
+      "operation": "assess migration eligibility",
+      "expected": "not ready with an explicit conflict/recovery disposition; never promote or rewrite the row",
+      "mutation": "none",
+      "preserves": "hash, verifier, and every other client field",
+      "redaction": "only mismatch classification; no verifier, hash, secret, or ciphertext",
+      "owner_phase": 175,
+      "evidence": {
+        "status": "pass",
+        "ids": [
+          "LEG175-HASH-MISMATCH"
+        ],
+        "source_sha": "e8aa26f587e1f12ea7722acea9de42188a3a7e6c"
+      },
+      "status": "qualified",
+      "blocking": "none; if mismatch is found in real stored rows, authorized secret rotation/reprovision remains the recovery"
+    },
+    {
+      "case_id": "LEGACY-AGE-BOUNDARIES",
+      "requirement": "VBASE-02",
+      "caller": "future dedicated verifier reader and migration acceptance",
+      "lifecycle": "native dedicated, migrated finite legacy, and unsupported migration inputs",
+      "stage": "authenticated age metadata and configured client-secret/app deadlines",
+      "storage": "dedicated verifier envelope plus persisted client lifetime fields",
+      "operation": "verify or migrate verifier",
+      "expected": "native follows configured client-secret lifetime (including nil/0 and v0 unlimited); migrated finite deadline is signed_ms + trunc(max_age_seconds * 1000), valid at equality and expired strictly after; configured app/secret deadlines reject at equality",
+      "mutation": "none on verify; migration only under the separately owned 177 conditional maintenance contract",
+      "preserves": "age basis, client/secret lifetime semantics, hash and replay behavior",
+      "redaction": "age metadata may be reported only as bounded classification, not secret bytes",
+      "owner_phase": 176,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "runtime implementation and boundary proof belong to 176; policy premise qualified and owner-approved in 175"
+    },
+    {
+      "case_id": "LEG175-METADATA-FUTURE-READINESS",
+      "requirement": "VBASE-02",
+      "caller": "qualification-only migration-readiness predicate after Plug-authenticated metadata extraction",
+      "lifecycle": "authenticated metadata with signed_at_ms later than the supplied migration decision time",
+      "stage": "post-authenticated-decode readiness check before any migration decision",
+      "storage": "legacy verifier metadata; no production row mutation",
+      "operation": "assess whether authenticated legacy metadata is eligible for migration",
+      "expected": "authenticated future payload decodes to metadata but readiness rejects signed_at_ms > now_ms before deadline comparison; exact finite deadline equality is eligible, +1ms is expired; 23-hour finite metadata is eligible; infinity, nonpositive age, empty data, or malformed metadata are unsupported",
+      "mutation": "none",
+      "preserves": "authenticated legacy bytes and original timestamp/deadline; no age reset or production migration behavior",
+      "redaction": "test-only synthetic data; no production secret, verifier, or ciphertext output",
+      "owner_phase": 175,
+      "evidence": {
+        "status": "pass",
+        "ids": [
+          "LEG175-METADATA-FUTURE-READINESS"
+        ],
+        "source_sha": "e60b7c1090719fa8ce29fbb35d9da6f90518112d"
+      },
+      "status": "qualified",
+      "blocking": "none; exact-source migration-readiness evidence is recorded at the qualified candidate SHA"
+    },
+    {
+      "case_id": "LEGACY-UNSUPPORTED-INPUTS",
+      "requirement": "VBASE-02",
+      "caller": "migration metadata reader",
+      "lifecycle": "malformed, missing, null, executable term, unknown shape, wrong key, tampered, future, nonpositive or infinite age",
+      "stage": "legacy decode and migration readiness",
+      "storage": "existing legacy verifier column",
+      "operation": "assess/migrate legacy verifier",
+      "expected": "reject as unsupported/not-ready; no legacy retry, age reset, or partial success",
+      "mutation": "none",
+      "preserves": "row and stored bytes",
+      "redaction": "no raw term, key, ciphertext, verifier, or hash in logs/tasks/audit/protocol",
+      "owner_phase": 176,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "future runtime proof; recovery is authorized secret rotation/reprovision"
+    },
+    {
+      "case_id": "CONFIG-ABSENT-LEGACY",
+      "requirement": "VBASE-02",
+      "caller": "Lockspire.Config resolved node context; verifier readers/writers",
+      "lifecycle": "configuration key absent",
+      "stage": "startup resolution and operation-local read/write",
+      "storage": "host application environment snapshot",
+      "operation": "read legacy verifier or perform legacy-compatible write",
+      "expected": "declared legacy compatibility only; no dedicated material is implied",
+      "mutation": "legacy-compatible existing behavior only",
+      "preserves": "existing endpoint-secret selection at explicit integration boundary",
+      "redaction": "diagnostic reports absent state, never endpoint secret",
+      "owner_phase": 176,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "configuration behavior not implemented or proven"
+    },
+    {
+      "case_id": "CONFIG-STAGED-READERS",
+      "requirement": "VBASE-02",
+      "caller": "Lockspire.Config resolved node context",
+      "lifecycle": "keys staged; legacy write/read selected",
+      "stage": "node startup/redeploy before fleet write activation",
+      "storage": "purpose-specific keys, no endpoint/signing key fallback",
+      "operation": "resolve and use verifier custody context",
+      "expected": "all declared dedicated read keys available; staged mode does not select or activate dedicated writes; legacy reads allowed",
+      "mutation": "legacy writes only",
+      "preserves": "immutable per-node resolved context until restart/redeploy",
+      "redaction": "diagnostics list key IDs/state only, never key material",
+      "owner_phase": 176,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "fleet parity is host-owned and not proven by local config"
+    },
+    {
+      "case_id": "CONFIG-DEDICATED-WRITES-ALLOW",
+      "requirement": "VBASE-02",
+      "caller": "Lockspire.Config and credential writers/readers",
+      "lifecycle": "dedicated write enabled; legacy read allowed",
+      "stage": "explicit rollout activation after compatible readers",
+      "storage": "purpose-specific configured key set and current write key",
+      "operation": "write/read dedicated material and read legacy material",
+      "expected": "dedicated writes use selected verifier key; legacy reads remain accepted",
+      "mutation": "verifier ciphertext only on credential-producing writes",
+      "preserves": "hash/verifier coherence and one-time plaintext handoff",
+      "redaction": "no raw key, verifier, or plaintext in output surfaces",
+      "owner_phase": 176,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "unsafe old-node activation and transition require explicit rollout proof"
+    },
+    {
+      "case_id": "CONFIG-DEDICATED-WRITES-REJECT",
+      "requirement": "VBASE-02",
+      "caller": "Lockspire.Config and credential readers",
+      "lifecycle": "dedicated write enabled; legacy read rejected",
+      "stage": "explicit post-migration policy state",
+      "storage": "purpose-specific key set",
+      "operation": "read dedicated or legacy verifier",
+      "expected": "dedicated succeeds; legacy returns typed invalid/unavailable; no fallback",
+      "mutation": "none on reads",
+      "preserves": "existing token, replay, issuer, audience and PAR/FAPI boundaries",
+      "redaction": "allowlisted error only",
+      "owner_phase": 176,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "complete rejection and compatibility proof required"
+    },
+    {
+      "case_id": "CONFIG-INVALID-PRESENT",
+      "requirement": "VBASE-02",
+      "caller": "Lockspire.Config resolver and affected verifier operations",
+      "lifecycle": "present but malformed/empty/null/incomplete/unknown configuration",
+      "stage": "node resolution, verifier read/write, maintenance preflight",
+      "storage": "host application environment snapshot",
+      "operation": "resolve or use verifier custody configuration",
+      "expected": "retained invalid state and visible diagnostic; affected operation typed failure; unrelated supported hash auth remains available; never reinterpret as absent/legacy",
+      "mutation": "none for rejected operation",
+      "preserves": "unrelated authentication behavior",
+      "redaction": "diagnostic excludes config value and all key bytes",
+      "owner_phase": 176,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "operation-local behavior and startup visibility are future proof"
+    },
+    {
+      "case_id": "CONFIG-CONTRADICTION-AND-READER-ONLY",
+      "requirement": "VBASE-02",
+      "caller": "Lockspire.Config resolver",
+      "lifecycle": "reader-only staging, or legacy writes combined with reject-legacy reads",
+      "stage": "configuration grammar validation",
+      "storage": "purpose-specific key set and write/read modes",
+      "operation": "resolve context",
+      "expected": "reader-only may omit current write key; legacy-write mode may omit current or provide a configured current ID for staging without activating dedicated writes; dedicated writes require it; legacy write + reject legacy is invalid-present",
+      "mutation": "none",
+      "preserves": "staged keys do not activate writes",
+      "redaction": "structured field/reason only",
+      "owner_phase": 176,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "configuration state tests required"
+    },
+    {
+      "case_id": "KEY-SET-GRAMMAR",
+      "requirement": "VBASE-02",
+      "caller": "verifier key-context validator; compare existing KeySet conventions",
+      "lifecycle": "configuration parse",
+      "stage": "key IDs and decoded key material",
+      "storage": "separate purpose-specific verifier config",
+      "operation": "validate configured key set",
+      "expected": "unique IDs match existing 1\u201332 ASCII [A-Za-z0-9._-] KeySet rule; each key decodes to exactly 32 bytes; duplicate IDs/options/unknown options, malformed encoding and duplicate decoded key bytes reject; known cross-purpose byte reuse rejects; remote/derived/unknown historic reuse is not claimed",
+      "mutation": "none",
+      "preserves": "signing KEK config and format are unchanged",
+      "redaction": "errors identify field/reason only; never values or decoded bytes",
+      "owner_phase": 176,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "key grammar and reuse behavior are not implemented"
+    },
+    {
+      "case_id": "ENVELOPE-FORMAT",
+      "requirement": "VBASE-02",
+      "caller": "purpose-specific verifier seal/unseal context",
+      "lifecycle": "new dedicated write and subsequent read",
+      "stage": "post-persisted-client-ID generation; before storage",
+      "storage": "client_secret_jwt_verifier_encrypted text column",
+      "operation": "seal/unseal dedicated verifier",
+      "expected": "ASCII `LSCV1.<key_id>.<base64url-unpadded(iv || tag || ciphertext)>`; plaintext is `version:u8=1 || secret_length:u32be || secret_bytes || age_kind:u8`, with age_kind 0 for native and 1 plus signed_at_ms:i64be || deadline_ms:i64be for migrated legacy; AES-256-GCM uses fresh 12-byte IV and exactly 16-byte tag; canonical base64url; AAD is exact bytes `lockspire-client-secret-jwt-verifier\\0LSCV1\\0` || key_id || `\\0` || canonical persisted client_id UTF-8 bytes; payload and AAD are authenticated without client-id normalization",
+      "mutation": "writer stores envelope only after final client ID is selected",
+      "preserves": "signing envelope bytes/semantics and generated secret one-time handoff",
+      "redaction": "envelope and plaintext never emitted in logs, telemetry, audit, task output or protocol response",
+      "owner_phase": 176,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "no production envelope implementation or vectors claimed"
+    },
+    {
+      "case_id": "ENVELOPE-STRICT-REJECTION",
+      "requirement": "VBASE-02",
+      "caller": "dedicated family dispatcher and unseal operation",
+      "lifecycle": "unknown version, malformed reserved family, bad length/encoding, substitution, wrong key/purpose/client, tamper or trailing bytes",
+      "stage": "dispatch before decode and authenticated decrypt",
+      "storage": "dedicated text envelope",
+      "operation": "unseal verifier",
+      "expected": "reserve every input beginning `LSCV`; typed unavailable/unsupported failure for unknown version or malformed reserved family; dedicated-looking input never retries as legacy; no substitution or trailing data acceptance",
+      "mutation": "none",
+      "preserves": "stored bytes and unrelated verifier flows",
+      "redaction": "stable allowlisted error; no payload or ciphertext",
+      "owner_phase": 176,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "negative vectors and family dispatch remain future proof"
+    },
+    {
+      "case_id": "MATERIAL-BOUNDS-AND-API-SCOPE",
+      "requirement": "VBASE-02",
+      "caller": "Clients.rotate_secret_hash/0, Clients.rotate_secret_material/1, Policy seal/unseal overloads",
+      "lifecycle": "generated credentials and explicit caller-provided helper inputs",
+      "stage": "secret generation, final identity selection, seal/unseal",
+      "storage": "client text fields; no existing DB maximum for client_id or verifier column found",
+      "operation": "generate/hash/seal/unseal credential material",
+      "expected": "new dedicated format accepts client_id and secret up to 1,048,576 bytes each; no legacy helper cap is added. Existing helper currently accepts arbitrary binary secret input for sealing and rejects empty/malformed on read. Generated secret is 32 random bytes encoded as 43 unpadded Base64URL chars; generated ID is `ls_` + 24 random bytes encoded as 32 chars (35 total). The envelope maximum is the formula-derived 1,398,207 ASCII bytes; parser checks encoded length before decoding and decoded lengths before allocation/use",
+      "mutation": "hash-only rotate_secret_hash/0 stays {hash, plaintext} and must not require identity/config; rotate_secret_material/1 remains map API; binary secret_key_base and keyword overloads retain legacy behavior; dedicated mode with missing identity fails clearly before persistence",
+      "preserves": "public helper arities/returns unless separately GSD-revised; hash-only stays independent of verifier custody",
+      "redaction": "generated plaintext only in existing one-time handoff; never persist or log it elsewhere",
+      "owner_phase": 176,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "oversized preexisting legacy rows are blocked from migration/activation unchanged; no legacy helper/API cap or truncation is allowed"
+    },
+    {
+      "case_id": "WRITERS-FINAL-ID-AND-HANDOFF",
+      "requirement": "VBASE-02",
+      "caller": "direct registration, DCR, operator secret rotation and public helper overloads",
+      "lifecycle": "confidential Basic/post/JWT client; new registration or secret rotation",
+      "stage": "choose/persist canonical ID before sealing; atomically persist coherent hash/verifier pair",
+      "storage": "direct Repository and configured registration/rotation stores at their existing seams",
+      "operation": "create or rotate client secret",
+      "expected": "dedicated verifier binds final persisted client_id and purpose; return plaintext once using existing RegistrationResult/rotation handoff; identity-free dedicated sealing rejects",
+      "mutation": "only intended credential fields and existing rotation timestamps from actual rotation",
+      "preserves": "client fields outside existing writer mutation contract; public hash-only helper behavior",
+      "redaction": "no returned secret in telemetry/audit; no persisted plaintext",
+      "owner_phase": 176,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "writer inventory implementation and persistence proof required"
+    },
+    {
+      "case_id": "READERS-AND-AUTH-EXCLUSIONS",
+      "requirement": "VBASE-02",
+      "caller": "client_secret_jwt token exchange and all existing JWT-authenticated token/introspection/revocation/device/CIBA paths",
+      "lifecycle": "dedicated, allowed legacy, rejected legacy and unavailable verifier; existing method/profile variants",
+      "stage": "verifier read then existing assertion/replay/lifecycle checks",
+      "storage": "selected authoritative client store; only built-in Ecto and declared shared PostgreSQL delegating composition",
+      "operation": "authenticate / issue / introspect / revoke / device / CIBA",
+      "expected": "all existing supported readers use the same frozen verifier contract; preserve HS256, audience, JTI consumption/replay, client/app/secret expiry, PAR and FAPI behavior; no extension to unsupported methods",
+      "mutation": "only existing protocol side effects after successful auth; JTI may be consumed before later lifecycle failure per qualified caller order",
+      "preserves": "existing protocol and auth-method boundaries",
+      "redaction": "existing and new success/failure output surfaces remain allowlisted",
+      "owner_phase": 176,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "reader matrix and both adapter composition packages are future proof"
+    },
+    {
+      "case_id": "WRITER-DIRECT-REGISTRATION",
+      "requirement": "VBASE-02",
+      "caller": "Clients.register_client -> ClientLifecycle.persist_direct -> Repository.register_client",
+      "lifecycle": "new direct client with any supported auth method",
+      "stage": "ID selection, helper generation, and persisted verifier/hash construction",
+      "storage": "direct configured registration path and selected repository transaction",
+      "operation": "create client",
+      "expected": "choose final persisted client_id before verifier sealing; dedicated verifier binds that ID; hash and verifier coherent; existing plaintext handed off once, including Basic/post clients",
+      "mutation": "one client row plus existing registration audit only",
+      "preserves": "all fields except intended creation fields; never persist plaintext",
+      "redaction": "no secret/hash/verifier in logs, query telemetry, errors, or audit",
+      "owner_phase": 176,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "writer ordering and persistence proof pending"
+    },
+    {
+      "case_id": "WRITER-DCR",
+      "requirement": "VBASE-02",
+      "caller": "ClientLifecycle.create_dcr -> configured ClientStore.register_client inside configured TransactionStore; Repository.append_audit_event",
+      "lifecycle": "new DCR client; generated ID and secret",
+      "stage": "final ID before verifier; selected configured adapter and audit transaction",
+      "storage": "configured client/transaction stores; audit currently crosses Repository seam",
+      "operation": "register DCR client",
+      "expected": "final generated ID precedes dedicated seal; stored hash/verifier coherent; transaction/audit authority explicit; one-time plaintext response unchanged",
+      "mutation": "new client and DCR audit in existing shared transaction",
+      "preserves": "hash/verifier agree; no transient ID or plaintext persistence",
+      "redaction": "DCR response is the sole existing plaintext handoff; internal surfaces redact material",
+      "owner_phase": 176,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "configured writer seam and pair proof pending"
+    },
+    {
+      "case_id": "WRITER-OPERATOR-ROTATION",
+      "requirement": "VBASE-02",
+      "caller": "Lockspire.Admin.Clients.rotate_secret -> ClientLifecycle.rotate_operator_secret using configured stores",
+      "lifecycle": "existing client operator rotates secret",
+      "stage": "final existing client_id, new hash/verifier construction, locked update and audit",
+      "storage": "configured client/transaction stores; admin prepares material then lifecycle rotates",
+      "operation": "rotate operator secret",
+      "expected": "seal for unchanged final ID; coherent new hash/verifier; conditional locked update and audit; preserve unrelated fields and one-time plaintext handoff",
+      "mutation": "one credential rotation and audit event",
+      "preserves": "Canonical client identity, authentication method, redirect URIs, grants, scopes, metadata and unrelated settings; existing authorized secret-rotation lifetime and timestamp semantics remain unchanged.",
+      "redaction": "No plaintext, hashes, verifier ciphertext or key material in logs, telemetry, audit, errors or protocol output; one-time plaintext handoff remains explicit.",
+      "owner_phase": 176,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "operator writer lifecycle proof pending"
+    },
+    {
+      "case_id": "WRITER-HASH-ONLY-HELPER",
+      "requirement": "VBASE-02",
+      "caller": "Clients.rotate_secret_hash/0",
+      "lifecycle": "helper caller requests hash-only result",
+      "stage": "helper generation with no persisted identity",
+      "storage": "no store",
+      "operation": "generate hash-only pair",
+      "expected": "returns {hash, plaintext}; no identity/config requirement and no discarded verifier generation",
+      "mutation": "none",
+      "preserves": "no verifier side effect or persisted material",
+      "redaction": "return is the existing intentional plaintext handoff; no logging",
+      "owner_phase": 176,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "hash-only helper compatibility proof pending"
+    },
+    {
+      "case_id": "READER-TOKEN-EXCHANGE",
+      "requirement": "VBASE-02",
+      "caller": "TokenExchange.Internal.ClientAuthentication via shared ClientAuth.authenticate",
+      "lifecycle": "client_secret_jwt token exchange",
+      "stage": "client authentication before grant/token persistence",
+      "storage": "selected configured ClientStore and transaction composition",
+      "operation": "authenticate JWT assertion",
+      "expected": "dedicated and allowed legacy verifier use exact frozen context; preserve HS256, issuer/audience, assertion lifetime, JTI single-use and ciphertext-sensitive verified identity; changed fingerprint rejects guarded issuance",
+      "mutation": "authentication may consume JTI; on later fingerprint mismatch no token/grant success",
+      "preserves": "client/grant/token fields unchanged on rejected issuance",
+      "redaction": "no credential material in protocol, logs, tasks, or telemetry",
+      "owner_phase": 176,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "reader and guarded-issuance race proof pending"
+    },
+    {
+      "case_id": "READER-INTROSPECTION-REVOCATION",
+      "requirement": "VBASE-02",
+      "caller": "Lockspire.Protocol.Introspection and Lockspire.Protocol.Revocation through shared client authentication",
+      "lifecycle": "client_secret_jwt client requests introspection or revocation",
+      "stage": "existing authenticated endpoint flow",
+      "storage": "existing configured client store and protocol transaction",
+      "operation": "authenticate client and perform supported endpoint action",
+      "expected": "same verifier policy without changing endpoint authorization, response or revocation semantics",
+      "mutation": "only existing endpoint-authorized effects",
+      "preserves": "unrelated client/token state preserved",
+      "redaction": "no verifier/hash/secret in response or operational surfaces",
+      "owner_phase": 176,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "endpoint compatibility proof pending"
+    },
+    {
+      "case_id": "READER-PAR-DEVICE-CIBA",
+      "requirement": "VBASE-02",
+      "caller": "Lockspire.Protocol.PushedAuthorizationRequest, DeviceAuthorization, BackchannelAuthentication",
+      "lifecycle": "client_secret_jwt caller uses PAR, device authorization, or CIBA",
+      "stage": "each current endpoint authentication boundary",
+      "storage": "existing configured client store and protocol transaction",
+      "operation": "authenticate client and perform supported endpoint action",
+      "expected": "preserve current supported client authentication methods and endpoint semantics; same verifier policy applies only where client_secret_jwt is already supported; do not add JWT support to PAR/device/CIBA; preserve PAR/FAPI checks and device/CIBA method boundaries",
+      "mutation": "only existing endpoint-authorized effects",
+      "preserves": "unrelated client/grant/token state preserved",
+      "redaction": "no raw credential material in protocol, logs, tasks, or telemetry",
+      "owner_phase": 176,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "endpoint compatibility proof pending"
+    },
+    {
+      "case_id": "READER-HS256-AUDIENCE-JTI-EXCLUSIONS",
+      "requirement": "VBASE-02",
+      "caller": "Lockspire.Protocol.ClientAuth.ClientSecretJwt and shared ClientAuth.authenticate",
+      "lifecycle": "valid, invalid, replayed, wrong-audience, or unsupported-alg assertion",
+      "stage": "assertion verification, replay insertion, then guarded issuance",
+      "storage": "existing replay store and client store",
+      "operation": "verify assertion and authorize client",
+      "expected": "HS256 only as currently supported; preserve issuer/audience/lifetime and JTI behavior; no alg=none; JTI consumed before later lifecycle failure remains consumed; fingerprint change rejects issuance and requires fresh assertion/JTI",
+      "mutation": "JTI may be consumed on auth; no successful token/grant effect on later conflict",
+      "preserves": "credential and grant state unchanged for rejected assertion",
+      "redaction": "allowlisted invalid_client response only",
+      "owner_phase": 176,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "existing protocol boundary and race tests pending"
+    },
+    {
+      "case_id": "MAINTENANCE-CAPABILITY-AUTHORITY",
+      "requirement": "VBASE-02",
+      "caller": "selected ClientStore implementing optional Lockspire.Storage.ClientVerifierMaintenance",
+      "lifecycle": "selected adapter composition lacks capability or declares wrong authority",
+      "stage": "preflight before inventory or mutation",
+      "storage": "configured ClientStore and TransactionStore declarations",
+      "operation": "resolve maintenance capability and transaction authority",
+      "expected": "missing capability => typed unsupported; mismatch => typed authority mismatch; declaration carries participant modules for selected client, transaction, and audit stores and exactly matches corresponding authority participants and selected ClientStore/TransactionStore declarations; fail before scan/change; never default to Repository",
+      "mutation": "none",
+      "preserves": "all client/audit state unchanged",
+      "redaction": "typed safe status only",
+      "owner_phase": 177,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "optional capability and built-in/delegating PostgreSQL authority proof pending"
+    },
+    {
+      "case_id": "MAINTENANCE-INVENTORY-PAGING",
+      "requirement": "VBASE-02",
+      "caller": "selected verifier maintenance capability",
+      "lifecycle": "empty, singleton, multi-page, invalid-cursor, invalid-limit, duplicate, malformed, and interrupted inventories",
+      "stage": "bounded cursor page scan",
+      "storage": "all persisted clients through selected adapter",
+      "operation": "verifier_inventory_page(after_client_id, limit)",
+      "expected": "limit 1..500, caller default 100; exclusive canonical ID cursor; ascending bytewise ID order; at most limit rows; cursor equals last row; terminal nil/complete true; nonterminal nonempty; empty => [], nil, true; invalid inputs typed error",
+      "mutation": "read-only",
+      "preserves": "no row changes",
+      "redaction": "safe counts/classifications only",
+      "owner_phase": 177,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "bounded pagination and continuation proof pending"
+    },
+    {
+      "case_id": "MAINTENANCE-INVENTORY-READINESS",
+      "requirement": "VBASE-02",
+      "caller": "migration/preflight caller over verifier maintenance pages",
+      "lifecycle": "all auth methods/lifecycle states including absent, malformed, mismatched, unknown-key, unreadable, oversized, and uninspected rows",
+      "stage": "full scan and readiness decision",
+      "storage": "every stored client; no auth/lifecycle filtering",
+      "operation": "classify migration readiness",
+      "expected": "only every row inspected and eligible plus terminal complete page can be ready; any bad row or interrupted/unreadable/duplicate scan blocks; no partial success; oversized legacy IDs/secrets unchanged; cursor scan is not snapshot/quiescence/fleet parity",
+      "mutation": "read-only",
+      "preserves": "all existing values and fields preserved",
+      "redaction": "only bounded counts and reason codes; no raw material",
+      "owner_phase": 177,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "truthful readiness and interrupted/resume/idempotence proof pending"
+    },
+    {
+      "case_id": "MAINTENANCE-ATOMIC-CAS-AND-PRESERVATION",
+      "requirement": "VBASE-02",
+      "caller": "verifier maintenance compare_and_rewrap/5 under selected TransactionStore",
+      "lifecycle": "eligible legacy row; already-current row; expected hash/verifier mismatch; missing row",
+      "stage": "lock/reload current row, compare expected material, conditionally update verifier and audit",
+      "storage": "one selected shared PostgreSQL transaction and selected client/audit participants",
+      "operation": "compare_and_rewrap(client_id, expected_hash, expected_verifier, replacement_verifier, audit_attrs)",
+      "expected": "callback runs inside caller-opened selected TransactionStore transaction; returns provisional changed, already_current, or material_conflict; changed row updates verifier only and appends one audit atomically; outer maintenance command reports changed only after outer commit; missing row/failure typed",
+      "mutation": "verifier ciphertext only when changed; audit event in same transaction",
+      "preserves": "hash, ID, active, metadata, management, lifetimes, rotation timestamps, inserted_at, updated_at and every other field unchanged; audit supplies maintenance time",
+      "redaction": "no expected/replacement material in result/audit/logs",
+      "owner_phase": 177,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "atomic callback and preservation proof pending"
+    },
+    {
+      "case_id": "MAINTENANCE-RACE-AND-ROLLBACK",
+      "requirement": "VBASE-02",
+      "caller": "maintenance callback racing secret rotation, client edit, another rewrap, audit failure, or JWT issuance",
+      "lifecycle": "each serialization order plus stale expected material",
+      "stage": "selected shared row lock and transaction; later guarded issuance fingerprint check",
+      "storage": "real PostgreSQL using selected client/transaction/audit participants",
+      "operation": "rewrap or authenticate-and-issue under race",
+      "expected": "rotation orders serialize; intervening edits conflict; concurrent rewrap is changed then already-current or conflict; audit failure rolls back ciphertext; auth fingerprint change rejects issuance without successful token/grant; consumed JTI remains consumed and retry uses fresh assertion",
+      "mutation": "only one committed verifier-only update and audit; failed audit none",
+      "preserves": "all protected fields preserved",
+      "redaction": "sentinel disclosures absent from every success/failure surface",
+      "owner_phase": 177,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "real PostgreSQL contention/rollback and guarded issuance evidence pending"
+    },
+    {
+      "case_id": "ROLLOUT-READER-FIRST-ROLLBACK-RETIREMENT",
+      "requirement": "VBASE-02",
+      "caller": "host operator deploying compatible readers, keys, writer activation, rollback, and retirement",
+      "lifecycle": "legacy-only -> staged reader -> dedicated write -> optional reject-legacy -> key rotation/retirement",
+      "stage": "host rollout and recovery sequence",
+      "storage": "all serving nodes and stored rows; host controls fleet",
+      "operation": "stage, activate, rollback, restore or retire",
+      "expected": "readers and keys everywhere before dedicated writes; unsafe old-node activation blocked; before first dedicated write rollback may use old code; after one dedicated write old code cannot read unless explicit migration/restoration path; retain keys until complete fresh inventory and host-owned drain/backup evidence; no local fleet assertion",
+      "mutation": "no runtime change in Phase 175",
+      "preserves": "existing rows unchanged during staging and blocked readiness",
+      "redaction": "status reports local observations, never fleet parity or rollback safety",
+      "owner_phase": 177,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "host rollout, old-node, recovery, key-retirement proof pending"
+    },
+    {
+      "case_id": "DISCLOSURE-SENTINELS",
+      "requirement": "VBASE-02",
+      "caller": "independent disclosure reviewer for existing and new credential-material paths",
+      "lifecycle": "successful and failed reads, writes, locks, API results and operational events",
+      "stage": "full-row and partial-row observability boundaries",
+      "storage": "domain/schema structs, changesets, adapters, SQL Logger, raw query telemetry, logs, errors, tasks, audits, protocol bodies",
+      "operation": "inject sentinel secret/hash/verifier/ciphertext and inspect every surface",
+      "expected": "no sentinel appears in any output surface; Support.sensitive disables Logger and raw query telemetry; error/audit fields allowlisted; include result structs/maps and Inspect",
+      "mutation": "none beyond scenario operation",
+      "preserves": "sensitive state remains protected",
+      "redaction": "zero sentinel disclosure on success and failure paths",
+      "owner_phase": 177,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "complete sentinel matrix pending, independent review owned by 178"
+    },
+    {
+      "case_id": "PACKAGES-ADAPTER-DELIVERY",
+      "requirement": "VBASE-02",
+      "caller": "existing two packaged dependency pairs and declared delegating adapter composition",
+      "lifecycle": "fresh/legacy/mixed-version, key stage/activate/rotate/reject/recover and delivery-source paths",
+      "stage": "package and adapter integration; candidate/main/delivery reconciliation",
+      "storage": "only both existing package pairs and declared shared-PostgreSQL delegating adapter",
+      "operation": "prove supported composition and delivery",
+      "expected": "both pairs pass same contract; no arbitrary adapter support claim; preserve source/candidate/main/delivery distinction; only accepted main/helper evidence qualifies final source",
+      "mutation": "none unless scenario explicitly invokes behavior",
+      "preserves": "same verifier/hash/client invariants",
+      "redaction": "no credentials in packaged diagnostics",
+      "owner_phase": 178,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "both pair/adapter/review/delivery evidence pending"
+    },
+    {
+      "case_id": "MAINTENANCE-INTERRUPTED-RESUME-IDEMPOTENCE-RECOVERY",
+      "requirement": "VBASE-02",
+      "caller": "migration/preflight operator restarting interrupted inventory or restoring compatible keys",
+      "lifecycle": "interrupted scan; repeated committed rewrap; missing/wrong key or unsupported legacy material",
+      "stage": "resume/recovery after caller-owned quiescence",
+      "storage": "paged inventory and verifier key configuration",
+      "operation": "resume scan, repeat conditional rewrap, restore key, or authorized secret rotation",
+      "expected": "interrupted scan is never complete or ready; restart a fresh full scan from nil after caller-owned quiescence; repeating a committed rewrap with matching hash and replacement verifier returns already_current without a second update/audit; otherwise stale expected material conflicts; missing/wrong key recovery is key restore from host backup or authorized secret rotation/reprovision, never key derivation, age reset, or verifier fallback",
+      "mutation": "none for scan/recovery check; verifier-only plus one audit on first committed change",
+      "preserves": "hash and every non-verifier client field; never rewrite unsupported or unreadable rows",
+      "redaction": "reason/status only; no key or credential material",
+      "owner_phase": 177,
+      "evidence": {
+        "status": "pending",
+        "ids": [],
+        "source_sha": null
+      },
+      "status": "pending",
+      "blocking": "restart/idempotence and host-owned recovery proof pending"
+    }
+  ],
+  "maintenance_contract": {
+    "capability": "Lockspire.Storage.ClientVerifierMaintenance",
+    "selection": "optional behavior implemented by the configured ClientStore module; selected explicitly and never defaulted to Repository",
+    "authority_callback": "verifier_maintenance_contract/0",
+    "authority_return": "{:ok, %{version: 1, transaction_authority: %{identity: term(), participants: map()}, participants: %{client_store: module(), transaction_store: module(), audit_store: module()}}} | {:error, :client_secret_verifier_maintenance_unsupported | :client_secret_verifier_maintenance_authority_mismatch}",
+    "authority_rule": "participants must exactly match the selected client, transaction, and audit modules and equal the corresponding entries in selected TransactionStore.transaction_authority(). The full declared authority must exactly equal selected ClientStore.lifetime_contract().transaction_authority and selected TransactionStore.transaction_authority(); mismatch/absence fails before inventory or mutation",
+    "inventory_callback": "verifier_inventory_page(after_client_id, limit)",
+    "inventory_args": "after_client_id is nil or canonical persisted client_id cursor; limit integer 1..500; caller default 100",
+    "inventory_return": "{:ok, %{clients: [Client.t()], next_cursor: String.t() | nil, complete?: boolean}} | {:error, :client_secret_verifier_maintenance_unsupported | :client_secret_verifier_maintenance_authority_mismatch | :client_secret_verifier_inventory_invalid_cursor | :client_secret_verifier_inventory_invalid_limit | :client_secret_verifier_inventory_unreadable}",
+    "inventory_order": "ascending unsigned bytewise order of canonical client_id UTF-8 bytes; cursor exclusive and equals final returned ID; pages at most limit; terminal page has next_cursor nil and complete? true; nonterminal page is nonempty and next_cursor equals last ID; empty inventory is [], nil, true",
+    "inventory_scope": "every persisted client regardless of auth method, active/lifecycle state, expiry, verifier presence, or validity; no filtering; duplicate IDs, malformed/unreadable rows, invalid cursor, or uninspected remainder block readiness",
+    "inventory_consistency": "one bounded query/page at a time; traversal is not a database snapshot, quiescence, or fleet-parity proof; concurrent changes may make a run incomplete/uncertain and require a fresh complete scan after caller-owned quiescence",
+    "rewrap_callback": "compare_and_rewrap(client_id, expected_client_secret_hash, expected_verifier, replacement_verifier, audit_attrs)",
+    "rewrap_args": "expected/replacement material compared byte-for-byte; audit_attrs allowlisted and contains no secret/hash/verifier/ciphertext; client_id required",
+    "rewrap_return": "{:ok, :changed | :already_current | :material_conflict} | {:error, :client_secret_verifier_maintenance_unsupported | :client_secret_verifier_maintenance_authority_mismatch | :client_secret_verifier_client_not_found | :client_secret_verifier_maintenance_failed}",
+    "rewrap_atomicity": "caller invokes compare_and_rewrap inside an already-open transaction owned by selected TransactionStore; callback locks and reloads current row, if current verifier already equals replacement and expected hash matches return provisional already_current without audit, otherwise compare expected hash and verifier, replace only verifier ciphertext, append one allowlisted audit event in same outer transaction; :changed is provisional until outer commit and command reports changed only after commit; audit failure rolls back update; never use direct Repository fallback",
+    "rewrap_preserves": "client_secret_hash, client_id, active, metadata, management fields, app/secret lifetimes, rotation timestamps, inserted_at, updated_at, and every field other than verifier ciphertext; audit event carries maintenance time",
+    "status": "contract-only; behavior and adapter composition evidence pending Phase 177/178"
+  }
+}

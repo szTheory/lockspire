@@ -492,12 +492,44 @@ Freeze source before final cross-phase fingerprints. Run shared generated-host s
 - Timeline: two calendar days (2026-10-22 → 2026-10-24), 147 commits through the milestone audit.
 - Evidence: all four phase owners passed pre-close; 96 browser cases and separate 43/44 lifecycle checks at recorded sources; 68/68 security threats closed. Hosted CI remains unobserved.
 
+## Milestone: v1.47 — OAuth/OIDC Core Interoperability & Hardening
+
+**Completed:** 2026-10-25
+**Phases:** 4 | **Plans:** 10 | **Tasks:** 22
+
+### What Was Built
+
+A finite twelve-case qualification ledger, two narrow protocol corrections, strict selected package receipts, bounded failure diagnostics and a protected accepted-main handoff. Unsupported response mode stays first-party HTTP400; pushed parameters remain authoritative. No dependency was added.
+
+### What Worked
+
+Controlled valid-path neighbors isolated actual normative REDs, and ten already-correct cases reused their proof. Independent review found invalid alternate-receipt coverage, ambiguous JSON members and diagnostic exit masking before final acceptance. Real package HTTP proof and exact-floor hosted jobs validated the embedded host seam. Explicit custody preserved unknown history/data without preventing owned cleanup.
+
+### What Was Inefficient
+
+Late fixture formatting and incomplete review scope forced candidate/package refreshes. Lost command completion required a full local gate rerun. Circular report/audit fingerprints caused repeated metadata refreshes. Opaque floor failures erased inner diagnostics until a scoped repair retained safe summaries. Extra broad-hygiene warning dispositions caused one otherwise-green exact-main invocation to be rejected and repeated. The phase-local qualification validator was coupled to active planning paths, so it required byte-preserved archival outside permanent test discovery.
+
+### Patterns Established
+
+Directed evidence dependencies; distinct package/checkpoint/candidate/PR/main identities; valid alternate-artifact controls before digest rejection; saved original child exits and bounded failure summaries; byte-preserved acceptance receipts and historical validator archival. Archive relocation is not re-verification or proof promotion.
+
+### Key Lessons
+
+Finish complete review and formatting before expensive gates. Start long gates with durable exit capture. Keep derivative lifecycle notes out of upstream proof fingerprints where they create cycles. Derive warning dispositions from the exact mode. Separate tests of durable product behavior from finite milestone-evidence validation, and decide archival lifecycle before the first freeze. Preserve failed attempts and make missing evidence explicit.
+
+### Cost Observations
+
+- Model mix/session totals are not reliably recorded; no percentages inferred.
+- Timeline:2026-10-24 →2026-10-25 (two calendar dates),147 commits in the recorded implementation/evidence range;106 files changed including planning.
+- Evidence:14/14 requirements, four phase-owner passes, package12/12, main CI7/7, local acceptance and no-publish Release. Nine judgment recommendations, generic assumptions and unlaunched external profiles remain explicit. Four prior audit suppressions are carried forward, zero newly acknowledged.
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
 
 | Milestone | Sessions | Phases | Key Change |
 |-----------|----------|--------|------------|
+| v1.47 | N/A | 4 | Finite qualification, directed exact-identity evidence and fresh accepted-main delivery. |
 | v1.46 | N/A | 4 | Native host routing, current authority, exact-pair real-browser proof and failure-tested receipt containment. |
 | v1.45 | N/A | 5 | Selected contract, actual lock waits, candidate-bound package proof and verification dependency ordering. |
 | v1.43 | N/A | 3 | Closed CR-01 with envelope encryption at rest, a checked migration path, and one structural leak matcher shared by every redaction test. |
@@ -516,6 +548,7 @@ Freeze source before final cross-phase fingerprints. Run shared generated-host s
 
 | Milestone | Tests | Coverage | Zero-Dep Additions |
 |-----------|-------|----------|-------------------|
+| v1.47 | Package12/12; main CI7/7 and local acceptance; four phase owners passed pre-close | Four Nyquist-compliant phases; external profiles remain supplemental/unlaunched | Existing protocol seams, standard-library receipt parser and safe bounded diagnostics |
 | v1.46 | 96 recorded browser cases, separate 43/44 lifecycle checks; four phase owners passed pre-close | Four Nyquist-compliant phases; hosted CI unobserved | Shared route inventory, host seams and bounded receipt harness |
 | v1.45 | Seven required CI contexts; 9 package scenarios/49 checks; 69 mapped cases; all five phase owners passed pre-close | Five Nyquist-compliant phases; undefined probes remain explicit | Current-row lifetime guards, declared adapter composition and strict receipts |
 | v1.43 | Sentinel key-material leak tests across repo telemetry, logs, admin and operator output; real-concurrency reencrypt proofs; upgrade-journey integration test; demo and clean-room `--check`/doctor CI checks | High | OTP `:crypto` envelope cipher, key-material matcher, reencrypt engine |

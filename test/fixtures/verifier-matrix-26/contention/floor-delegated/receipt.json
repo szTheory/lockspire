@@ -1,0 +1,58 @@
+{
+  "candidate": {
+    "archive_sha256": "8be113c5d8cd630ee9fefba3494aac2c236350589a5cd9e7c98600a11a8d1e91",
+    "kind": "checkout",
+    "runner_revision": "2da528fba3ca894cda4e5776b47eb6ccaf12f93c",
+    "source_proof": "11296b52dc5b478d8a6a640d952c34c38295c602412d9fd8392776407e2ddef1",
+    "source_revision": "2da528fba3ca894cda4e5776b47eb6ccaf12f93c",
+    "tree_sha256": "2af2082226f0be0e47b1f761cb4e98dd526effc0f93800fbacacce1f3a46b243",
+    "version": "1.6.1"
+  },
+  "executed_count": 2,
+  "host": {
+    "compiled_candidate_sha256": "b1599e699ff7d9dce77e1b93872e570dfd02acf8eec056e050fa50a034919be1",
+    "live_view": "1.1.28",
+    "lock_sha256": "74212156d931add8c5acae6ad67928d08951a6c698cc6f29fec88992af38a954",
+    "phoenix": "1.8.5",
+    "resolved_dependency_verified": true,
+    "vendor_tree_sha256": "2af2082226f0be0e47b1f761cb4e98dd526effc0f93800fbacacce1f3a46b243"
+  },
+  "observations": {
+    "VPROOF-02-CONTENTION-MAINTENANCE-FIRST": {
+      "blocker_observed": true,
+      "contender_backend_pid": 19136,
+      "credential_pair_coherent": true,
+      "durable_state_verified": true,
+      "executed": true,
+      "holder_backend_pid": 19141,
+      "material_conflict": false,
+      "outcome": "pass"
+    },
+    "VPROOF-02-CONTENTION-ROTATION-FIRST": {
+      "blocker_observed": true,
+      "contender_backend_pid": 19139,
+      "credential_pair_coherent": true,
+      "durable_state_verified": true,
+      "executed": true,
+      "holder_backend_pid": 19136,
+      "material_conflict": true,
+      "outcome": "pass"
+    }
+  },
+  "pair": "floor",
+  "partial": true,
+  "run_id": "8cc64ad151a24340b78b0f30542d2e1c",
+  "runner": "2da528fba3ca894cda4e5776b47eb6ccaf12f93c",
+  "runtime": {
+    "elixir": "1.19.5",
+    "otp": "28",
+    "postgresql": "14.17 (Homebrew)"
+  },
+  "schema": "lockspire-installed-verifier-v1",
+  "scope": "contention",
+  "stable_case_ids": [
+    "VPROOF-02-CONTENTION-ROTATION-FIRST",
+    "VPROOF-02-CONTENTION-MAINTENANCE-FIRST"
+  ],
+  "store": "delegated"
+}

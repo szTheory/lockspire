@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 5
+open_count: 6
 waived_count: 0
-fixed_count: 11
-total_count: 16
-last_updated: 2026-10-25T01:32:59.172Z
+fixed_count: 12
+total_count: 18
+last_updated: 2026-10-26T02:09:55.852Z
 ---
 
 # Broken Windows Ledger
@@ -31,6 +31,8 @@ last_updated: 2026-10-25T01:32:59.172Z
 | 14 | 170 | deviation | test/lockspire/host_integration_ci_contract_test.exs |  | Formatted the phase-owned Plan 04 CI contract after the whole-project formatter exposed its long assertions; behavior unchanged. | fixed |  | 2026-10-24T07:25:42.812Z | 2026-10-24T07:25:44.957Z |
 | 15 | 174 | deviation | scripts/acceptance/clean_room_saas_journey.py |  | The clean-room authorization helper was corrected to follow the host-owned direct consent redirect for authenticated A171-006. | open |  | 2026-10-25T01:32:57.121Z |  |
 | 16 | 174 | deviation | test/clean_room/provider_host/lib/clean_room_provider/lockspire/account_resolver.ex |  | The clean-room resolver now reads account identity and auth_time from the same fetched host session connection. | open |  | 2026-10-25T01:32:59.172Z |  |
+| 17 | 177 | deviation | test/support/delegated_verifier_maintenance_store.ex |  | Moved the selected maintenance test adapter into shared test support so the plan integration command can load it. | open |  | 2026-10-26T01:20:35.414Z |  |
+| 18 | 177 | deviation | lib/lockspire/storage/client_verifier_maintenance.ex |  | Bare Mix apply needed the validated task-local context passed through verifier rewrap; the original path required a cached serving-node context. | fixed |  | 2026-10-26T02:09:42.663Z | 2026-10-26T02:09:55.852Z |
 
 ````json
 [
@@ -233,6 +235,32 @@ last_updated: 2026-10-25T01:32:59.172Z
     "recorded_at": "2026-10-25T01:32:59.172Z",
     "resolved_at": null,
     "milestone": "v1.47"
+  },
+  {
+    "id": 17,
+    "kind": "deviation",
+    "phase": "177",
+    "file": "test/support/delegated_verifier_maintenance_store.ex",
+    "line": null,
+    "description": "Moved the selected maintenance test adapter into shared test support so the plan integration command can load it.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-26T01:20:35.414Z",
+    "resolved_at": null,
+    "milestone": "v1.48"
+  },
+  {
+    "id": 18,
+    "kind": "deviation",
+    "phase": "177",
+    "file": "lib/lockspire/storage/client_verifier_maintenance.ex",
+    "line": null,
+    "description": "Bare Mix apply needed the validated task-local context passed through verifier rewrap; the original path required a cached serving-node context.",
+    "status": "fixed",
+    "reason": "",
+    "recorded_at": "2026-10-26T02:09:42.663Z",
+    "resolved_at": "2026-10-26T02:09:55.852Z",
+    "milestone": "v1.48"
   }
 ]
 ````

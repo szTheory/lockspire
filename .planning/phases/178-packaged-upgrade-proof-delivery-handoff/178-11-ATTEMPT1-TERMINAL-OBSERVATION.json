@@ -1,0 +1,58 @@
+{
+  "jobs": [
+    {
+      "conclusion": "success",
+      "id": 122593555798,
+      "name": "Release Hygiene Drift",
+      "status": "completed"
+    },
+    {
+      "conclusion": "failure",
+      "id": 122593555887,
+      "name": "Integration Checks",
+      "status": "completed"
+    },
+    {
+      "conclusion": "failure",
+      "id": 122593555900,
+      "name": "Minimum Supported Elixir/OTP",
+      "status": "completed"
+    },
+    {
+      "conclusion": "failure",
+      "id": 122593555915,
+      "name": "Fast Checks",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "id": 122593555945,
+      "name": "Adoption Demo Smoke",
+      "status": "completed"
+    },
+    {
+      "conclusion": "failure",
+      "id": 122593555959,
+      "name": "Dialyzer",
+      "status": "completed"
+    },
+    {
+      "conclusion": "skipped",
+      "id": 122593920395,
+      "name": "Complete Coverage Evidence",
+      "status": "completed"
+    }
+  ],
+  "minimum_inner_cause": "unknown",
+  "observed_at_utc": "2026-10-28T13:16:52.002548+00:00",
+  "pr_number": 141,
+  "published_head": "4d512ae2c6a042e2b4557750eca2d49e57fb7189",
+  "qualification": "failed_old_head_not_current_local_candidate",
+  "raw_logs_read_in_this_refresh": false,
+  "remote_writes": false,
+  "repository": "szTheory/lockspire",
+  "run_attempt": 1,
+  "run_id": 40620643629,
+  "schema": "lockspire-phase178-old-head-terminal-job-observation-v1",
+  "source": "GitHub connector fetch_workflow_run_jobs read-only metadata"
+}

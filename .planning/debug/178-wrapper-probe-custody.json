@@ -1,0 +1,10 @@
+{
+  "purpose": "Exact resource custody from dedicated wrapper forced-group-denial regression",
+  "registry": "/private/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-verifier-owned-ay5qswtf",
+  "root_session_pgid": 26036,
+  "nested_session_pgid": 26051,
+  "supervisor_pid": 26026,
+  "creation_unix_seconds": 1793086596.964507,
+  "evidence": "Only retained private numeric registry from just-completed force-denial probe; root-to-child parent relation matches registered start_owned_session custody. Test finally sent KILL to these exact groups. Post-KILL group0 probe EPERM prevented absence claim.",
+  "cleanup": "confirmed absent by exact PGID signal-0 probes; retained registry removed after matching numeric identity records"
+}

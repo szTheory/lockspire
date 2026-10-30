@@ -14,15 +14,18 @@ import tempfile
 import sys
 import unittest
 import uuid
-from unittest.mock import patch
+from unittest.mock import call, patch
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "acceptance" / "clean_room"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "acceptance"))
 import clean_room_admin_journey as admin_journey
+import clean_room_saas_journey as saas_journey
+import client_lifetime_upgrade as lifetime_upgrade
+import package_input
 from admin_receipts import validate_receipt, write_receipt
 import build_provider as provider_builder
-from package_input import PackageInputError
+from package_input import PackageInputError, _OWNED_IDENTITIES, owned_session_state, start_owned_session, stop_process_group
 
 FULL_CASE_IDS = (
     "allowed_entry", "assets", "live_navigation", "params_patch", "detail_task",
@@ -49,6 +52,363 @@ FULL_CASE_EVIDENCE = {
     "public_protocol_error": {"protocol_error_shape", "no_staff_checks"},
 }
 FULL_OBSERVATIONS = frozenset().union(*FULL_CASE_EVIDENCE.values()) | {"assets_200"}
+
+
+class PackageSourceRevisionTests(unittest.TestCase):
+    def test_authenticated_candidate_source_wins_over_synthetic_checkout_sha(self):
+        source = "a" * 40
+        synthetic_merge = "b" * 40
+        self.assertEqual(
+            saas_journey.selected_package_source_revision(
+                synthetic_merge,
+                {"LOCKSPIRE_EXPECTED_CANDIDATE_SOURCE_REVISION": source},
+            ),
+            source,
+        )
+
+    def test_lifetime_source_override_and_checkout_fallback_keep_precedence(self):
+        current = "c" * 40
+        candidate = "b" * 40
+        lifetime = "a" * 40
+        self.assertEqual(
+            saas_journey.selected_package_source_revision(
+                current,
+                {
+                    "LOCKSPIRE_LIFETIME_SOURCE_REVISION": lifetime,
+                    "LOCKSPIRE_EXPECTED_CANDIDATE_SOURCE_REVISION": candidate,
+                },
+            ),
+            lifetime,
+        )
+        self.assertEqual(saas_journey.selected_package_source_revision(current, {}), current)
+
+    def test_generic_tar_stays_unattributed_without_an_explicit_source_owner(self):
+        source = package_input.package_source(Path("/tmp/lockspire-1.6.1.tar"), None)
+        self.assertEqual(source.kind, "tar")
+        self.assertIsNone(source.source_revision)
+        with self.assertRaises(PackageInputError):
+            package_input.package_source(None, None, source_revision="a" * 40)
+
+
+class ExpectedPackageFileSetTests(unittest.TestCase):
+    def test_declared_but_absent_mix_path_is_excluded_until_it_exists(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "mix.exs").write_text(
+                'defmodule Fixture.MixProject do\n'
+                '  use Mix.Project\n'
+                '  def project, do: [app: :fixture, version: "0.0.1", '
+                'package: [files: ~w(mix.exs docs/user-flows-jtbd.md)]]\n'
+                '  def application, do: [extra_applications: [:logger]]\n'
+                'end\n',
+                encoding="utf-8",
+            )
+            with patch.object(package_input, "PROJECT_ROOT", root), patch.dict(
+                os.environ,
+                {"ASDF_ELIXIR_VERSION": "1.19.5-otp-28", "ASDF_ERLANG_VERSION": "28.5"},
+            ):
+                self.assertEqual(package_input.expected_package_files(), frozenset({"mix.exs"}))
+
+                docs = root / "docs"
+                docs.mkdir()
+                (docs / "user-flows-jtbd.md").write_text("fixture input\n", encoding="utf-8")
+                self.assertEqual(
+                    package_input.expected_package_files(),
+                    frozenset({"mix.exs", "docs/user-flows-jtbd.md"}),
+                )
+
+
+class LocalTarSourceBindingTests(unittest.TestCase):
+    def make_fixture(self, root: Path) -> tuple[Path, Path, str]:
+        repository = root / "source"
+        repository.mkdir()
+        (repository / "lib").mkdir()
+        (repository / "mix.exs").write_text("defmodule Fixture.MixProject do\nend\n")
+        (repository / "lib" / "source.ex").write_text("defmodule Fixture.Source do\nend\n")
+        subprocess.run(("git", "init", "-q"), cwd=repository, check=True)
+        subprocess.run(("git", "config", "user.email", "fixture@example.test"), cwd=repository, check=True)
+        subprocess.run(("git", "config", "user.name", "Fixture"), cwd=repository, check=True)
+        subprocess.run(("git", "add", "mix.exs", "lib/source.ex"), cwd=repository, check=True)
+        subprocess.run(("git", "commit", "-qm", "fixture source"), cwd=repository, check=True)
+        revision = subprocess.check_output(("git", "rev-parse", "HEAD"), cwd=repository, text=True).strip()
+        package = root / "package"
+        (package / "lib").mkdir(parents=True)
+        (package / "mix.exs").write_text((repository / "mix.exs").read_text())
+        (package / "lib" / "source.ex").write_text((repository / "lib" / "source.ex").read_text())
+        (package / "hex_metadata.config").write_text("generated package metadata")
+        return repository, package, revision
+
+    def bind(self, repository: Path, package: Path, revision: str) -> tuple[str, str]:
+        with patch.object(package_input, "PROJECT_ROOT", repository), patch.object(
+            package_input, "expected_package_files", return_value=frozenset({"mix.exs", "lib/source.ex"})
+        ):
+            return package_input.verify_local_tar_source_owner(
+                revision, revision, package, "d" * 64, package_input.package_tree_digest(package),
+            )
+
+    def test_matches_the_complete_mix_file_set_and_tracked_blob_bytes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            repository, package, revision = self.make_fixture(Path(temporary))
+            bound_revision, source_proof = self.bind(repository, package, revision)
+            self.assertEqual(bound_revision, revision)
+            self.assertRegex(source_proof, r"^[0-9a-f]{64}$")
+
+    def test_rejects_tracked_deletion_hidden_from_both_mix_and_archive(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            repository, package, revision = self.make_fixture(Path(temporary))
+            (repository / "lib" / "source.ex").unlink()
+            (package / "lib" / "source.ex").unlink()
+            with patch.object(package_input, "PROJECT_ROOT", repository), patch.object(
+                package_input, "expected_package_files", return_value=frozenset({"mix.exs"})
+            ), self.assertRaises(PackageInputError):
+                package_input.verify_local_tar_source_owner(
+                    revision, revision, package, "d" * 64, package_input.package_tree_digest(package),
+                )
+
+    def test_rechecks_tracked_state_after_observing_mix_file_set(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            repository, package, revision = self.make_fixture(Path(temporary))
+
+            def changed_checkout():
+                (repository / "lib" / "source.ex").write_text("changed during observation\n")
+                return frozenset({"mix.exs", "lib/source.ex"})
+
+            with patch.object(package_input, "PROJECT_ROOT", repository), patch.object(
+                package_input, "expected_package_files", side_effect=changed_checkout
+            ), self.assertRaises(PackageInputError):
+                package_input.verify_local_tar_source_owner(
+                    revision, revision, package, "d" * 64, package_input.package_tree_digest(package),
+                )
+
+    def test_rejects_missing_extra_modified_or_differently_owned_package_files(self):
+        for mutation in ("missing", "extra", "modified", "wrong_revision"):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as temporary:
+                repository, package, revision = self.make_fixture(Path(temporary))
+                runner = revision
+                if mutation == "missing":
+                    (package / "lib" / "source.ex").unlink()
+                elif mutation == "extra":
+                    (package / "lib" / "untracked.ex").write_text("defmodule Fixture.Untracked do\nend\n")
+                elif mutation == "modified":
+                    (package / "lib" / "source.ex").write_text("defmodule Fixture.Changed do\nend\n")
+                else:
+                    runner = "b" * 40
+                with patch.object(package_input, "PROJECT_ROOT", repository), patch.object(
+                    package_input, "expected_package_files", return_value=frozenset({"mix.exs", "lib/source.ex"})
+                ), self.assertRaises(PackageInputError):
+                    package_input.verify_local_tar_source_owner(
+                        revision, runner, package, "d" * 64, package_input.package_tree_digest(package),
+                    )
+
+
+class CallbackCounterTests(unittest.TestCase):
+    def test_counts_only_allowlisted_complete_callback_markers_in_memory(self):
+        read_fd, write_fd = os.pipe()
+        stream = os.fdopen(read_fd, "rb", buffering=0)
+        counter = saas_journey.CallbackCounter(stream)
+        try:
+            output = (
+                b"ordinary output with sentinel-like-sensitive-content\n"
+                + b"discarded output\n" * 40_000
+                + b"LIFETIME_ADAPTER_CALLBACK register_client\n"
+                + b"LIFETIME_ADAPTER_CALLBACK transact\n"
+                + b"LIFETIME_ADAPTER_CALLBACK unrecognized\n"
+                + b"LIFETIME_ADAPTER_CALLBACK "
+                + b"x" * 200
+                + b"\nLIFETIME_ADAPTER_CALLBACK register_client\n"
+            )
+            os.write(write_fd, output)
+            os.write(write_fd, b"LIFETIME_ADAPTER_CALLBACK lock_clients")
+        finally:
+            os.close(write_fd)
+
+        self.assertTrue(counter.join(timeout=2))
+        stream.close()
+        self.assertEqual(
+            counter.snapshot(),
+            {"register_client": 2, "transact": 1},
+        )
+
+    def test_reader_failure_is_reported_without_a_thread_traceback(self):
+        class BrokenStream:
+            def fileno(self):
+                raise OSError("private stream failure")
+
+        counter = saas_journey.CallbackCounter(BrokenStream())
+        self.assertFalse(counter.join(timeout=2))
+        self.assertEqual(counter.snapshot(), {})
+
+    def test_all_processes_receive_a_stop_attempt_after_one_cleanup_failure(self):
+        first = object()
+        second = object()
+        with patch.object(saas_journey, "stop_process", side_effect=[False, True]) as stop:
+            self.assertFalse(saas_journey.stop_processes((first, second)))
+        self.assertEqual(stop.call_args_list, [call(first), call(second)])
+
+    def test_start_failure_keeps_the_registered_handle_and_blocks_database_cleanup(self):
+        process = SimpleNamespace(stdout=None, pid=456)
+        saas_journey.STARTED_HOST_PROCESSES.clear()
+        try:
+            with patch.object(saas_journey, "start_owned_session", return_value=process), patch.object(
+                saas_journey, "stop_process", return_value=False
+            ) as stop:
+                with self.assertRaises(PackageInputError):
+                    saas_journey.start_process(Path("host"), {})
+
+                self.assertEqual(saas_journey.STARTED_HOST_PROCESSES, [process])
+                self.assertFalse(saas_journey.stop_started_processes())
+                self.assertEqual(stop.call_count, 2)
+
+            with patch.object(saas_journey, "drop_child_database") as drop:
+                self.assertFalse(saas_journey.cleanup_child_databases(
+                    False, Path("client"), {}, Path("provider"), {}
+                ))
+                drop.assert_not_called()
+        finally:
+            saas_journey.STARTED_HOST_PROCESSES.clear()
+
+    def test_unconfirmed_process_cleanup_retains_owned_temporary_root(self):
+        with saas_journey.RetainableTemporaryDirectory(
+            "lockspire-retained-owned-root-"
+        ) as temporary:
+            root = Path(temporary)
+            (root / "custody-marker").write_text("owned", encoding="utf-8")
+
+        self.assertTrue((root / "custody-marker").is_file())
+        shutil.rmtree(root)
+
+    def test_leader_exit_with_live_descendant_is_not_reported_as_group_cleanup(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            ready = Path(temporary) / "descendant-ready"
+            child_code = (
+                "import pathlib,signal,sys,time; "
+                "signal.signal(signal.SIGTERM,signal.SIG_IGN); "
+                "pathlib.Path(sys.argv[1]).write_text('ready'); time.sleep(1.5)"
+            )
+            parent_code = (
+                "import subprocess,sys,time; "
+                "subprocess.Popen([sys.executable,'-c',sys.argv[1],sys.argv[2]], "
+                "stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL); "
+                "time.sleep(30)"
+            )
+            process = start_owned_session(
+                (sys.executable, "-c", parent_code, child_code, str(ready)),
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                close_fds=True,
+            )
+            identity = _OWNED_IDENTITIES[process.pid]
+            deadline = time.monotonic() + 2
+            while time.monotonic() < deadline and not ready.is_file():
+                time.sleep(0.01)
+            self.assertTrue(ready.is_file())
+
+            process._clean_room_identity = identity
+            try:
+                stopped = saas_journey.stop_process(process)
+                state_after_stop = owned_session_state(identity)
+            finally:
+                if owned_session_state(identity) != "absent":
+                    stop_process_group(process, grace=2)
+            self.assertTrue(stopped)
+            self.assertEqual(state_after_stop, "absent")
+            if process.stdout is not None:
+                process.stdout.close()
+
+
+class LifetimeProviderEnvironmentTests(unittest.TestCase):
+    def test_uses_the_same_locked_dependency_and_build_paths_as_provider_setup(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            run_root = Path(temporary)
+            child = run_root / "host"
+            child.mkdir()
+            with patch.dict(os.environ, {"MIX_ENV": "test"}):
+                environment = lifetime_upgrade.mix_env(
+                    child, run_root, "postgres://private/test", "tenant_a"
+                )
+
+            expected_cache = provider_builder.proof_pair_cache_root(
+                run_root / "deps-cache", "locked", "test"
+            ) / "provider" / "deps"
+            self.assertEqual(environment["MIX_DEPS_PATH"], str(expected_cache.resolve()))
+            self.assertEqual(environment["MIX_BUILD_PATH"], str((child / "_build" / "test").resolve()))
+            self.assertEqual(environment["MIX_ENV"], "test")
+            self.assertEqual(environment["DATABASE_URL"], "postgres://private/test")
+            self.assertEqual(environment["LOCKSPIRE_STORAGE_PREFIX"], "tenant_a")
+
+
+class AdminOwnedProcessCleanupTests(unittest.TestCase):
+    def test_signal_cleanup_accepts_only_absence_of_the_original_identity(self):
+        process = SimpleNamespace(pid=987)
+        identity = SimpleNamespace(pid=987, pgid=987, sid=987, start=(123,))
+        with patch.object(admin_journey, "stop_process_group", return_value=False), patch.object(
+            admin_journey, "owned_session_state", return_value="absent"
+        ):
+            self.assertTrue(admin_journey.stop_owned(process, identity))
+
+        for state in ("owned", "unconfirmed"):
+            with self.subTest(state=state), patch.object(
+                admin_journey, "stop_process_group", return_value=False
+            ), patch.object(admin_journey, "owned_session_state", return_value=state):
+                self.assertFalse(admin_journey.stop_owned(process, identity))
+
+
+class JourneySetupCleanupTests(unittest.TestCase):
+    def test_pre_host_setup_failure_restores_environment_and_removes_empty_owned_root(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            run_root = Path(temporary) / "owned-run"
+            receipt = Path(temporary) / "receipt.json"
+            original = {
+                "TMPDIR": "/private/tmp/original-mix-tmp",
+                "CLEAN_ROOM_PROVIDER_ORIGIN": "http://127.0.0.1:49991",
+                "CLEAN_ROOM_CLIENT_ORIGIN": "http://127.0.0.1:49992",
+            }
+            def fail_after_origin_configuration():
+                saas_journey.PROVIDER_ORIGIN = "http://127.0.0.1:49993"
+                saas_journey.CLIENT_ORIGIN = "http://127.0.0.1:49994"
+                raise OSError("private setup failure")
+
+            def create_owned_root(*_arguments, **_options):
+                run_root.mkdir(mode=0o700)
+                return str(run_root)
+
+            with patch.dict(os.environ, original), patch.object(
+                saas_journey.tempfile, "mkdtemp", side_effect=create_owned_root
+            ), patch.object(
+                saas_journey, "configure_origins", side_effect=fail_after_origin_configuration
+            ), contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                result = saas_journey.main(["--only", "dcr_lifetime", "--receipt", str(receipt)])
+                self.assertEqual({key: os.environ.get(key) for key in original}, original)
+                self.assertEqual(saas_journey.PROVIDER_ORIGIN, "http://127.0.0.1:4100")
+                self.assertEqual(saas_journey.CLIENT_ORIGIN, "http://127.0.0.1:4101")
+
+            self.assertEqual(result, 1)
+            self.assertFalse(run_root.exists())
+
+    def test_failed_legacy_upgrade_retains_its_owned_temporary_root(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            run_root = Path(temporary) / "owned-upgrade"
+            package_root = Path(temporary) / "candidate-package"
+            identity = SimpleNamespace(
+                version="1.6.1", source_revision="a" * 40,
+                archive_sha256="b" * 64, tree_sha256="c" * 64,
+            )
+            def create_upgrade_root(*_arguments, **_options):
+                run_root.mkdir(mode=0o700)
+                return str(run_root)
+            with patch.object(lifetime_upgrade.sys, "argv", ["client_lifetime_upgrade", "--scenario", "public"]), patch.dict(os.environ, {"LOCKSPIRE_UPGRADE_DEBUG_ROOT": ""}), patch.object(
+                saas_journey.tempfile, "mkdtemp", side_effect=create_upgrade_root
+            ), patch.object(
+                lifetime_upgrade, "prepare_package", return_value=(package_root, (), identity)
+            ), patch.object(
+                lifetime_upgrade, "run_scenario", side_effect=PackageInputError("private failure")
+            ), contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                result = lifetime_upgrade.main()
+
+            self.assertEqual(result, 1)
+            self.assertTrue(run_root.is_dir())
+            shutil.rmtree(run_root)
 
 
 def full_scenario(case_id):
@@ -427,8 +787,10 @@ class AdminCleanupRegressionTests(unittest.TestCase):
                 base.mkdir()
                 receipt_path = Path(temporary) / "receipt.json"
                 identity = SimpleNamespace(source_revision="a" * 40, version="1.6.1", archive_sha256="b" * 64, tree_sha256="c" * 64)
+                started_process = SimpleNamespace(pid=987)
+                process_identity = SimpleNamespace(pid=987, pgid=987, sid=987, start=(123,))
                 output = io.StringIO()
-                with patch.object(admin_journey.tempfile, "mkdtemp", return_value=str(base)), patch.object(admin_journey, "package_source"), patch.object(admin_journey, "prepare_package", return_value=(base, [], identity)), patch.object(admin_journey, "prepare_provider", return_value=base), patch.object(admin_journey, "run_child_command"), patch.object(admin_journey, "runtime_versions", return_value={"phoenix": "1.8.13", "live_view": "1.2.10", "elixir": "1.20.4", "otp": "29"}), patch.object(admin_journey, "wait_ready"), patch.object(admin_journey.subprocess, "Popen"), patch.object(admin_journey, "stop_owned", return_value=True), patch.object(admin_journey, "bounded_run", side_effect=[SimpleNamespace(stdout=json.dumps(observed), returncode=0), fault]), patch.object(admin_journey.subprocess, "run", return_value=SimpleNamespace(stdout=b"")), contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
+                with patch.object(admin_journey.tempfile, "mkdtemp", return_value=str(base)), patch.object(admin_journey, "package_source"), patch.object(admin_journey, "prepare_package", return_value=(base, [], identity)), patch.object(admin_journey, "prepare_provider", return_value=base), patch.object(admin_journey, "run_child_command"), patch.object(admin_journey, "runtime_versions", return_value={"phoenix": "1.8.13", "live_view": "1.2.10", "elixir": "1.20.4", "otp": "29"}), patch.object(admin_journey, "wait_ready"), patch.object(admin_journey, "start_owned_session", return_value=started_process), patch.object(admin_journey, "_OWNED_IDENTITIES", {started_process.pid: process_identity}), patch.object(admin_journey, "stop_owned", return_value=True), patch.object(admin_journey, "bounded_run", side_effect=[SimpleNamespace(stdout=json.dumps(observed), returncode=0), fault]), patch.object(admin_journey.subprocess, "run", return_value=SimpleNamespace(stdout=b"")), contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
                     status = admin_journey.main(["--pair", "locked", "--mount", "/", "--scenario", "tracer", "--receipt", str(receipt_path)])
                 self.assertEqual(status, 1)
                 retained = validate_receipt(json.loads(receipt_path.read_text()))
@@ -448,8 +810,10 @@ class AdminCleanupRegressionTests(unittest.TestCase):
             base.mkdir()
             receipt = Path(temporary) / "receipt.json"
             identity = SimpleNamespace(source_revision="a" * 40, version="1.6.1", archive_sha256="b" * 64, tree_sha256="c" * 64)
+            started_process = SimpleNamespace(pid=987)
+            process_identity = SimpleNamespace(pid=987, pgid=987, sid=987, start=(123,))
             output = io.StringIO()
-            with patch.object(admin_journey.tempfile, "mkdtemp", return_value=str(base)), patch.object(admin_journey, "package_source"), patch.object(admin_journey, "prepare_package", return_value=(base, [], identity)), patch.object(admin_journey, "prepare_provider", return_value=base), patch.object(admin_journey, "run_child_command"), patch.object(admin_journey, "runtime_versions", return_value={"phoenix": "1.8.13", "live_view": "1.2.10"}), patch.object(admin_journey, "wait_ready"), patch.object(admin_journey.subprocess, "Popen"), patch.object(admin_journey, "stop_owned", return_value=True), patch.object(admin_journey, "bounded_run", side_effect=[SimpleNamespace(stdout=json.dumps(observation), returncode=1), SimpleNamespace(returncode=0)]), patch.object(admin_journey.subprocess, "run", return_value=SimpleNamespace(stdout=b"")), contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
+            with patch.object(admin_journey.tempfile, "mkdtemp", return_value=str(base)), patch.object(admin_journey, "package_source"), patch.object(admin_journey, "prepare_package", return_value=(base, [], identity)), patch.object(admin_journey, "prepare_provider", return_value=base), patch.object(admin_journey, "run_child_command"), patch.object(admin_journey, "runtime_versions", return_value={"phoenix": "1.8.13", "live_view": "1.2.10"}), patch.object(admin_journey, "wait_ready"), patch.object(admin_journey, "start_owned_session", return_value=started_process), patch.object(admin_journey, "_OWNED_IDENTITIES", {started_process.pid: process_identity}), patch.object(admin_journey, "stop_owned", return_value=True), patch.object(admin_journey, "bounded_run", side_effect=[SimpleNamespace(stdout=json.dumps(observation), returncode=1), SimpleNamespace(returncode=0)]), patch.object(admin_journey.subprocess, "run", return_value=SimpleNamespace(stdout=b"")), contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
                 status = admin_journey.main(["--pair", "locked", "--mount", "/", "--receipt", str(receipt)])
             self.assertEqual(status, 1)
             self.assertNotIn(sentinel, output.getvalue())
@@ -578,6 +942,15 @@ class HostProofWrapperFailureTests(unittest.TestCase):
     def setUpClass(cls):
         cls._temporary = tempfile.TemporaryDirectory(prefix="lockspire-host-proof-fakes-")
         cls.tools = Path(cls._temporary.name)
+        # Package ownership checks must observe committed inputs. An ignored
+        # workspace file can otherwise contaminate the fake package and prevent
+        # these tests from ever reaching their intended lifecycle failure stage.
+        checkout = cls.tools / "source"
+        subprocess.run(
+            ["git", "clone", "--quiet", "--shared", str(cls.ROOT), str(checkout)],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True,
+        )
+        cls.ROOT = checkout
         package_dir = cls.tools / "package"
         package_dir.mkdir()
         version = __import__("re").search(r'version: "([^"]+)"', (cls.ROOT / "mix.exs").read_text()).group(1)
@@ -714,7 +1087,15 @@ class HostProofWrapperFailureTests(unittest.TestCase):
             ready.unlink()
             with self.assertRaises(ProcessLookupError):
                 os.kill(owned_pid, 0)
-        self.assertEqual(list(raw_parent.iterdir()), [], "private logs and raw receipts must be removed")
+        # The real Mix package-file observer creates its own coordination
+        # directories in TMPDIR. They are fixture-owned runtime metadata, not
+        # wrapper logs or receipts; accept only these exact regular directories.
+        mix_runtime_directories = {f"mix_pubsub_user{os.getuid()}", f"mix_lock_user{os.getuid()}"}
+        remaining = [
+            path for path in raw_parent.iterdir()
+            if path.name not in mix_runtime_directories or path.is_symlink() or not path.is_dir()
+        ]
+        self.assertEqual(remaining, [], "private logs and raw receipts must be removed")
         drop_record = receipt_dir / "drop-record"
         self.assertTrue(drop_record.exists(), "the wrapper must drop its lifecycle database on every exit")
         self.assertRegex(drop_record.read_text(), r"^lockspire_proof_locked_[a-f0-9]{20}\n$")
@@ -758,7 +1139,16 @@ class HostProofWrapperFailureTests(unittest.TestCase):
         result, _receipt_dir = self.run_wrapper("timeout", timeout_seconds=8)
 
         self.assertEqual(result.returncode, 124)
-        self.assertIn("bounded child timed out", result.stdout)
+        status_line = next(
+            line for line in result.stdout.splitlines()
+            if line.startswith("host integration command status: ")
+        )
+        status = json.loads(status_line.split(": ", 1)[1])
+        self.assertEqual(status["schema"], "lockspire-admin-command-status-v1")
+        self.assertEqual(status["stage"], "lifecycle")
+        self.assertEqual(status["reason"], "timeout")
+        self.assertEqual(status["status"], 124)
+        self.assertEqual(status["cleanup"], "stopped")
         self.assertNotIn(self.SENTINEL, result.stdout)
         self.assert_staging_redacted(_receipt_dir)
 
@@ -805,10 +1195,21 @@ class HostProofWrapperFailureTests(unittest.TestCase):
     def test_database_cleanup_failure_turns_success_into_failure(self):
         for stage in ("drop-failure", "drop-timeout", "shared-drop-failure"):
             with self.subTest(stage=stage):
-                started = time.monotonic()
                 result, receipt_dir = self.run_wrapper(stage)
-                self.assertLess(time.monotonic() - started, 15)
                 self.assertEqual(result.returncode, 37 if stage == "shared-drop-failure" else 1)
+                if stage == "drop-timeout":
+                    statuses = [
+                        json.loads(line.split(": ", 1)[1])
+                        for line in result.stdout.splitlines()
+                        if line.startswith("host integration command status: ")
+                    ]
+                    self.assertTrue(any(
+                        status["stage"] == "cleanup"
+                        and status["reason"] == "timeout"
+                        and status["status"] == 124
+                        and status["cleanup"] == "stopped"
+                        for status in statuses
+                    ))
                 self.assertNotIn(self.SENTINEL, result.stdout)
                 self.assert_staging_redacted(receipt_dir)
 

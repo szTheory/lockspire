@@ -1,0 +1,10 @@
+{
+  "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 ERL_FLAGS='+S 4' python3 -m unittest discover -s test/acceptance -p 'client_verifier_transactions_test.py' -k test_witness_capture_never_persists_unknown_child_output",
+  "exitCode": 1,
+  "output": "F\n======================================================================\nFAIL: test_witness_capture_never_persists_unknown_child_output (client_verifier_transactions_test.VerifierTransactionContracts.test_witness_capture_never_persists_unknown_child_output)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/Users/jon/projects/lockspire/test/acceptance/client_verifier_transactions_test.py\", line 102, in test_witness_capture_never_persists_unknown_child_output\n    self.assertFalse(marker in persisted)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: True is not false\n\n----------------------------------------------------------------------\nRan 1 test in 0.001s\n\nFAILED (failures=1)",
+  "targetTest": "test_witness_capture_never_persists_unknown_child_output",
+  "targetFile": "test/acceptance/client_verifier_transactions_test.py",
+  "expected": "An unknown child-output marker remains in process memory for parsing and is never written to durable attempt evidence",
+  "actual": "The target assertion failed because the child stdout marker was written into the durable host-output log despite being unregistered",
+  "semanticAssessment": "Behavioral RED: the target directly forced a nonzero child exit with an unregistered output marker and inspected only the owned temporary attempt directory; the marker reached the durable-write boundary."
+}

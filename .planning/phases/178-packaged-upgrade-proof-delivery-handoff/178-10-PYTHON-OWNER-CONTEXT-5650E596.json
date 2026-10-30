@@ -1,0 +1,31 @@
+{
+  "schema": "lockspire-bounded-python-gate-v1",
+  "tested_source_revision": "5650e596c71259f83020aed941d4a9ce2a2f13b8",
+  "capture_method": "Native unittest discovery with pre-discovered parent IDs; import/test stdout/stderr and failure diagnostics retained in memory only",
+  "selection": "test/acceptance/*_test.py",
+  "selected_parent_tests": 232,
+  "executed_tests": 232,
+  "failures": 0,
+  "errors": 0,
+  "unexpected_successes": 0,
+  "skips": 0,
+  "expected_failures": 0,
+  "loader_errors": 0,
+  "parent_attribution": [],
+  "exit_code": 0,
+  "session_id": 46929,
+  "pid": 28432,
+  "started_at": "2026-10-27T10:09:24.861388+00:00",
+  "deadline_seconds": 900,
+  "environment": {
+    "ASDF_ELIXIR_VERSION": "1.19.5-otp-28",
+    "ASDF_ERLANG_VERSION": "28.5",
+    "ERL_FLAGS": "+S 4",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "stdout_bytes": 1267,
+  "stdout_sha256": "6b51bb482487e70ddf1d1e551b1bf945400a11317edcf0999ca428710868a139",
+  "stderr_bytes": 150,
+  "stderr_sha256": "4aee1e35299c2854e24a5d97afe756be1e808d13af903c043814383ded76ddf5",
+  "limitations": "Controlled mechanism tests only; no genuine source DB/canonical CI/final freeze/package producer/hosted or main acceptance/remote action. Linux process-authority execution remains unobserved. Historical incidents and evidence limitations remain unchanged. Independent source/security delta review remains required."
+}

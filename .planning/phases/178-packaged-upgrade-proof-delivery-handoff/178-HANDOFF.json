@@ -1,0 +1,10 @@
+{
+  "accepted_main_status": "pending",
+  "integration_status": "pending",
+  "main_acceptance_path": null,
+  "main_acceptance_sha256": null,
+  "main_sha": null,
+  "next_action": "Review the exact final evidence-only metadata commit and prepared PR body; final metadata SHA is not yet known. Fresh approval is required for that exact push/body update. Publishedheadc465f2b8156c2f17db82910452dbcdf16aa8353b/qualifiedsourceE7AD/CI40954208717attempt2all7green andsameattempt26receipts64cases remain separate actual identities. Phase178 verification4/4passed, canonicalmilestoneaudittech_debt/no criticalgaps/18requirements4phases18integrationpaths5flows, Plan12complete andfinalsecuritySECURED37/37zeroopen/acceptedrisksASVS1. All12phaseplans31milestoneplans4phases18requirements complete premerge; milestone not archived. Formal postruncoveragevalidated/PARTIAL/nyquistfalse and advisorygeneric/null/prohibition flags retain unresolved/unverified/non-authoritative provenance; failures/unknowns preserved. Priorpush/bodyandONErerunapprovalsconsumed; no furtherremote mutation/rerun/merge/publication authorized. Integration/acceptedmain remain pendingD19/nullrefs/no receipt. UI remains future/unselectedforimplementation.",
+  "owner": "PR owner / repository maintainer",
+  "schema": "lockspire-phase178-handoff-v1"
+}

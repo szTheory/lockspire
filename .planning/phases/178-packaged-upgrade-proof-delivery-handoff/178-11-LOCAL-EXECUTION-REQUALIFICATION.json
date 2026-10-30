@@ -1,0 +1,295 @@
+{
+  "canonical_ci_attempts": {
+    "covered_bytes_equal": true,
+    "covered_input_count": 1078,
+    "covered_path_set_equal": true,
+    "dependency_setup": {
+      "command": "mix deps.get --check-locked",
+      "exit": 0,
+      "mix_lock_unchanged": true,
+      "outer_session_id": 86372,
+      "process_group_stopped": true,
+      "process_identity": {
+        "parent_pid": 23025,
+        "pgid": 23063,
+        "pid": 23063,
+        "sid": 23063,
+        "start": [
+          1793201030,
+          911433
+        ]
+      },
+      "stderr_bytes": 0,
+      "stdout_bytes": 3170,
+      "stdout_sha256": "3809d023c8e45fe26840761d5e9297c67be2f171dd6b873bf7ac264e0a5bc823"
+    },
+    "execution_clone": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire178-execution-14txkxsx/repo",
+    "format_check": {
+      "command": "mix format --check-formatted",
+      "exit": 1,
+      "failed_tracked_paths": [
+        "test/lockspire/ci_workflow_evidence_contract_test.exs"
+      ],
+      "process_group_stopped": true,
+      "process_identity": {
+        "parent_pid": 42145,
+        "pgid": 42190,
+        "pid": 42190,
+        "sid": 42190,
+        "start": [
+          1793201252,
+          175445
+        ]
+      },
+      "stderr_bytes": 785,
+      "stderr_sha256": "3419fa437815b4dc1257c1c674a4bcee135b325bdf041966aa7af50e6d25b381",
+      "stdout_bytes": 0
+    },
+    "formatter_ast_changed": false,
+    "formatter_check_after_fix": "pass",
+    "formatter_fix_commit": "0d0e74417cd98c5ef93c3f1f8af1b10143b692e0",
+    "freeze": {
+      "archive_sha256": "f14080574269453d97315c92e73e7b52a345b8c664555a0355e967f5bd3c1459",
+      "manifest_sha256": "b545f6cf8ea7a2fa4760825f42147380f393b69c3857e8772e1d44013afeab2a",
+      "status": "prior_attempt_preserved_after_source_format_commit",
+      "tree_sha256": "4dfa77217b9f80e7b6465abd748977a67d5d3cffbc45b26e4f1ac98b7293a80a"
+    },
+    "latest_canonical_ci": "pending",
+    "runner_revision": "de1117d36fb2c10fede019a79a5049c1aab81ea4",
+    "setup_only": {
+      "escalated_probe": {
+        "database_created": false,
+        "exit": 0,
+        "process_group_stopped": true,
+        "process_identity": {
+          "parent_pid": 20112,
+          "pgid": 20175,
+          "pid": 20175,
+          "sid": 20175,
+          "start": [
+            1793200957,
+            797170
+          ]
+        },
+        "stderr_bytes": 0,
+        "stdout_bytes": 944,
+        "temporary_root": "removed"
+      },
+      "sandbox_initdb_attempts": [
+        {
+          "cause": "unknown",
+          "exit": 1,
+          "outer_session_id": 16737,
+          "process_group_stopped": true,
+          "stderr_bytes": 336,
+          "stderr_sha256": "2fa1c8d513c0081545876dd5bd034fa1f4240469a566647b21fcb637f0d640e2",
+          "temporary_root": "removed"
+        },
+        {
+          "cause": "unknown",
+          "exit": 1,
+          "outer_session_id": 38555,
+          "process_group_stopped": true,
+          "process_identity": {
+            "parent_pid": 19351,
+            "pgid": 19392,
+            "pid": 19392,
+            "sid": 19392,
+            "start": [
+              1793200923,
+              568455
+            ]
+          },
+          "stderr_bytes": 336,
+          "stderr_sha256": "e8e272b1f7214d57225aec8c0b33355ae36e29fc3b61e0395e389eb286954387",
+          "temporary_root": "removed"
+        }
+      ]
+    },
+    "source_revision": "7dce61a65c0eada9b1dbe57eb2c3513df9e5d770",
+    "source_runner_attempts": [
+      {
+        "cause": "unknown",
+        "cleanup": "not_owned_or_uncertain_create",
+        "database_oid": null,
+        "exit": 1,
+        "failure": {
+          "reason": "effective_config_mismatch",
+          "stage": "preflight"
+        },
+        "manifest_sha256": "c0383b0d8dd23c8745bfdf15be07389a75f24334fa3a50976cd81e6189fd944d",
+        "mode": "canonical_ci",
+        "outer_session_id": 27011,
+        "process_groups": "all_stopped",
+        "source_tests_run": false
+      },
+      {
+        "ci_stderr_bytes": 335,
+        "ci_stderr_sha256": "6d651d6c8a72dda7170b1c9aa0e8dd8acfbbfaf83c3de6c8eddafc489633fee7",
+        "cleanup": "independently_absent",
+        "database_oid": 16384,
+        "exit": 1,
+        "exunit_summaries": [],
+        "failure": {
+          "reason": "tests_failed",
+          "stage": "ci"
+        },
+        "inner_cause": "unknown",
+        "manifest_sha256": "1ed4bc691f594cff210f3023b7f4a2a0d3be18f74cceea3f202c32b467f3dc67",
+        "mode": "canonical_ci",
+        "outer_session_id": 93629,
+        "process_groups": "all_stopped"
+      },
+      {
+        "ci_classifier": "format_check_failed",
+        "ci_stderr_bytes": 335,
+        "ci_stderr_sha256": "6d651d6c8a72dda7170b1c9aa0e8dd8acfbbfaf83c3de6c8eddafc489633fee7",
+        "cleanup": "independently_absent",
+        "database_oid": 16384,
+        "exit": 1,
+        "exunit_summaries": [],
+        "failure": {
+          "reason": "tests_failed",
+          "stage": "ci"
+        },
+        "mode": "canonical_ci_classifier",
+        "outer_session_id": 1347,
+        "process_groups": "all_stopped",
+        "stdout_bytes": 1996,
+        "stdout_sha256": "77aae282a6221dd8e53a0c548bd5550b392ad9fa9f080bf09c4f3d6a3837629b"
+      }
+    ]
+  },
+  "focused_guard": {
+    "checkout_clean_after": true,
+    "checkout_clean_before": true,
+    "database_cleanup": "independently_absent",
+    "database_oid": 16384,
+    "elixir": "1.19.5",
+    "erl_flags": "+S 4",
+    "failures": 0,
+    "include_integration": true,
+    "manifest_path": ".artifacts/phase178/local-owned-source-requalification-7dce61a6/manifests/4fh43nj5.manifest.json",
+    "manifest_sha256": "44cf93b34eb0ceaa332c18be95d80f2e1907937a76c4ddf31a027e18759b4e34",
+    "otp": "28.5",
+    "owned_process_groups": "all_stopped",
+    "port": 49239,
+    "postgres": "14.17",
+    "private_cluster": "removed",
+    "private_hex_home": true,
+    "runner": "scripts/ci/run_owned_source_tests.py",
+    "runner_exit": 0,
+    "selection": [
+      "test/mix/tasks/lockspire_client_create_cold_test.exs",
+      "test/lockspire/storage/client_lifetime_rollback_test.exs",
+      "test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs",
+      "test/lockspire/ci_workflow_evidence_contract_test.exs",
+      "test/lockspire/ci_static_contract_test.exs",
+      "test/lockspire/host_integration_ci_contract_test.exs",
+      "test/lockspire/workflow_supply_chain_contract_test.exs"
+    ],
+    "source_revision": "7dce61a65c0eada9b1dbe57eb2c3513df9e5d770",
+    "test_stdout_bytes": 185,
+    "test_stdout_sha256": "fbefa0907792ebf7d43faf05938b6f249293f7c89585b6d204343e150b0e43e5",
+    "tests": 37,
+    "tool_cell_id": null,
+    "tool_id_note": "completed within the initial tool wait; no nested session identifier was returned",
+    "tool_session_id": null
+  },
+  "immutable_driver": {
+    "mode": "0444",
+    "path": "/private/tmp/lockspire178-owned-validation-driver-7dce61a65c0eada9b1dbe57eb2c3513df9e5d770.py",
+    "sha256": "01017c2ae5634d848a0ad51306c61d2cc13e050ac41bf2b4367130a0998ce0bd"
+  },
+  "prior_attempts_and_retractions": [
+    {
+      "attempts": [
+        "oexuzcy2",
+        "la5uns4y"
+      ],
+      "classification": "valid integration-inclusive failed attempts",
+      "include_integration": true,
+      "parent_diagnosis_retracted": "earlier contract-only claim was incorrect",
+      "result": "37 tests / 2 failures",
+      "selection_basis": "explicit .exs paths clear integration exclusions in test/test_helper.exs"
+    },
+    {
+      "attempt": "oexuzcy2",
+      "retraction": "failure attribution not captured; cause and location remain unknown"
+    },
+    {
+      "attempt": "la5uns4y",
+      "retraction": "source-frame locations were incidental; all such location attribution withdrawn"
+    },
+    {
+      "attempt": "la5uns4y",
+      "retraction": "source-frame locations were incidental; all such attribution withdrawn"
+    },
+    {
+      "assertions": "not yet known at this attempt",
+      "attempt": "tjvndv3y",
+      "headers": [
+        "test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs:212",
+        "test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs:216"
+      ],
+      "include_integration": true,
+      "result": "37 tests / 2 failures"
+    },
+    {
+      "attempt": "2b9do844",
+      "failure_witnesses": [
+        {
+          "assertion": "positive-control client hash equality",
+          "assertion_location": "test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs:282",
+          "correction": "run control rotation in Sandbox.unboxed_run before committed-state reads",
+          "test_header": "test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs:212"
+        },
+        {
+          "assertion": "normalized storage error",
+          "assertion_location": "test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs:271",
+          "correction": "normalize Postgrex and DBConnection errors at the Ecto AuditStore boundary",
+          "observed_reason_type": "postgres_error",
+          "test_header": "test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs:216"
+        }
+      ],
+      "result": "4 tests / 2 failures"
+    },
+    {
+      "attempt": "ae9s2kwx",
+      "correction": "replace injected PostgreSQL text expectation at line 235 with :storage_error",
+      "observed_reason_type": "storage_error",
+      "result": "37 tests / 1 failure",
+      "test_header": "test/lockspire/storage/client_lifetime_rollback_test.exs:210"
+    }
+  ],
+  "publication_status": "pending; no new remote action authorized",
+  "recorded_at": "2026-10-28",
+  "remaining_local_work": [
+    "delta review and authenticated candidate source freeze at 0d0e7441 with fresh runner metadata",
+    "canonical guarded source CI through OwnedSourceTests on the frozen runner",
+    "guarded lifetime package tests with the exact frozen pins",
+    "fresh installed locked/floor verifier profiles and current/minimum host listener proofs",
+    "strict local package composition and truthful pending hosted delivery handoff"
+  ],
+  "review_install_commit": "0e90b100522e13aa2db926e0ea8f42a1644c253a",
+  "review_status": {
+    "active_source_blockers": 0,
+    "delta_review_at_0d0e7441": "pending",
+    "integration": "accepted",
+    "reviewed_revision": "7dce61a65c0eada9b1dbe57eb2c3513df9e5d770",
+    "security": "accepted",
+    "source": "accepted"
+  },
+  "sanitized_evidence_bundle": {
+    "path": ".artifacts/phase178/local-owned-source-requalification-7dce61a6/178-11-LOCAL-OWNED-SOURCE-EVIDENCE.json",
+    "sha256": "7446be2b3dc10828e3dedb2fd0fd878338ed5557490f91bfc6ca006b7e988dfe"
+  },
+  "schema": "lockspire-phase178-plan11-local-requalification-v1",
+  "source_commits": [
+    "66f5169afab2b325d5f37d784d880d60623e68ed",
+    "0f513a6d120954a5695a95ac9757bcb68c1914b5",
+    "7dce61a65c0eada9b1dbe57eb2c3513df9e5d770",
+    "0d0e74417cd98c5ef93c3f1f8af1b10143b692e0"
+  ],
+  "state": "focused-source-guard-passed; canonical-ci-failed-format-gate-fixed-in-source-0d0e7441; new-review-freeze-and-package-proofs-pending"
+}

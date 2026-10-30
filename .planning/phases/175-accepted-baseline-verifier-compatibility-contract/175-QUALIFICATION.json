@@ -1,0 +1,358 @@
+{
+  "schema": "lockspire-phase-175-qualification-v1",
+  "accepted_baseline_sha": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+  "task_01_commit": "c7cedee9dddfd4a0f9085eac213411433ca4796e",
+  "tested_checkout_head": "c7cedee9dddfd4a0f9085eac213411433ca4796e",
+  "runtime": {
+    "elixir": "1.19.5",
+    "otp": "28.5",
+    "mix": "1.19.5"
+  },
+  "qualification_database": {
+    "name": "lockspire_175_02_qualification_20261025",
+    "owner": "jon",
+    "purpose": "isolated Plan 175-02 persisted-caller test database",
+    "disposition": "retain"
+  },
+  "dependency_contexts": {
+    "root_locked": {
+      "cwd": ".",
+      "phoenix": "1.8.13",
+      "phoenix_live_view": "1.2.10",
+      "plug_crypto": "2.2.1",
+      "mix_lock_sha256": "5baa6a78be65857defb11fc4fc26b271460c80d259e65a3ae4aebd6ac5962f28",
+      "compatibility_test": {
+        "command": "MIX_ENV=test mix test test/lockspire/security/client_secret_verifier_compatibility_test.exs",
+        "status": "pass",
+        "tests": 9,
+        "failures": 0,
+        "exunit_seconds": 0.07
+      }
+    },
+    "declared_floor": {
+      "cwd": "compatibility/phoenix_1_8_live_view_1_1",
+      "phoenix": "1.8.5",
+      "phoenix_live_view": "1.1.28",
+      "plug_crypto": "2.2.1",
+      "mix_lock_sha256": "74212156d931add8c5acae6ad67928d08951a6c698cc6f29fec88992af38a954",
+      "compatibility_test": {
+        "command": "MIX_ENV=test mix test ../../test/lockspire/security/client_secret_verifier_compatibility_test.exs",
+        "status": "pass",
+        "tests": 9,
+        "failures": 0,
+        "exunit_seconds": 0.1,
+        "dependency_changes": false
+      }
+    }
+  },
+  "persisted_caller": {
+    "source": "Lockspire.Protocol.ClientAuth.authenticate/3 with Repository client, replay, and policy stores",
+    "command": "MIX_ENV=test mix test --include integration test/integration/client_secret_jwt_legacy_age_test.exs",
+    "status": "pass",
+    "tests": 10,
+    "failures": 0,
+    "exunit_seconds": 0.1,
+    "task_01_tracer_feedback": {
+      "commit": "c7cedee9dddfd4a0f9085eac213411433ca4796e",
+      "status": "pass",
+      "tests": 9,
+      "failures": 0,
+      "rerun": true
+    },
+    "cases": {
+      "LEG175-FRESH": {
+        "result": "authenticated",
+        "jti_inserted": true,
+        "tokens": 0,
+        "grants": 0,
+        "audits": 0
+      },
+      "LEG175-FORMS-TUPLE3": {
+        "result": "authenticated",
+        "jti_inserted": true,
+        "tokens": 0,
+        "grants": 0,
+        "audits": 0
+      },
+      "LEG175-FORMS-TUPLE2": {
+        "result": "authenticated",
+        "jti_inserted": true,
+        "tokens": 0,
+        "grants": 0,
+        "audits": 0
+      },
+      "LEG175-FORMS-MAP": {
+        "result": "authenticated",
+        "jti_inserted": true,
+        "tokens": 0,
+        "grants": 0,
+        "audits": 0
+      },
+      "LEG175-AGED-23H": {
+        "result": "authenticated",
+        "jti_inserted": true,
+        "tokens": 0,
+        "grants": 0,
+        "audits": 0
+      },
+      "LEG175-AGED-2D": {
+        "result": "invalid_client",
+        "reason_code": "client_secret_verifier_unavailable",
+        "jti_inserted": false,
+        "tokens": 0,
+        "grants": 0,
+        "audits": 0
+      },
+      "LEG175-FUTURE": {
+        "result": "invalid_client",
+        "reason_code": "client_secret_verifier_unavailable",
+        "jti_inserted": false,
+        "tokens": 0,
+        "grants": 0,
+        "audits": 0
+      },
+      "LEG175-MALFORMED": {
+        "result": "invalid_client",
+        "reason_code": "client_secret_verifier_unavailable",
+        "jti_inserted": false,
+        "tokens": 0,
+        "grants": 0,
+        "audits": 0
+      },
+      "LEG175-WRONG-KEY": {
+        "result": "invalid_client",
+        "reason_code": "client_secret_verifier_unavailable",
+        "jti_inserted": false,
+        "tokens": 0,
+        "grants": 0,
+        "audits": 0
+      },
+      "LEG175-MISSING": {
+        "result": "invalid_client",
+        "reason_code": "client_secret_verifier_missing",
+        "jti_inserted": false,
+        "tokens": 0,
+        "grants": 0,
+        "audits": 0
+      },
+      "LEG175-INACTIVE": {
+        "result": "invalid_client",
+        "reason_code": "client_app_disabled",
+        "jti_inserted": true,
+        "tokens": 0,
+        "grants": 0,
+        "audits": 0
+      },
+      "LEG175-APP-BEFORE": {
+        "result": "authenticated",
+        "jti_inserted": true,
+        "tokens": 0,
+        "grants": 0,
+        "audits": 0
+      },
+      "LEG175-APP-EQUAL": {
+        "result": "invalid_client",
+        "reason_code": "client_app_expired",
+        "jti_inserted": true,
+        "tokens": 0,
+        "grants": 0,
+        "audits": 0
+      },
+      "LEG175-APP-AFTER": {
+        "result": "invalid_client",
+        "reason_code": "client_app_expired",
+        "jti_inserted": true,
+        "tokens": 0,
+        "grants": 0,
+        "audits": 0
+      },
+      "LEG175-SECRET-BEFORE": {
+        "result": "authenticated",
+        "jti_inserted": true,
+        "tokens": 0,
+        "grants": 0,
+        "audits": 0
+      },
+      "LEG175-SECRET-EQUAL": {
+        "result": "invalid_client",
+        "reason_code": "client_secret_expired",
+        "jti_inserted": true,
+        "tokens": 0,
+        "grants": 0,
+        "audits": 0
+      },
+      "LEG175-SECRET-AFTER": {
+        "result": "invalid_client",
+        "reason_code": "client_secret_expired",
+        "jti_inserted": true,
+        "tokens": 0,
+        "grants": 0,
+        "audits": 0
+      },
+      "LEG175-V0-UNLIMITED": {
+        "result": "authenticated",
+        "jti_inserted": true,
+        "tokens": 0,
+        "grants": 0,
+        "audits": 0
+      },
+      "LEG175-HASH-MISMATCH": {
+        "persisted": true,
+        "hash_verifier_match": false,
+        "migration_readiness": "not_ready; no per-request hash check was introduced"
+      }
+    },
+    "assertion_jtis": "fresh unique values per attempt; omitted from this record",
+    "plaintext_secrets": "omitted",
+    "verifier_ciphertexts": "omitted",
+    "actual_client_secret_hashes": "omitted",
+    "clocks": {
+      "plug_storage_timestamp": "authenticated signed_at seconds are encoded to milliseconds and checked against Plug wall clock",
+      "client_lifecycle": "separately controlled injected decision clock; equality expiry is inclusive"
+    }
+  },
+  "metadata_reader": {
+    "status": "qualified",
+    "tested_source_sha": "e8aa26f587e1f12ea7722acea9de42188a3a7e6c",
+    "tested_files_sha256": {
+      "test/lockspire/security/client_secret_verifier_compatibility_test.exs": "8e037f91eeebc18766f492d88f3d7e000649556131e2f3103160ea053408f3ea",
+      "test/support/client_secret_verifier_fixtures.ex": "47cf37d4e6cd482ff554511da50f22b09847128a53f41ab66c03ce9c448fcb37"
+    },
+    "api_path": "Plug.Crypto.KeyGenerator.generate/3, Plug.Crypto.MessageEncryptor.decrypt/3, then Plug.Crypto.non_executable_binary_to_term/2 with [:safe]",
+    "evidence_cases": [
+      "LEG175-METADATA-TAMPER",
+      "LEG175-METADATA-SHAPE",
+      "LEG175-DEADLINE",
+      "LEG175-METADATA-UNITS",
+      "LEG175-METADATA-INFINITY",
+      "LEG175-AGE-CONTROLS"
+    ],
+    "supported_authenticated_shapes": [
+      "{data, signed_ms, max_age_seconds}",
+      "{data, signed_ms} with 86400 default",
+      "%{data: data, signed: signed_ms} with 86400 default"
+    ],
+    "authenticated_metadata_ranges": {
+      "timestamp": "integer milliseconds only; producer timestamp seconds are represented as signed_ms = seconds * 1000",
+      "finite_max_age": "positive numeric seconds; fractional 0.5 is interpreted as 500ms",
+      "nonpositive_max_age": "0 and -1 are unsupported migration deadlines and Plug rejects them as expired",
+      "infinity": "preserved as infinity but not a bounded migration deadline; Plug accepts future timestamps when infinity is configured"
+    },
+    "explicit_unsupported_inputs": [
+      "nonbinary payload data",
+      "noninteger signed timestamp",
+      "unknown tuple/map shape",
+      "executable Erlang term",
+      "tampered ciphertext",
+      "wrong endpoint key",
+      "nonpositive finite age",
+      "infinite age for a bounded migration deadline"
+    ],
+    "recovery": "Keep unsupported rows unchanged and use authorized secret rotation/reprovision; never reset age or decode unauthenticated bytes.",
+    "floor_context_tested": true
+  },
+  "compatibility_tests": {
+    "tested_source_sha": "e8aa26f587e1f12ea7722acea9de42188a3a7e6c",
+    "case_ids": [
+      "LEG175-HASH-MISMATCH",
+      "LEG175-METADATA-TAMPER",
+      "LEG175-METADATA-SHAPE",
+      "LEG175-DEADLINE",
+      "LEG175-METADATA-UNITS",
+      "LEG175-METADATA-INFINITY",
+      "LEG175-AGE-CONTROLS"
+    ],
+    "tested_files_sha256": {
+      "test/lockspire/security/client_secret_verifier_compatibility_test.exs": "8e037f91eeebc18766f492d88f3d7e000649556131e2f3103160ea053408f3ea",
+      "test/support/client_secret_verifier_fixtures.ex": "47cf37d4e6cd482ff554511da50f22b09847128a53f41ab66c03ce9c448fcb37"
+    }
+  },
+  "policy_disposition": {
+    "current_legacy_semantics": "Plug.Crypto 2.2.1 finite storage age rejects future timestamps; age expiry occurs only when signed_ms + max_age_ms is strictly less than Plug wall clock",
+    "configured_lifecycle_semantics": "client and secret deadlines reject at equality using the injected lifecycle decision clock",
+    "migrated_row_recommendation": "preserve authenticated original finite deadline; a usable 23-hour row does not receive a reset deadline",
+    "native_dedicated_recommendation": "configured credential lifetime, approved by the owner through 175-POLICY-REVISION.md on 2026-10-25 before dependent planning",
+    "within_approved_policy": false,
+    "approved_revision_ref": "175-POLICY-REVISION.md",
+    "within_approved_policy_basis": "The boolean retains the result against the original pre-revision D-20 policy; this approved revision is separately identified by approved_revision_ref.",
+    "owner_approval": {
+      "status": "approved",
+      "date": "2026-10-25",
+      "source": "Explicit owner response received by the Phase 175 execution orchestrator",
+      "exact_response": "Approve the recommended revision",
+      "scope": "Native dedicated verifier follows authoritative configured client-secret lifetime, including nil/0 and v0-unlimited beyond 24 hours; migrated legacy material preserves its authenticated original finite deadline and Plug equality-valid/strict-after-expiry behavior; unsupported future, malformed, tampered, wrong-key, unsupported-shape and unbounded migration-age rows remain rejected unchanged with authorized rotation/reprovision recovery.",
+      "limits": "No algorithm, dependency, schema, or other authentication default changes; no production implementation, publication, deployment, or cleanup authorized."
+    }
+  },
+  "material_gates": {
+    "native_age_policy": {
+      "status": "qualified",
+      "revision_proposal_ref": "175-POLICY-REVISION.md",
+      "evidence_cases": [
+        "LEG175-AGED-23H",
+        "LEG175-AGED-2D",
+        "LEG175-FUTURE",
+        "LEG175-DEADLINE",
+        "LEG175-AGE-CONTROLS"
+      ],
+      "disposition": "Owner-approved D-20 revision (2026-10-25): native dedicated verifier validity follows authoritative configured client-secret lifetime, while client-app expiry remains separate; configured nil/0 and v0-unlimited clients may remain eligible beyond 24 hours. Migrated legacy material preserves its authenticated original finite deadline and equality-valid/strict-after-expiry boundary. Future, malformed, tampered, wrong-key, unsupported-shape and unbounded migration-age inputs remain unsupported and unchanged. Evidence observes the current callers; approval selects the future policy but does not claim runtime implementation.",
+      "recovery": "Existing authorized secret rotation/reprovision path; no opaque rewrap or age reset."
+    },
+    "public_metadata_reader": {
+      "status": "qualified",
+      "evidence_cases": [
+        "LEG175-METADATA-TAMPER",
+        "LEG175-METADATA-SHAPE",
+        "LEG175-DEADLINE",
+        "LEG175-METADATA-UNITS",
+        "LEG175-METADATA-INFINITY",
+        "LEG175-AGE-CONTROLS"
+      ],
+      "disposition": "Public authenticated decrypt plus safe decoding works on root and exact declared floor Plug.Crypto 2.2.1. Supported tuple-three, legacy tuple-two and Phoenix map forms pass; nonbinary payload, invalid timestamp, unknown shape, executable terms, wrong-key/tampered values and unbounded migration ages are explicitly unsupported.",
+      "recovery": "Explicitly reject unsupported metadata forms and route affected credentials through authorized secret rotation/reprovision."
+    }
+  },
+  "dependent_planning": "ready",
+  "protocol_deviations": [
+    "Started the Task 02 compatibility test expansion before the Task 01 tracer commit/feedback gate; parent orchestrator was notified. After Task 01 commit c7cedee9, the literal caller command was rerun and passed 9/9; subsequent Task 02 case additions passed 10/10."
+  ],
+  "source_files_sha256_at_record": {
+    "test/integration/client_secret_jwt_legacy_age_test.exs": "9cc57a31ebc5ed189a1fe41618aaa122447c8332758a96c5f7a58087b94f91c6",
+    "test/support/client_secret_verifier_fixtures.ex": "47cf37d4e6cd482ff554511da50f22b09847128a53f41ab66c03ce9c448fcb37",
+    "test/lockspire/security/client_secret_verifier_compatibility_test.exs": "8e037f91eeebc18766f492d88f3d7e000649556131e2f3103160ea053408f3ea"
+  },
+  "qualification_history": {
+    "metadata_reader_e8": {
+      "status": "historical_qualified",
+      "tested_source_sha": "e8aa26f587e1f12ea7722acea9de42188a3a7e6c",
+      "tested_files_sha256": {
+        "test/lockspire/security/client_secret_verifier_compatibility_test.exs": "8e037f91eeebc18766f492d88f3d7e000649556131e2f3103160ea053408f3ea",
+        "test/support/client_secret_verifier_fixtures.ex": "47cf37d4e6cd482ff554511da50f22b09847128a53f41ab66c03ce9c448fcb37"
+      },
+      "case_ids": [
+        "LEG175-HASH-MISMATCH",
+        "LEG175-METADATA-TAMPER",
+        "LEG175-METADATA-SHAPE",
+        "LEG175-DEADLINE",
+        "LEG175-METADATA-UNITS",
+        "LEG175-METADATA-INFINITY",
+        "LEG175-AGE-CONTROLS"
+      ]
+    }
+  },
+  "current_qualification_sources": {
+    "status": "qualified",
+    "tested_source_sha": "e60b7c1090719fa8ce29fbb35d9da6f90518112d",
+    "case_ids": [
+      "LEG175-METADATA-FUTURE-READINESS"
+    ],
+    "tested_files_sha256": {
+      "test/integration/client_secret_jwt_legacy_age_test.exs": "9cc57a31ebc5ed189a1fe41618aaa122447c8332758a96c5f7a58087b94f91c6",
+      "test/lockspire/security/client_secret_verifier_compatibility_test.exs": "b409d40d4e1a1a88f9b8e18ab3023c278ae4d29e39fa26282dc0634b7029216d",
+      "test/support/client_secret_verifier_fixtures.ex": "4015e36c1a8ca87c066c5b4ddbbcb5193e29edaa5726d35409c80a5d7d36d524"
+    },
+    "qualification_command": "fresh root caller and compatibility source run plus exact declared floor",
+    "qualification_result": "passed",
+    "qualification_commit": "e60b7c1090719fa8ce29fbb35d9da6f90518112d"
+  }
+}

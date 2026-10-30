@@ -1,0 +1,57 @@
+{
+  "actual_checkout": {
+    "parents": [
+      "173059a166e9ade0f5f57c9980b7b2400a98538c",
+      "f962fce47d97a78ae67522301aa65104d42a8b2d"
+    ],
+    "sha": "b327184765668e0f070312d0a26e6a17a3ce8ccb",
+    "tree": "5421a819c0d67351f7de61584ecd1016dd230770",
+    "witness": "Completed Dialyzer job123637948706 checkout git log -1 --format=%H; GitHub Git commit API independently confirms parents/tree"
+  },
+  "authorization": {
+    "body_sha256": "2e9ff2ae6246ab98858e83e2206cf169feb1c7eae966f6b482305edf169b5b28",
+    "consumed": true,
+    "exact_head": "f962fce47d97a78ae67522301aa65104d42a8b2d",
+    "received": true,
+    "source": "User replied Yes to push f962fce4 and the prepared PR141 body"
+  },
+  "automatic_workflows": {
+    "CI": {
+      "complete_required_graph_observed": false,
+      "run_attempt": 1,
+      "run_id": 40927824424,
+      "status": "in_progress"
+    },
+    "DependencyReview": {
+      "run_id": 40927824173,
+      "status": "in_progress"
+    }
+  },
+  "body_update": {
+    "bytes": 4652,
+    "exact_readback_match": true
+  },
+  "merge_or_publication_performed": false,
+  "observed_at": "2026-10-29T18:10:17.719993+00:00",
+  "phase11_complete": false,
+  "phase12": "not_ready",
+  "pr": {
+    "base": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+    "head": "f962fce47d97a78ae67522301aa65104d42a8b2d",
+    "merged": false,
+    "number": 141,
+    "url": "https://github.com/szTheory/lockspire/pull/141"
+  },
+  "push": {
+    "branch": "milestone/v1.48-client-auth-key-isolation",
+    "exit_code": 0,
+    "force": false,
+    "new_remote_head": "f962fce47d97a78ae67522301aa65104d42a8b2d",
+    "previous_remote_head": "dc6279813a7efa5746c73c24827ce2ba7231c198"
+  },
+  "remote_mutations_performed": [
+    "exact_non_force_push",
+    "exact_PR_body_update"
+  ],
+  "schema": "lockspire-phase178-approved-update-outcome-v1"
+}

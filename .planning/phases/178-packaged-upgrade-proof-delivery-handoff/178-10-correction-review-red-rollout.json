@@ -1,0 +1,10 @@
+{
+  "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 ERL_FLAGS='+S 4' python3 -m unittest discover -s test/acceptance -p 'client_verifier_rollout_test.py' -k test_rollout_receipt_rejects_unproven_predecessor_and_unknown_sensitive_fields",
+  "exitCode": 1,
+  "output": "F\n======================================================================\nFAIL: test_rollout_receipt_rejects_unproven_predecessor_and_unknown_sensitive_fields (client_verifier_rollout_test.VerifierRolloutContracts.test_rollout_receipt_rejects_unproven_predecessor_and_unknown_sensitive_fields)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"test/acceptance/client_verifier_rollout_test.py\", line 40, in test_rollout_receipt_rejects_unproven_predecessor_and_unknown_sensitive_fields\n    with self.assertRaises(verifier_receipts.ReceiptError):\n         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ReceiptError not raised\n\n----------------------------------------------------------------------\nRan 1 test in 0.001s\n\nFAILED (failures=1)",
+  "targetTest": "test_rollout_receipt_rejects_unproven_predecessor_and_unknown_sensitive_fields",
+  "targetFile": "test/acceptance/client_verifier_rollout_test.py",
+  "expected": "Rollout validation rejects an unproven predecessor object and unknown nested sensitive observation fields",
+  "actual": "The target assertion failed because validate_rollout_receipt accepted the substituted predecessor",
+  "semanticAssessment": "Behavioral RED: the retained raw receipt otherwise validates as the expected locked/builtin rollout; changing its predecessor to an unproven object was accepted before reaching the second unknown-field assertion."
+}
