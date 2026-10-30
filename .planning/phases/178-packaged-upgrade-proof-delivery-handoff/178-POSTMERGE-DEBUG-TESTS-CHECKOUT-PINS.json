@@ -1,0 +1,26 @@
+{
+  "accepted_main": false,
+  "errors": 0,
+  "failed_tests": [],
+  "failures": 0,
+  "finished_at": "2026-10-30T12:39:49.103614+00:00",
+  "git_head": "0b93debe0d77456af6ca44435715e8c58c0677a1",
+  "requested_toolchain": {
+    "elixir": "1.19.5-otp-28",
+    "erlang": "28.5",
+    "hex": "2.6.0"
+  },
+  "schema": "lockspire-v148-postmerge-debug-tests-v1",
+  "skips": 0,
+  "source_file_sha256": {
+    ".github/workflows/ci.yml": "841697da3d6fb9c4cf6953cacd1a289537d6154eb8d884e098bbc114e40b0f08",
+    "scripts/acceptance/clean_room/verifier_delivery.py": "0a34659ffabbe26b65108fbd071b95ca63d4de56538d18245116e89ef5ef61c8",
+    "test/acceptance/client_verifier_ci_test.py": "63db78daf2979d0c6ad354dfd20e8ab674ba118683a9bef1113b4508093befe7",
+    "test/acceptance/client_verifier_delivery_chain_test.py": "002a211094f66cfd9723108b2c677f36b3d489e2748df2e39c769048a5d9f40a",
+    "test/acceptance/verifier_owner_fixture.py": "830492a7f0bae799ff27f472904883392c2f284f1f2cad89335c01b50f0e790d"
+  },
+  "source_files_unchanged": true,
+  "started_at": "2026-10-30T12:37:02.437394+00:00",
+  "tests": 300,
+  "unexpected_successes": 0
+}

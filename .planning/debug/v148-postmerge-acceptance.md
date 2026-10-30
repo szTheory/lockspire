@@ -62,6 +62,10 @@ next_action: Review the exact local correction and authorize its remote integrat
   checked: Final native pinned Python gate, original exec session96510/PID56405.
   observed: 299 tests passed, zero failures/errors/skips/unexpected successes; all three source file hashes were unchanged throughout. Complete ordinary-merge and postmerge-squash chains include lost refs, wrong/duplicated/missing checkout logs, wrong closed-PR metadata/attempts, and later tooling changes. 178-POSTMERGE-DEBUG-TESTS-FINAL.json binds these results to actual local HEADe857 plus the exact uncommitted file hashes.
   implication: Final checker correction is reviewable; integration and fresh exact-main acceptance remain pending.
+- timestamp: 2026-10-30
+  checked: Prospective hosted source selection for the correction.
+  observed: Both hosted proof jobs still used --reviewed-candidate-source, whose selector requires exact selected-byte agreement with the historical E7AD closure. Any checker correction changes selected bytes and would be rejected before proof execution. Both steps now pass --expected-candidate-source "$EXPECTED_RUNNER_REVISION" to the existing provisioner and retain their job-owned manifest/digest path. Actionlint passed; final300 native tests passed with zero failures/errors/skips/unexpected successes and all five source hashes unchanged. The source-bound record is 178-POSTMERGE-DEBUG-TESTS-CHECKOUT-PINS.json (original session14143/PID37073). Native exact-checkout provisioning follows at committed source.
+  implication: Future CI must prove its actual checkout as fresh source while historical milestone evidence remains frozen at its original identities.
 
 ## Eliminated
 
@@ -72,5 +76,5 @@ next_action: Review the exact local correction and authorize its remote integrat
 
 root_cause: Ancestry-only integration checks, temporary GitHub PR associations/merge refs treated as permanent, and historical candidate evidence evaluated against today's working bytes. The synthetic fixture epoch independently required invalid HEAD ancestry.
 fix: Preserve strict historical identities; authenticate an origin merged-PR/full-tree squash bridge, recover old checkout ownership from all seven exact-attempt job logs, and label historical candidate validation separately from the fresh main gate. Keep synthetic fixtures bound to their immutable source/lock epoch.
-verification: Final299 native pinned Python tests passed; live original7-job/26-receipt/64-case historical candidate revalidation passed; hygiene18/0/0 and whitespace/compilation checks passed. Exact-main gate remains pending integration.
+verification: Final300 native pinned Python tests passed; live original7-job/26-receipt/64-case historical candidate revalidation passed; hygiene18/0/0 and whitespace/compilation checks passed. Exact-main gate remains pending integration.
 files_changed: scripts/acceptance/clean_room/verifier_delivery.py; test/acceptance/client_verifier_delivery_chain_test.py; test/acceptance/verifier_owner_fixture.py; planning checkpoint/evidence records.
