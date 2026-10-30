@@ -6,10 +6,10 @@ current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
 current_plan: 12
 status: verifying
-stopped_at: closeout correction fully verified; waiting for owner integration approval
+stopped_at: owner approved closeout integration; final metadata CI and conditional merge in progress
 last_updated: "2026-10-30"
 last_activity: 2026-10-30
-last_activity_desc: Own hosted CI and strict uploaded proof passed; integration/main acceptance and milestone archival await owner approval
+last_activity_desc: Owner approved exact correction integration, fresh main acceptance and milestone archival; preserve original evidence and debt
 state_head: fb76ffbe
 progress:
   total_phases: 4
@@ -27,7 +27,7 @@ The owner selected resolution before archival, then explicitly authorized the sc
 
 Fourteen obsolete debug checkpoints are reconciled against later independent review/runtime/main evidence; three superseded verification reports are byte-preserved in phase history. The original accepted main remains historical acceptance, not approval of the new migration. The migration preserves the original Phase 177 report as a pinned immutable snapshot, resolves historical selected inputs from their actual Git tree and lets the active report evolve. Native lifecycle regressions and the complete Python acceptance suite passed; the canonical contributor gate passed in a new private checkout/database with every authenticated process and the private database closed. Exact-source native provisioning passed and reproduced the original package bytes under the verified isolated Hex 2.6.0 builder. The correction's own hosted CI and strict current/minimum artifact validation also passed. No stale-verification override was authorized.
 
-See [closeout reconciliation](milestones/v1.48-CLOSEOUT-RECONCILIATION.md), [native migration check](milestones/v1.48-CLOSEOUT-PYTHON-MIGRATION.json), and [local contributor gate](milestones/v1.48-CLOSEOUT-LOCAL-CI.json). The concrete [integration proposal](milestones/v1.48-CLOSEOUT-INTEGRATION-PROPOSAL.md) is ready for the owner. The user acts next: approve or decline the metadata-push/conditional-merge/new-main-acceptance/archive sequence. The agent is waiting for that decision; no merge, new main acceptance, tag or archival has occurred. Publication and UI implementation remain separate boundaries.
+See [closeout reconciliation](milestones/v1.48-CLOSEOUT-RECONCILIATION.md), [native migration check](milestones/v1.48-CLOSEOUT-PYTHON-MIGRATION.json), and [local contributor gate](milestones/v1.48-CLOSEOUT-LOCAL-CI.json). The owner approved the concrete [integration proposal](milestones/v1.48-CLOSEOUT-INTEGRATION-PROPOSAL.md) with “yes”, observed2026-10-30T20:52:05Z. The agent continues the bounded metadata push, final required checks, conditional protected merge, fresh synchronized-main acceptance and milestone archive/local tag. No further acknowledgment is needed within this approved scope. No merge or new main acceptance has occurred yet. Publication and UI implementation remain separate boundaries.
 
 ## Historical accepted-main checkpoint — 2026-10-30
 
@@ -63,7 +63,7 @@ See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Original v1.48 implementation is accepted on main; the authorized closeout evidence-lifecycle correction has passing local/hosted gates and strict uploaded proof; owner integration approval and new exact-main acceptance remain pending. No archival/tagging or UI work has begun. See the current closeout checkpoint above; historical acceptance and PARTIAL debt remain preserved.
+**Current focus:** Original v1.48 implementation is accepted on main; the authorized closeout evidence-lifecycle correction has passing local/hosted gates and strict uploaded proof; Owner integration approval is recorded; final checks, conditional merge and new exact-main acceptance are in progress. No archival/tagging or UI work has begun. See the current closeout checkpoint above; historical acceptance and PARTIAL debt remain preserved.
 
 ## Current Position
 

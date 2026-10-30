@@ -1,0 +1,33 @@
+{
+  "scope": "Original actual accepted main dc396930; immutable execution identities retained. Canonical paths may advance for the newly approved correction.",
+  "files": [
+    {
+      "path": "178-INTEGRATION-AUTHORIZATION.json",
+      "sha256": "1202d6dcfc4e8759a113d78166f827f8753f10a37978d36cf16278788c793f35"
+    },
+    {
+      "path": "178-MAIN-ACCEPTANCE.json",
+      "sha256": "c74c4f3715d05852a09a33e92d3535351ed2f02f116e5011233a05fd01016cc2"
+    },
+    {
+      "path": "178-MAIN-OWNED-SOURCE-MANIFEST.json",
+      "sha256": "ed489fe535e631bfdb3012de79f6c5678a8cdadf80a089c45c2f707f45b368a5"
+    },
+    {
+      "path": "178-HANDOFF.json",
+      "sha256": "ea8e7846b8784acda0e2b5817558f617af2df757617aeced6e0807d78b2e41da"
+    },
+    {
+      "path": "178-POSTMERGE-ACCEPTANCE.md",
+      "sha256": "ce0f80c7a67254a87854f6874c3769c764a0da27805c2a0f7c7cd2904c9a12a4"
+    },
+    {
+      "path": "178-POSTMERGE-ACCEPTANCE-EXECUTION.json",
+      "sha256": "3b719b39be295ecda9b32ddf2d20abf80403e1de3645d6ee6e7eff845225ea00"
+    },
+    {
+      "path": "178-POSTMERGE-MAIN-DELIVERY-VERIFICATION.json",
+      "sha256": "de1dc59fd4fa11e38dca02ad13a416dd350b909b3f4baa33a6053b290914b23a"
+    }
+  ]
+}

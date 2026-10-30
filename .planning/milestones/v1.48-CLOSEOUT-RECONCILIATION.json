@@ -172,8 +172,8 @@
   "selected_input_changes": [],
   "frozen_phase177_report_sha256": "e452a2145d31c41ac766c6fc7c95ea4e75c57884e40b2272fe48213baab9f1ef",
   "frozen_phase177_unchanged": true,
-  "archival_status": "waiting_for_owner_integration_approval",
-  "remaining_blocker": "The fully verified corrective source needs owner authorization for bounded metadata push/conditional merge, then fresh synchronized-main acceptance before archival.",
+  "archival_status": "integration_authorized_in_progress",
+  "remaining_blocker": "Final metadata head must pass required CI before the approved protected merge; fresh actual synchronized-main acceptance follows before archival.",
   "overrides_applied": 0,
   "phase_directories_moved": false,
   "requirements_removed": false,
@@ -183,5 +183,6 @@
   "current_phase_reports_verified": true,
   "own_hosted_ci": "passed",
   "uploaded_artifact_validation": "26 receipts / 64 cases / 0 failures",
-  "integration_authorized": false
+  "integration_authorized": true,
+  "authorized_at": "2026-10-30T20:52:05Z"
 }
