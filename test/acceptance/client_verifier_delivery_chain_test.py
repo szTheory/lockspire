@@ -151,6 +151,53 @@ class HistoricalOwnerSelection(unittest.TestCase):
                     delivery._owner_at_runner(document, **{**claims, "runner": "HEAD"})
 
 
+class HistoricalDependencyLocks(unittest.TestCase):
+    git = ReviewedCandidateHistory.git
+
+    def test_original_committed_pair_locks_survive_later_dependency_updates(self):
+        with tempfile.TemporaryDirectory(prefix="lockspire-lock-history-") as temporary:
+            root = Path(temporary)
+            self.git(root, "init", "-q")
+            self.git(root, "config", "user.name", "Lockspire Fixture")
+            self.git(root, "config", "user.email", "fixture@example.invalid")
+            locks = {"locked": root / "test/clean_room/provider_host/mix.lock",
+                     "floor": root / "compatibility/phoenix_1_8_live_view_1_1/mix.lock"}
+            for pair, path in locks.items():
+                path.parent.mkdir(parents=True)
+                path.write_text(f"original {pair} dependency lock\n")
+            self.git(root, "add", ".")
+            self.git(root, "commit", "-qm", "original pair locks")
+            original = self.git(root, "rev-parse", "HEAD")
+            digests = {pair: package_input.sha256(path) for pair, path in locks.items()}
+            for path in locks.values():
+                path.write_text("reviewed later dependency update\n")
+            self.git(root, "commit", "-qam", "later dependency update")
+            with patch.object(delivery, "ROOT", root), patch.dict(delivery.PROOF_PAIR_LOCKS, locks):
+                for pair, path in locks.items():
+                    self.assertEqual(delivery._pair_lock_digest(pair), package_input.sha256(path))
+                    self.assertNotEqual(delivery._pair_lock_digest(pair), digests[pair])
+                    self.assertEqual(delivery._pair_lock_digest(pair, historical_runner=original), digests[pair])
+
+    def test_missing_or_unpinned_history_never_falls_back_to_current_lock(self):
+        with tempfile.TemporaryDirectory(prefix="lockspire-lock-missing-") as temporary:
+            root = Path(temporary)
+            self.git(root, "init", "-q")
+            self.git(root, "config", "user.name", "Lockspire Fixture")
+            self.git(root, "config", "user.email", "fixture@example.invalid")
+            (root / "unrelated").write_text("not a lock\n")
+            self.git(root, "add", ".")
+            self.git(root, "commit", "-qm", "no historical locks")
+            missing = self.git(root, "rev-parse", "HEAD")
+            current = root / "current.lock"
+            current.write_text("available current lock must not rescue history\n")
+            with patch.object(delivery, "ROOT", root), patch.dict(delivery.PROOF_PAIR_LOCKS, {"locked": current}):
+                for runner in (missing, "0" * 40, "HEAD"):
+                    with self.assertRaises(delivery.DeliveryError):
+                        delivery._pair_lock_digest("locked", historical_runner=runner)
+                with self.assertRaises(delivery.DeliveryError):
+                    delivery._pair_lock_digest("unselected", historical_runner=missing)
+
+
 class SquashIntegrationHistory(unittest.TestCase):
     """Real Git identities; only the external GitHub responses are fixtures."""
 
@@ -845,8 +892,13 @@ class ActualEndToEndDelivery(unittest.TestCase):
                 tooling.write_text(tooling.read_text() + "\n# subsequent fixture tooling correction\n")
                 workflow = repo / ".github/workflows/ci.yml"
                 workflow.write_text(workflow.read_text() + "\n# subsequent CI provisioning correction\n")
+                # A reviewed dependency update must not restamp the original
+                # package receipts or compare them to today's pair locks.
+                for lock in epoch_locks.values():
+                    lock.write_bytes(lock.read_bytes() + b"\n# later dependency update\n")
                 self.git(repo, "add", "--", tooling.relative_to(repo).as_posix(),
-                         workflow.relative_to(repo).as_posix())
+                         workflow.relative_to(repo).as_posix(),
+                         *(lock.relative_to(repo).as_posix() for lock in epoch_locks.values()))
                 self.git(repo, "commit", "-qm", "later tooling correction")
                 corrected = self.git(repo, "rev-parse", "HEAD")
                 auth_record = json.loads(authorization_path.read_bytes())
@@ -858,6 +910,38 @@ class ActualEndToEndDelivery(unittest.TestCase):
                 with self.assertRaises(delivery.DeliveryError):
                     delivery._check_candidate(phase)
                 self.assertEqual(delivery._check_candidate(phase, historical=True)["validation_scope"], "historical_candidate")
+                # Recomputing raw/index/copy hashes cannot substitute today's
+                # lock into an otherwise authentic historical hosted artifact.
+                with zipfile.ZipFile(uploads[0]) as archive:
+                    members = {name: archive.read(name) for name in archive.namelist()}
+                index_name = next(name for name in members if Path(name).name == "index.json")
+                prefix = index_name[:-len("index.json")]
+                index = json.loads(members[index_name])
+                row = next(row for row in index["cells"] if row["scope"] == "core")
+                member = next(name for name in members if Path(name).name == f"core-locked-{row['store']}-receipt.json")
+                raw = members[member]
+                receipt = json.loads(raw)
+                current_lock = package_input.sha256(epoch_locks["locked"])
+                self.assertNotEqual(receipt["host"]["lock_sha256"], current_lock)
+                receipt["host"]["lock_sha256"] = current_lock
+                changed = json.dumps(receipt).encode()
+                for name, content in list(members.items()):
+                    if content == raw:
+                        members[name] = changed
+                row.update(host_lock_sha256=current_lock, receipt_sha256=hashlib.sha256(changed).hexdigest())
+                copies = json.loads(members[prefix + "raw-copies.json"])
+                copy_row = next(item for item in copies["copies"]
+                                if (item["scope"], item["pair"], item["store"]) == ("core", "locked", row["store"]))
+                copy_row["sha256"] = row["receipt_sha256"]
+                members[prefix + "raw-copies.json"] = json.dumps(copies).encode()
+                members[index_name] = json.dumps(index).encode()
+                changed_archive = artifacts / "substituted-current-lock.zip"
+                with zipfile.ZipFile(changed_archive, "w") as archive:
+                    for name, content in members.items():
+                        archive.writestr(name, content)
+                with self.assertRaises(delivery.DeliveryError):
+                    delivery._artifact_zip_pair(changed_archive, pair="locked", runner=merge,
+                        candidate=candidate, profile="hosted-current", _historical=True)
             self.git(repo, "update-ref", "refs/heads/main", main_sha)
             self.git(repo, "update-ref", "refs/remotes/origin/main", main_sha)
             self.boundary.api["repos/fixture/repo/git/ref/heads/main"] = {"ref": "refs/heads/main", "object": {"sha": main_sha}}

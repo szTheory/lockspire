@@ -454,10 +454,28 @@ def _owner_at_runner(document: dict[str, Any], *, runner: str, **claims: Any):
         return validate_owner_document(document, root=selection, runner=runner, **claims)
 
 
+def _pair_lock_digest(pair: str, *, historical_runner: str | None = None) -> str:
+    paths = {
+        "locked": "test/clean_room/provider_host/mix.lock",
+        "floor": "compatibility/phoenix_1_8_live_view_1_1/mix.lock",
+    }
+    if pair not in paths:
+        raise DeliveryError("dependency pair is unsupported")
+    if historical_runner is None:
+        return sha256(PROOF_PAIR_LOCKS[pair])
+    # The caller authenticates this execution independently through its frozen
+    # source/receipt owner. Never select a historical lock from receipt claims
+    # or fall back to today's working copy when the original blob is missing.
+    try:
+        return _blob_sha(historical_runner, paths[pair])
+    except (ValueError, OSError):
+        raise DeliveryError("historical dependency lock source is unavailable") from None
+
+
 def compose_pair_indexes(
     locked_root: Path, floor_root: Path, *, expected_runner: str,
     expected_candidate: tuple[str, str, str], expected_candidate_proof: str | None = None,
-    expected_version: str | None = None,
+    expected_version: str | None = None, _historical: bool = False,
 ) -> dict[str, Any]:
     """Compose only the two fresh fixed-wrapper pair partitions into the closed matrix."""
     from verifier_receipts import validate_receipt, validate_rollout_receipt
@@ -551,7 +569,7 @@ def compose_pair_indexes(
             if (host.get("lock_sha256") != row.get("host_lock_sha256")
                     or compiled != row.get("compiled_candidate_sha256")):
                 raise DeliveryError("package host or compiled identity differs from the raw receipt")
-            expected_lock = sha256(PROOF_PAIR_LOCKS[pair])
+            expected_lock = _pair_lock_digest(pair, historical_runner=expected_runner if _historical else None)
             if host.get("lock_sha256") != expected_lock:
                 raise DeliveryError("package host lock does not match the selected dependency pair")
             if not isinstance(compiled, str) or not SHA.fullmatch(compiled):
@@ -786,6 +804,7 @@ def _check_package(phase_dir: Path, locked_root: Path, floor_root: Path,
         expected_candidate=(owner["source_revision"], owner["archive_sha256"], owner["tree_sha256"]),
         expected_candidate_proof=owner["owner_sha256"],
         expected_version=__import__("package_input").package_version(ROOT / owner["extracted_tree_path"]),
+        _historical=_historical_checkout is not None,
     )
     lines = [
         "# Phase 178 Package Acceptance",
@@ -1341,7 +1360,7 @@ def _uploaded_owner(archive: zipfile.ZipFile, prefix: str, *, runner: str,
 
 def _artifact_zip_pair(path: Path, *, pair: str, runner: str,
                        candidate: tuple[str, str, str], require_owner: bool = True,
-                       profile: str | None = None) -> dict[str, int]:
+                       profile: str | None = None, _historical: bool = False) -> dict[str, int]:
     from verifier_receipts import validate_receipt, validate_rollout_receipt
 
     if profile is None:
@@ -1454,7 +1473,8 @@ def _artifact_zip_pair(path: Path, *, pair: str, runner: str,
                         or (raw_candidate.get("source_revision"), raw_candidate.get("archive_sha256"), raw_candidate.get("tree_sha256")) != candidate
                         or (owner_proof is not None and raw_candidate.get("source_proof") != owner_proof)
                         or row.get("host_lock_sha256") != receipt["host"].get("lock_sha256")
-                        or row.get("host_lock_sha256") != sha256(PROOF_PAIR_LOCKS[pair])
+                        or row.get("host_lock_sha256") != _pair_lock_digest(
+                            pair, historical_runner=runner if _historical else None)
                         or row.get("compiled_candidate_sha256") != compiled):
                     raise DeliveryError("downloaded artifact raw ownership differs from indexed authenticated identity")
             if seen != expected_keys or set(names) != expected_members:
@@ -1588,6 +1608,7 @@ def _check_candidate(phase_dir: Path, *, historical: bool = False) -> dict[str, 
             archive_path, pair=row["pair"], runner=identity["runner_sha"], candidate=candidate_owner,
             require_owner=True,
             profile="hosted-minimum" if row["pair"] == "floor" else "hosted-current",
+            _historical=historical,
         )
     if (artifact_results.get("locked") != {"receipts": 14, "cases": 33}
             or artifact_results.get("floor") != {"receipts": 12, "cases": 31}):
