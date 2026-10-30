@@ -1,10 +1,10 @@
 {
   "candidate": {
-    "executed_checkout_sha": "b327184765668e0f070312d0a26e6a17a3ce8ccb",
-    "package_source_sha": "ec92cca096edd4d9d9efd2d5f128889346de4c35",
-    "reviewed_head_sha": "f962fce47d97a78ae67522301aa65104d42a8b2d",
-    "run_attempt": 1,
-    "run_id": "40927824424"
+    "executed_checkout_sha": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+    "package_source_sha": "e7ad5e67b7c6d00f97ce347b2576b671ddafd811",
+    "reviewed_head_sha": "c465f2b8156c2f17db82910452dbcdf16aa8353b",
+    "run_attempt": 2,
+    "run_id": "40954208717"
   },
   "dispositions": [
     {
@@ -159,27 +159,42 @@
         "178-INDEPENDENT-REVIEWS-e7ad5e67.json",
         "178-11-CI-CORRECTION-EVIDENCE-ec92cca0.json",
         "178-SOURCE-ACCEPTANCE.json",
-        "178-PACKAGE-ACCEPTANCE.md"
+        "178-PACKAGE-ACCEPTANCE.md",
+        "178-VERIFICATION.md",
+        "178-SECURITY-FINAL-c465-attempt2.md",
+        "178-12-SUMMARY.md",
+        "178-POSTRUN-VALIDATION.md",
+        "../../milestones/v1.48-MILESTONE-AUDIT.md"
       ],
       "phase": 178,
       "requirement": "VPROOF-02",
       "status": "complete"
     },
     {
-      "blocker": "Published f962fce4 run40927824424 attempt1 ended cancelled: five passing jobs, Integration cancelled and Coverage skipped; locked package artifact absent. Fresh E7AD source is local only. A newly authorized exact-head push and successful seven-job same-attempt graph with both artifacts, candidate validation and canonical milestone audit remain required.",
+      "acceptance_boundary": "Independent final phase verification passed4/4; canonical milestone audit satisfies all18requirements/4phases/18integrationpaths/5flows with nonblocking formal coverage debt; final author-owned securitySECURED37/37zeroopenASVS1. Actual candidate seven-job graph and same-attempt package artifacts/native validation passed. This is completed premerge acceptance, with main/integration pendingD19.",
+      "blocker": null,
       "evidence_owner": "Current PR candidate run and independent milestone audit",
       "evidence_refs": [
         "178-CANDIDATE.json",
         "178-CANDIDATE-OBSERVATION.json",
         "178-ACCEPTANCE-ADDENDUM.md",
-        "178-11-EC92-HOSTED-CI-TERMINAL.json"
+        "178-11-EC92-HOSTED-CI-TERMINAL.json",
+        "178-CANDIDATE-GATES.json",
+        "178-11-CANDIDATE-VALIDATION-c465f2b8-attempt2.json",
+        "178-VERIFICATION.md",
+        "../../milestones/v1.48-MILESTONE-AUDIT.md",
+        "../../milestones/v1.48-INTEGRATION-CHECK.md",
+        "178-SECURITY-FINAL-c465-attempt2.md",
+        "178-12-SUMMARY.md",
+        "178-POSTRUN-VALIDATION.md"
       ],
       "phase": 178,
       "requirement": "VDELIV-01",
-      "status": "pending"
+      "status": "complete"
     },
     {
-      "blocker": "Dated pending handoff and ranking are present; candidate acceptance and canonical milestone audit remain pending. Integration and accepted main have not occurred and no main receipt exists. D-19 permits explicit pending-main premerge handoff but does not waive missing candidate CI.",
+      "acceptance_boundary": "Independent final verification and canonical milestone audit accept the dated delivery/custody handoff underD19. Plan12complete; integration/acceptedmain remain explicitlypending/nullrefs/no mainreceipt. No merge/publication or next-milestone implementation authorization is inferred.",
+      "blocker": null,
       "evidence_owner": "Dated custody/delivery handoff and exact-main acceptance boundary",
       "evidence_refs": [
         "178-CUSTODY.md",
@@ -187,11 +202,19 @@
         "178-HANDOFF.json",
         "178-ACCEPTANCE-ADDENDUM.md",
         "178-DELIVERY.md",
-        "../../MILESTONE-ARC.md"
+        "../../MILESTONE-ARC.md",
+        "178-VERIFICATION-PRE-AUDIT.md",
+        "178-11-CANDIDATE-VALIDATION-c465f2b8-attempt2.json",
+        "../../milestones/v1.48-INTEGRATION-CHECK.md",
+        "178-VERIFICATION.md",
+        "178-SECURITY-FINAL-c465-attempt2.md",
+        "178-12-SUMMARY.md",
+        "178-POSTRUN-VALIDATION.md",
+        "../../milestones/v1.48-MILESTONE-AUDIT.md"
       ],
       "phase": 178,
       "requirement": "VDELIV-02",
-      "status": "pending"
+      "status": "complete"
     }
   ],
   "preserved_unresolved_flags": [
@@ -237,14 +260,16 @@
       "verification": null
     }
   ],
-  "recorded_at": "2026-10-29T20:19:25.971243+00:00",
+  "recorded_at": "2026-10-29T23:28:54.253255+00:00",
   "schema": "lockspire-phase178-requirement-dispositions-v1",
   "summary": {
     "candidate_graph_terminal": true,
-    "complete": 16,
-    "global_security": "OPEN_THREATS4",
+    "complete": 18,
+    "global_security": "SECURED37/37;0open;ASVS1;0acceptedrisks",
     "main_acceptance": "pending",
-    "pending": 2,
+    "pending": 0,
+    "phase_completion": "complete_premerge",
+    "security_evidence": "178-SECURITY-FINAL-c465-attempt2.md",
     "total": 18
   }
 }

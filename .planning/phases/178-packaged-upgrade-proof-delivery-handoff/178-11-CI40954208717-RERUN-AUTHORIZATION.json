@@ -1,0 +1,14 @@
+{
+  "action": "POST /repos/szTheory/lockspire/actions/runs/40954208717/rerun",
+  "authorized_full_reruns": 1,
+  "enable_debug_logging": false,
+  "expected_head": "c465f2b8156c2f17db82910452dbcdf16aa8353b",
+  "other_remote_mutations_authorized": false,
+  "preconditions_observed": "PR open/unmerged/exacthead; attempt1 terminal; seven terminal jobs; no competing rerun",
+  "prior_attempt": 1,
+  "proposal_sha256": "b1c5c694df4384c961d4832b8a8c9e68c4010fea5af85368bfa4d2f25bce1126",
+  "recorded_at": "2026-10-29T21:13:43.417399+00:00",
+  "run_id": 40954208717,
+  "schema": "lockspire-phase178-exact-rerun-authorization-v1",
+  "user_response": "yes"
+}

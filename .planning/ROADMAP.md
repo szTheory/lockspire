@@ -28,7 +28,7 @@
 - [x] **Phase 175: Accepted Baseline & Verifier Compatibility Contract** - Establish fresh implementation entry and freeze the finite custody, legacy, rollout and store contract. (completed 2026-10-25)
 - [x] **Phase 176: Dedicated Verifier Custody & Compatible Runtime** - Wire independent keys through every production reader/writer and prove the supported rolling transition. (completed 2026-10-25)
 - [x] **Phase 177: Safe Verifier Maintenance & Recovery** - Deliver atomic rewrap/check/status and key rotation/loss recovery without changing client credentials. (completed 2026-10-26)
-- [ ] **Phase 178: Packaged Upgrade Proof & Delivery Handoff** - Prove the selected journeys, pass review/gates and leave exact delivery/main-acceptance custody.
+- [x] **Phase 178: Packaged Upgrade Proof & Delivery Handoff** - Prove the selected journeys, pass review/gates and leave exact delivery/main-acceptance custody.
 
 ## Phase Details
 
@@ -232,7 +232,7 @@ Execution waves: 1: 01; 2: 02 + 07; 3: 03; 4: 04 + 05; 5: 06; 6: 08; 7: 09.
   3. Fresh-install, generator, upgrade, diagnostic and support guidance matches verified behavior without changing public protocol scope, signing format, host ownership, schema or runtime dependencies unless explicitly re-scoped through GSD.
   4. A dated handoff records reviewed integration and fresh exact-main acceptance or explicit unresolved delivery blockers, resource owners/purpose/next actions and preserved unknown work; UI quality remains the next substantial candidate with the completed interview intact. No package publication is inferred.
 
-**Plans**: 10/12 plans executed in 8 waves; the normal milestone PR and protected release train remain distinct.
+**Plans**: 12/12 plans executed in 8 waves; premerge delivery complete, integration/main pending under D-19; the normal milestone PR and protected release train remain distinct.
 
 Plans:
 **Wave 1**
@@ -258,10 +258,10 @@ Plans:
 - [x] 178-10-PLAN.md — Independent reviews, frozen inputs and final local/package gates.
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 178-11-PLAN.md — Single reviewed candidate and actual complete hosted graph.
+- [x] 178-11-PLAN.md — Single reviewed candidate and actual complete hosted graph.
 
 **Wave 8** *(blocked on Wave 7 completion)*
-- [ ] 178-12-PLAN.md — Canonical audit, dated custody/ranking and pending-or-accepted main handoff.
+- [x] 178-12-PLAN.md — Canonical audit, dated custody/ranking and pending-or-accepted main handoff.
 
 ## Progress
 
@@ -270,9 +270,9 @@ Plans:
 | 175. Accepted Baseline & Verifier Compatibility Contract | 3/3 | Complete    | 2026-10-25 |
 | 176. Dedicated Verifier Custody & Compatible Runtime | 7/7 | Complete    | 2026-10-25 |
 | 177. Safe Verifier Maintenance & Recovery | 9/9 | Complete    | 2026-10-26 |
-| 178. Packaged Upgrade Proof & Delivery Handoff | 10/12 | In Progress | — |
+| 178. Packaged Upgrade Proof & Delivery Handoff | 12/12 | Complete — premerge; main pending | 2026-10-29 |
 
-**Coverage:** 18/18 approved requirements map exactly once; 4 approved phases; Phases 175–177 completed 19/19 plans and 15/18 requirements. Phase 178 has 10/12 plans executed; VPROOF-02 is locally qualified with corrected reviewed attribution and fresh native source, lifetime, verifier-pair and current/minimum installed-host qualification. Overall requirement completion is 16/18; prior failures, retention limits and execution counts are not erased. VDELIV-01/02 remain pending because PR #141 candidate CI is incomplete and main/delivery acceptance remains unobserved. Plan 11 is incomplete; Plan 12 has not started. The phase remains in progress. Roadmap approved 2026-10-25.
+**Coverage:** 18/18 approved requirements map exactly once; 4/4 phases and31/31plans executed. Phase178 completed all12plans with independent4/4goal verification and37/37declaredsecuritymitigations closed (0open/0acceptedrisks). Actual CI40954208717attempt2 at reviewedc465/executed3c7bd2a passed all7jobs and strict26receipt/64case artifact validation. The canonical milestone audit records all18verifiedoutcomes and non-blocking formal coverage PARTIAL/advisory debt; original generic/null/prohibition flags and failed/unknown observations remain unwaived. Integration and accepted main remain explicitlypending underD19; no main receipt, publication or next-milestone implementation is inferred. See Phase178Summary12 and the canonical v1.48milestoneaudit. Roadmap approved2026-10-25; premerge phase completion2026-10-29.
 
 ## Completed Backlog Scope
 

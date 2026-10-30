@@ -1,0 +1,47 @@
+{
+  "candidate_result": {
+    "artifacts": {
+      "floor": {
+        "cases": 31,
+        "receipts": 12
+      },
+      "locked": {
+        "cases": 33,
+        "receipts": 14
+      }
+    },
+    "jobs": 7,
+    "run_attempt": 2,
+    "run_id": "40954208717"
+  },
+  "canonical_milestone_audit": "pending",
+  "executed_checkout": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+  "exit_code": 0,
+  "handoff_result": {
+    "accepted_main": false,
+    "integration_status": "pending"
+  },
+  "original_children": 80,
+  "original_children_closed": true,
+  "original_exec_session": 34027,
+  "original_record": "/private/tmp/lockspire178-native-e7ad-native-epoch-13diaf3z/hosted-candidate-e7ad-3jwqz1yr/result.json",
+  "original_record_sha256": "cc8b78ac28351f59af6a1c1501627d99cd58ceb00d75814c516126ce83d95b90",
+  "phase_completion": "not asserted",
+  "phase_records_unchanged": true,
+  "postgres_started": false,
+  "recorded_at": "2026-10-29T21:48:00.098924+00:00",
+  "retained_temporary_roots": 6,
+  "reviewed_head": "c465f2b8156c2f17db82910452dbcdf16aa8353b",
+  "root_tar_preserved": true,
+  "run_attempt": 2,
+  "run_id": 40954208717,
+  "schema": "lockspire-phase178-native-candidate-validation-projection-v1",
+  "source": "e7ad5e67b7c6d00f97ce347b2576b671ddafd811",
+  "source_runtime_rerun": false,
+  "stages": [
+    "candidate",
+    "handoff"
+  ],
+  "status": "passed",
+  "temporary_roots_retained": true
+}

@@ -1,0 +1,26 @@
+{
+  "candidate_or_main_acceptance": false,
+  "exact_inner_predicate": "UNKNOWN; no inner exception/predicate claim from this finite failure record",
+  "failed_step": {
+    "exit_code": 2,
+    "name": "Run exact-floor packaged host proof",
+    "number": 17
+  },
+  "job_id": 123729935763,
+  "log_utf8_sha256": "9c0eb35e6e0fb94bd4161cfb402defd926f541cd082c31821a794fb309ca3b4f",
+  "observed_at": "2026-10-29T21:15:45.130645+00:00",
+  "raw_log_persisted": false,
+  "reviewed_head": "c465f2b8156c2f17db82910452dbcdf16aa8353b",
+  "run_attempt": 1,
+  "run_id": 40954208717,
+  "schema": "lockspire-phase178-hosted-minimum-failure-v1",
+  "source_test_summary": {
+    "failures": 0,
+    "tests": 2755
+  },
+  "validated_safe_failure_record": {
+    "reason": "lifecycle_failed",
+    "schema": "lockspire-admin-proof-failure-v1",
+    "stage": "lifecycle"
+  }
+}

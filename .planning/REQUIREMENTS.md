@@ -1,7 +1,7 @@
 # Requirements: Lockspire v1.48 Client Authentication Key Isolation & Rotation
 
 **Defined:** 2026-10-25
-**Status:** All 18 requirements approved by the owner with “lgtm” on 2026-10-25; roadmap approved on 2026-10-25. Phases 175–177 independently verified 15/18 requirements. Phase 178 VPROOF-02 is locally qualified after accepted C50 attribution correction and fresh native source, lifetime, verifier-pair and installed current/minimum host proof: 16/18 requirements are verified complete. Old-contract results, failed attempts and custody-retention limitations stay historical and unwaived. VDELIV-01/02 remain pending because PR #141 candidate CI is incomplete and main/delivery acceptance is not observed. Generic edge and non-authoritative prohibition flags remain visible in their reports.
+**Status:** All18 approved requirements have independently verified concrete outcomes. Allfour phases and31plans are complete at the permitted premerge boundary. Actual CI40954208717attempt2 and strict native candidate/artifact/handoff validation passed; final Phase178 verification passed4/4 and security closed37/37declaredmitigations with0acceptedrisks. The canonical audit retains non-blocking formal coverage PARTIAL/advisory debt. Integration/acceptedmain remain explicitlypending underD19, with no main receipt. Original flags, failures and execution identities are preserved.
 **Core Value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 **Research:** [SEC-01 synthesis](research/v1.48-client-auth-key-isolation/SUMMARY.md).
 
@@ -37,8 +37,8 @@
 
 - [x] **VPROOF-01**: Security reviewer can verify that verifier plaintext, encryption keys and ciphertext stay out of logs, SQL diagnostics, telemetry, audit, operator reports and protocol responses across success and failure paths.
 - [x] **VPROOF-02**: Maintainer can reproduce source-bound package-installed fresh/legacy-upgrade, mixed-key/version, rotation, rejection and recovery journeys on the existing supported dependency pairs, including actual PostgreSQL concurrency/rollback and a supported configured-store composition; unavailable cases remain explicit failures or blockers. HIGH SEC-178-DISCLOSURE-ATTRIBUTION-01 was corrected and accepted at `50d67751`. Fresh execution at H175 passed canonical source CI (2,456 tests/zero failures/two properties), lifetime composition (47 checks/nine scenarios), verifier pairs (26 receipts/64 cases) and installed current/minimum hosts (96 scenarios). Native root validation passed with exact covered-input equivalence. Earlier failures, old-contract results and original-token retention limits remain unwaived; see `178-11-CORRECTED-NATIVE-PACKAGE-HOST-EVIDENCE-50d6775.json`.
-- [ ] **VDELIV-01**: Reviewer can assess a completed milestone audit, focused security/code review and passing required candidate contributor/CI gates, with install/upgrade/support guidance matching verified behavior and no new dependency or public protocol scope.
-- [ ] **VDELIV-02**: Next maintainer can resume from a dated delivery/main-acceptance and resource-custody handoff, with unknown work preserved and the rolling ranking refreshed to retain UI quality next and its completed interview.
+- [x] **VDELIV-01**: Reviewer can assess a completed milestone audit, focused security/code review and passing required candidate contributor/CI gates, with install/upgrade/support guidance matching verified behavior and no new dependency or public protocol scope.
+- [x] **VDELIV-02**: Next maintainer can resume from a dated delivery/main-acceptance and resource-custody handoff, with unknown work preserved and the rolling ranking refreshed to retain UI quality next and its completed interview.
 
 ## Qualification-driven scope reconciliation (2026-10-24)
 
@@ -68,7 +68,7 @@ The A171-003 correction is limited to unsupported `response_mode` returning HTTP
 
 ## Traceability
 
-Each approved requirement maps exactly once to the approved roadmap, continuing after Phase 174. Phases 175–177 are independently verified complete; Phase 178 remains in progress with VPROOF-02 locally qualified after corrected attribution and fresh native requalification; both delivery requirements remain pending.
+Each approved requirement maps exactly once to the four-phase v1.48 roadmap. All18 concrete requirement outcomes are now independently verified; Phase178 has4/4 roadmap truths. Final independent security post-review completed37/37,0open; the formal coveragePARTIAL judgment remains explicit. VDELIV-02 is satisfied at the explicitD19premerge boundary, with integration and accepted main still pending.
 
 | Requirement | Phase | Status |
 |---|---|---|
@@ -88,10 +88,10 @@ Each approved requirement maps exactly once to the approved roadmap, continuing 
 | VOPS-04 | Phase 177 | Complete |
 | VPROOF-01 | Phase 177 | Complete |
 | VPROOF-02 | Phase 178 | Complete — corrected C50d/H175 native source, lifetime, verifier-pair and current/minimum installed-host proof; prior limitations retained |
-| VDELIV-01 | Phase 178 | Pending |
-| VDELIV-02 | Phase 178 | Pending |
+| VDELIV-01 | Phase 178 | Complete — independent4/4verification and actual canonicalaudit/candidate evidence |
+| VDELIV-02 | Phase 178 | Complete — independently verified premerge handoff under D-19; integration/main pending |
 
-**Coverage:** 18 requirements; 18 mapped exactly once; 0 unmapped; 16 currently verified complete and 2 pending. Roadmap approved 2026-10-25. The original 1,076- and 1,077-input Plan 10 evidence remains historical and valid only for its recorded closures. Earlier source/package results retain their exact identities. VPROOF-02 has corrected channel attribution and fresh affected qualification; VDELIV-01/02 still require passing hosted candidate CI, milestone audit, and main/delivery evidence.
+**Coverage:** 18requirements; 18mapped exactly once; 0unmapped; 18independently verified outcomes and 0pending requirement outcomes at the premerge boundary. Phase178 is complete at the D19premerge boundary; integration and acceptedmain remain pending. Historical1,076/1,077-input and C50/H175 results remain attributable only to their actual closures. Current E7AD source/package proof and c465/actual3c7bd2a hosted attempt2 retain separate identities; no accepted main or publication is claimed.
 
 ---
-*Last updated: 2026-10-28 after corrected C50d/H175 native package/host qualification; VDELIV-01/02 remain pending.*
+*Last updated: 2026-10-29 after actual7/7hostedCI, strict same-attempt artifacts, completedcanonicalaudit, independent4/4verification and37/37declaredsecurityclosure; integration/main remain pending.*

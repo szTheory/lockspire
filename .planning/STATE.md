@@ -4,19 +4,19 @@ milestone: v1.48
 milestone_name: Client Authentication Key Isolation & Rotation
 current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
-current_plan: 11
-status: in_progress
-stopped_at: E7AD source and both matrix partitions passed; local evidence assembly/ROOT promotion/semantic checks passed; fresh push approval next
-last_updated: "2026-10-29T20:19:25.971243+00:00"
+current_plan: 12
+status: completed
+stopped_at: completed premerge and ready for review; final exact evidence-only commit/body approval next; integration/main pending D19
+last_updated: "2026-10-29T23:28:54.253255+00:00"
 last_activity: 2026-10-29
-last_activity_desc: E7AD source2463/0+2properties and strict matrix26receipts/64cases/0; old hosted run cancelled; new candidate CI pending
-state_head: e7ad5e67
+last_activity_desc: Phase178 verification4/4passed; Plan12complete;18/18requirements/4phases/31plans;finalsecuritySECURED37/37;milestoneaudittech_debt/PARTIALcoverage
+state_head: c465f2b8
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 31
-  completed_plans: 29
-  percent: 75
+  completed_plans: 31
+  percent: 100
 ---
 
 # Project State
@@ -27,20 +27,20 @@ See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** E7AD source and both matrix partitions passed; strict composition26receipts/64cases/0 and all original runtime/PG cleanup are confirmed, with private data retained. Archive/tree exactly match EC92; prior EC92 lifetime/SaaS/96host proof remains at its original identities. Local evidence assembly, preservation/promotion and all four ROOT semantic checks passed. The exact metadata commit/body is being prepared for fresh push approval. Published f962fce4 remains unchanged; CI40927824424 is terminal cancelled with5passed/Integrationcancelled/Coverageskipped and no locked artifact. Inner release-RPC predicate UNKNOWN. Plan11incomplete/12unready;16/18requirements;OPEN_THREATS4. No new remote authorization.
+**Current focus:** Phase178 and v1.48 are complete on the premerge branch:12/12phaseplans31/31milestoneplans4/4phases18/18requirements. Actual final verification4/4passed; final independentsecuritySECURED37/37zeroopen/acceptedrisksASVS1; canonicalmilestoneaudittech_debt/no criticalgaps/18integrationpaths5flows. Postrunformalcoveragevalidated/PARTIAL/nyquistfalse; frozen178VALIDATIONdraft remains byte-identical, advisorygeneric/null/prohibitionflagsunresolved/unverified/nonauthoritative and oldfailures/unknowns preserved. Publishedheadc465/qualifiedsourceE7AD/actualcheckout3c7bd/CI40954208717attempt2all7green+sameattemptartifacts/native26/64 remain distinct actual identities. Allownedprocessesclosed/dataretained. Next review exactfinalevidence-onlymetadata commit+preparedPRbody, freshapprovalrequired foranotherexactpush/body; finalmetadataSHAunknownuntilcommit. Existingapprovalsconsumed/nootherremoteauthority. Integration/acceptedmainpendingD19/nullrefs/noMAINreceipt; milestone notarchived. UI-next/Q1–Q10/finalconfirmation/triggers unchanged, nofutureimplementationauthorized.
 
 ## Current Position
 
-Phase: 178 (Packaged Upgrade Proof & Delivery Handoff) — LOCAL CI CORRECTION / REQUALIFICATION
-Current Plan: 11
+Phase: 178 (Packaged Upgrade Proof & Delivery Handoff) — COMPLETE PREMERGE / READY FOR REVIEW
+Current Plan: 12
 Total Plans in Phase: 12
-Plan: 11 of 12; 10/12 complete; Plan 12 waits on Plan 11
-Status: E7AD local source/matrix qualification passed; local assembly/promotion/semantic checks passed; final metadata commit pending; hosted/audit/main acceptance pending.
-Last activity: 2026-10-29 UTC — E7AD canonical2463/0+2properties; fresh locked14/33 and floor12/31 composed26/64/0; no active runtime/PG; new exact candidate push approval is next after local metadata verification.
+Plan: 12/12 complete; 31/31 milestone plans, 4/4 phases and 18/18 requirements complete premerge
+Status: completed premerge / ready for review; milestone not archived; fresh final exact commit/body push approval required; integration/main pending.
+Last activity: 2026-10-29 UTC — final verification4/4/security37/37/audit18requirements4phases18paths5flows/Plan12complete; nonblocking formalcoveragePARTIAL retained.
 
 ## Performance Metrics
 
-v1.48: 18 approved requirements, 4 approved phases (175–178), 31 plans with 29 executed; 3/4 phases complete. Phase 177 corrected source `5e8cd65e` passed full `mix ci` (15 boundary, 2 properties and 2,138 fast tests, 261 integration tests; zero failures), independent security 29/29, clean source review across 32 files and prior regressions 188/0. Independent verification passed 47/47 truths, six requirements and all 23 decisions; no behavior override. Earlier failed attempts and two unclassified/three prohibition flags remain visible. Phase 176 corrected source `71627f27` passed full `mix ci` (2 properties, 2,102 fast tests and 231 integration tests; zero failures), focused security 26/0 and prior-phase regressions 30/0. Independent verification passed 28/28 truths; security closed 22/22 threats and source review found zero issues across 29 files. Four initial audit mechanisms were corrected; failed environmental attempts and three generic edge/three prohibition flags remain disclosed. Earlier Phase 175 candidate f3ef32a7 passed canonical mix ci: boundary 15/0, main 2,055/0 and integration 210/0, with recorded skips/exclusions. Source review has zero open findings.  Fresh pre-qualification exact-main acceptance and required tracer feedback both passed: 22 PASS, 2 WARN, 0 BLOCK, full local contributor gate, seven canonical CI jobs and no-publish Release at `173059a1`. The receipt's final ExUnit stage is 200 tests; the main stage separately passed 2,057 tests. Historical v1.47 remains 4 completed phases, 10 plans and 14 verified requirements; its old receipts are unchanged.
+v1.48: 18 approved requirements, 4 approved phases (175–178), 31 plans with 31 executed; 4/4 phases complete premerge. Phase178 verification passed4/4, finalsecuritySECURED37/37/0open, all18requirements satisfied. Milestoneaudittech_debt retains nonblocking postruncoveragePARTIAL/Nyquistfalse and original advisoryflag provenance; integration/acceptedmain remain pendingD19. Phase 177 corrected source `5e8cd65e` passed full `mix ci` (15 boundary, 2 properties and 2,138 fast tests, 261 integration tests; zero failures), independent security 29/29, clean source review across 32 files and prior regressions 188/0. Independent verification passed 47/47 truths, six requirements and all 23 decisions; no behavior override. Earlier failed attempts and two unclassified/three prohibition flags remain visible. Phase 176 corrected source `71627f27` passed full `mix ci` (2 properties, 2,102 fast tests and 231 integration tests; zero failures), focused security 26/0 and prior-phase regressions 30/0. Independent verification passed 28/28 truths; security closed 22/22 threats and source review found zero issues across 29 files. Four initial audit mechanisms were corrected; failed environmental attempts and three generic edge/three prohibition flags remain disclosed. Earlier Phase 175 candidate f3ef32a7 passed canonical mix ci: boundary 15/0, main 2,055/0 and integration 210/0, with recorded skips/exclusions. Source review has zero open findings.  Fresh pre-qualification exact-main acceptance and required tracer feedback both passed: 22 PASS, 2 WARN, 0 BLOCK, full local contributor gate, seven canonical CI jobs and no-publish Release at `173059a1`. The receipt's final ExUnit stage is 200 tests; the main stage separately passed 2,057 tests. Historical v1.47 remains 4 completed phases, 10 plans and 14 verified requirements; its old receipts are unchanged.
 **Per-Plan Metrics:**
 
 | Plan | Duration | Tasks | Files |
@@ -156,16 +156,31 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 ## Session Continuity
 
 Last session: 2026-10-29 UTC.
+Stopped at: completed premerge, ready for review; milestone not archived.
+Resume file: .planning/phases/178-packaged-upgrade-proof-delivery-handoff/.continue-here.md
+Current evidence: 178-VERIFICATION.md (passed4/4), 178-SECURITY.md (SECURED37/37), 178-12-SUMMARY.md (complete), 178-POSTRUN-VALIDATION.md (validated/PARTIAL/Nyquistfalse), and .planning/milestones/v1.48-MILESTONE-AUDIT.md (tech_debt/no criticalgaps). All18requirements,4phases,31plans complete premerge. Publishedheadc465/qualifiedsourceE7AD/CI40954208717attempt2 retain actual separate identities.
+Next: review exact final evidence-only metadata commit and prepared PR body, then obtain fresh exact push/body approval. Final metadata SHA is unknown until commit. No active owned runtime; private data, protected tar and original receipts retained.
+
+### Current external boundaries
+
+- No concrete premerge requirement/security/integration/flow gap remains. Formal coverage debt is nonblocking/PARTIAL and advisory flags retain original unresolved provenance.
+- Final metadata publication needs fresh exact push/body approval. Prior approvals are consumed. Normal integration and accepted main remain pendingD19/nullrefs/no mainreceipt; no merge/publication or next-milestone implementation authority.
+
+### Historical C98 continuity checkpoint — superseded
+
+Last session: 2026-10-29 UTC.
 Stopped at: C98 local qualification passed; transfer validation passed; exact remote proposal in progress.
 Resume file: .planning/phases/178-packaged-upgrade-proof-delivery-handoff/.continue-here.md
 Current evidence: 178-11-CI-CORRECTION-EVIDENCE-98b79e54.json. Previous epochs remain historical and unwaived.
 Next: Complete all ready local metadata work, verify source closure, prepare exact final SHA/body and request only the required new remote authorization. No active runtime; retain private data and protected tar.
 
-### Blockers
+### Historical blockers at that checkpoint
 
 - Old published cc61 CI failed. New hosted seven-job candidate graph/artifacts, milestone audit and main acceptance remain pending. Plan11/12 and VDELIV01/02 are incomplete.
 
 ## Decisions
+
+These decisions retain their original checkpoint context. Earlier stage-specific “pending” or “next” observations below are historical; current completion and authority are recorded above.
 
 - [Phase 178 execution resume]: After root explicitly asked whether to continue implementation and local commits, the owner replied “yes i authorize”. Resume Plan 01 from preserved edits/evidence; retain the earlier approval rejection. This authorization does not include merge or publication.
 
@@ -264,6 +279,12 @@ Next: Complete all ready local metadata work, verify source closure, prepare exa
 - [Phase 178]: Plan 10 source and package evidence remains historical and valid for its exact 1,076-input frozen closure; after main-base synchronization, requalify the 1,077-input closure before marking VPROOF-02 complete.
 
 ## Operator Next Steps
+
+- Review the final evidence-only metadata commit and prepared PR #141 body; require fresh approval for that exact push/body update. Do not rerun completed proofs or repeat consumed remote actions.
+- Preserve the independent passed verification, SECURED37/37 security, canonical tech_debt audit, postrun PARTIAL coverage and all original failures/flags/custody records. Milestone remains complete premerge and unarchived.
+- Keep integration/main explicitly pending until separately authorized and actually observed under the existing exact-main helper conditions. No next-milestone implementation, version reservation, merge or publication is authorized.
+
+### Historical operator next steps — superseded
 
 - After clearing context, run `$gsd-execute-phase 178` without --wave. Resume Plan 11 from current phase continue.md/.continue-here.md and the terminal CI40792440885 record. Diagnose and fix the three current failures locally under existing authorization; do not repeat earlier completed fixes or publication.
 - Preserve C50/H175 native proof and all historical failures/limits. Refresh affected evidence for new covered inputs before proposing an exact next remote update. The cc61cffc push/body approval is consumed; further remote mutation needs a new concrete approval. Plan 12 and main/delivery acceptance remain dependent work.

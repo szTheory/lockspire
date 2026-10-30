@@ -1,0 +1,95 @@
+{
+  "additional_remote_mutation_authorized": false,
+  "covered_inputs_count": 1079,
+  "covered_inputs_sha256": "010613c567019f5dbca057ea5b749038ec54ae273467a17f87520bac76835b1f",
+  "current_postrun_validation": "validated/PARTIAL/nyquistfalse",
+  "executed_checkout": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+  "final_metadata_commit": "recorded in exact proposal outside this commit to avoid self-reference",
+  "final_retention_index": {
+    "bytes": 19135,
+    "files": 50,
+    "mode": 384,
+    "path": ".artifacts/phase178/premerge-final-c465-attempt2/retained-index.json",
+    "sha256": "67be5de5f5f4fe4eadb1efe924b2aae939e1d0f71c483514fcb05bdeb6592243"
+  },
+  "frozen_original_validation_unchanged": true,
+  "hosted_CI": {
+    "attempt": 2,
+    "failures": 0,
+    "jobs_passed": 7,
+    "package_cases": 64,
+    "package_receipts": 26,
+    "run_id": 40954208717
+  },
+  "integration": "pending",
+  "main_acceptance": "pendingD19;nullrefs/no receipt",
+  "milestone_audit": "tech_debt;0criticalgaps;formalcoveragePARTIAL/advisoryflags retained",
+  "milestone_plans_complete": "31/31",
+  "next_milestone_implementation_authorized": false,
+  "phase": 178,
+  "phase_status": "complete_premerge",
+  "phase_verification": "passed4/4",
+  "plans_complete": "12/12",
+  "primary_records": {
+    ".planning/milestones/v1.48-MILESTONE-AUDIT.md": {
+      "bytes": 11880,
+      "mode": 420,
+      "sha256": "e1e2468301f1a176dbc48377e3f126306d43ca5e1d7a72479fdd94534a4211ce"
+    },
+    ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-12-SUMMARY.md": {
+      "bytes": 4744,
+      "mode": 420,
+      "sha256": "75b71849568c1a83ae84c52263182216c8a36ed061d13af3c0d7ce3326db85cd"
+    },
+    ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-CANDIDATE-GATES.json": {
+      "bytes": 4577,
+      "mode": 384,
+      "sha256": "11e68b0742985705235f25b0424e62504941f3f2d073a266d064244cbb9c2284"
+    },
+    ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-CANDIDATE-OBSERVATION.json": {
+      "bytes": 674,
+      "mode": 384,
+      "sha256": "a3c7ba2af93d12ed306fd731bce4bca4bbf2e894762eab36a4ce0084b22dca5f"
+    },
+    ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-CANDIDATE.json": {
+      "bytes": 286865,
+      "mode": 384,
+      "sha256": "7eae83d326385d854994b22909ff8d450e1796af97df5efdddfa6820b3e4e025"
+    },
+    ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-HANDOFF.json": {
+      "bytes": 1314,
+      "mode": 420,
+      "sha256": "81ebd5e2610805e1d1f7268098e59a64ca08fcc15aaff46c15bcfc0d964f7870"
+    },
+    ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-POSTRUN-VALIDATION.md": {
+      "bytes": 11453,
+      "mode": 420,
+      "sha256": "de8c8cb7e894b855055e12f9500706db52a52e50fa50269faae3ea01742bba8a"
+    },
+    ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-REQUIREMENT-DISPOSITIONS.json": {
+      "bytes": 10828,
+      "mode": 420,
+      "sha256": "301c2ec5b75859fa563911d45b27c50f332216fc74da17beb5f35f3ede357e1b"
+    },
+    ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-SECURITY.md": {
+      "bytes": 19376,
+      "mode": 420,
+      "sha256": "7db88287aac82e395252d1b961f65aef950fe008efd0b79d17db388c73eb54d6"
+    },
+    ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-VERIFICATION.md": {
+      "bytes": 17691,
+      "mode": 420,
+      "sha256": "5992ccf7aac474216e0f2cbc82261f42655c65ba98ef34d9cd8f924053622291"
+    }
+  },
+  "recorded_at": "2026-10-30T00:24:37.844602+00:00",
+  "remote_approvals": "c465push/body and one fullrerun executed/consumed; finalmetadata push/body requires fresh exact approval",
+  "requirement_outcomes": "18/18 independently verified",
+  "reviewed_head": "c465f2b8156c2f17db82910452dbcdf16aa8353b",
+  "schema": "lockspire-phase178-final-premerge-checkpoint-v1",
+  "scope_limitations": "Historical failures/unknowns/flags and source/runtime identities retained; no new predicate/probe, waiver, main acceptance, merge or publication invented.",
+  "security": "SECURED37/37 ASVS1 0open 0acceptedrisks",
+  "source_application_changes_after_qualified_E7AD": false,
+  "source_revision": "e7ad5e67b7c6d00f97ce347b2576b671ddafd811",
+  "verification_cli_notes": "Initial wrong-file argument yielded phase_dir_not_found; phaseDir query then correctly found stale after new Summary12; assigned independent verifier reviewed finalmetadata and refreshed owningv4fingerprint; currentphaseDir query PASSED."
+}

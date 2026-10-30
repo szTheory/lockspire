@@ -1,9 +1,9 @@
 {
   "checkout_parents": [
     "173059a166e9ade0f5f57c9980b7b2400a98538c",
-    "f962fce47d97a78ae67522301aa65104d42a8b2d"
+    "c465f2b8156c2f17db82910452dbcdf16aa8353b"
   ],
-  "checkout_tree": "5421a819c0d67351f7de61584ecd1016dd230770",
+  "checkout_tree": "57df3f8ec0fcfb69ca647fdc2793ab3df84f5b4c",
   "covered_input_relation": [
     {
       "package_sha256": "b0e25d2687afa2d432995db4fc522faaf77539b4bcaf585adebb8867b418a552",
@@ -51,9 +51,9 @@
       "runner_sha256": "0618be6c6204f62d02f54b0645e9b5cdae15321b7cbcc50f0fb69b61622e1069"
     },
     {
-      "package_sha256": "a6f4add2c221256d067f073dc62c828d5b0810bf61f00a0e1ea4beb38655b0d3",
+      "package_sha256": "ab64ee4f2eeede8fbf4ef96410b8598397d21e361adf910417752e9b96a8e782",
       "path": ".github/workflows/ci.yml",
-      "runner_sha256": "a6f4add2c221256d067f073dc62c828d5b0810bf61f00a0e1ea4beb38655b0d3"
+      "runner_sha256": "ab64ee4f2eeede8fbf4ef96410b8598397d21e361adf910417752e9b96a8e782"
     },
     {
       "package_sha256": "2fd9bd20bf73752112bd3dbc9f60560068fae13efb3628cd2020fbb172c8ce66",
@@ -2731,9 +2731,9 @@
       "runner_sha256": "e4fad639722d4453edd1b1a27c3bd8cdd97294c679accc17ec5441eda02df376"
     },
     {
-      "package_sha256": "4a90bc270b1456193dfe5cb6bf1109ea5ee7d8f6eaf69220d3e17017a542d3bf",
+      "package_sha256": "d3c6fbbd274b2214b2ff708329a5c09fc5b32024fc1c6df2c253b8ee05b75add",
       "path": "scripts/ci/run_verifier_upgrade_proof.sh",
-      "runner_sha256": "4a90bc270b1456193dfe5cb6bf1109ea5ee7d8f6eaf69220d3e17017a542d3bf"
+      "runner_sha256": "d3c6fbbd274b2214b2ff708329a5c09fc5b32024fc1c6df2c253b8ee05b75add"
     },
     {
       "package_sha256": "410f1917116675c1384cdd24a90f0bb978a42c6515433cc790896ab5e9c262c3",
@@ -3861,9 +3861,9 @@
       "runner_sha256": "be4b017d7c921dd88d7422b5e7974a9f6d7522fd96d96eef214d895950e1bcf3"
     },
     {
-      "package_sha256": "a45da2b19c35011303584c4bc276af213a29c7e16c5001f1e182c7daae307e8f",
+      "package_sha256": "6e713558183169a8f9e0083c8034be5714662792f00f5d4937c46107d332486b",
       "path": "test/lockspire/ci_workflow_evidence_contract_test.exs",
-      "runner_sha256": "a45da2b19c35011303584c4bc276af213a29c7e16c5001f1e182c7daae307e8f"
+      "runner_sha256": "6e713558183169a8f9e0083c8034be5714662792f00f5d4937c46107d332486b"
     },
     {
       "package_sha256": "242b8b13ecd0ca34636c8aea42ca77748ee1f901ae6400c7d1526d05ddff10de",
@@ -5402,7 +5402,7 @@
     }
   ],
   "event": "pull_request",
-  "executed_checkout_sha": "b327184765668e0f070312d0a26e6a17a3ce8ccb",
+  "executed_checkout_sha": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
   "failed_attempts": [
     {
       "head": "cc61cffc563fc8df141313c26442186c0b4645a3",
@@ -5419,19 +5419,41 @@
       "run_attempt": 1,
       "run_id": "40882212125",
       "status": "failure"
+    },
+    {
+      "conclusion": "cancelled",
+      "exact_inner_release_rpc_predicate": "UNKNOWN",
+      "jobs": "5success/1cancelled/1skipped",
+      "missing_locked_artifact": true,
+      "reviewed_head_sha": "f962fce47d97a78ae67522301aa65104d42a8b2d",
+      "run_attempt": 1,
+      "run_id": "40927824424",
+      "terminal_evidence": "178-11-EC92-HOSTED-CI-TERMINAL.json",
+      "terminal_evidence_sha256": "3829096243c499785b576a9f0e46286785aaee44350055b57e081032b8d10775"
+    },
+    {
+      "conclusion": "failure",
+      "integration_failure": "Hex registry fetch timeout before tests",
+      "jobs": "4success/2failure/1skipped",
+      "minimum_failure": "2755source tests0failures thenfloorhostlifecycle_failedexit2; innerpredicateUNKNOWN",
+      "reviewed_head_sha": "c465f2b8156c2f17db82910452dbcdf16aa8353b",
+      "run_attempt": 1,
+      "run_id": "40954208717",
+      "terminal_evidence": "178-11-E7AD-HOSTED-CI-ATTEMPT1-TERMINAL.json",
+      "terminal_evidence_sha256": "defa432aebf6ce3fb71f3b4069e058c45aee3be71ac775b49351edcd11a61673"
     }
   ],
-  "frozen_manifest_sha256": "44163c6c7b6e9cc5399ec81bd2f42a09c2d507a49e6452d4cdb34ccd41e76b9c",
-  "observed_at": "2026-10-29T18:10:17.719993+00:00",
+  "frozen_manifest_sha256": "8b18518e65d943c30021a79b36883162f27bc58cd7666196c948d2f2ebb40698",
+  "observed_at": "2026-10-29T21:33:22.051637+00:00",
   "package_archive_sha256": "eea947dd6a734b60bd502b4d202ecc9cfa7cc7adbdf05bf21d30fa7830f9209c",
-  "package_source_sha": "ec92cca096edd4d9d9efd2d5f128889346de4c35",
+  "package_source_sha": "e7ad5e67b7c6d00f97ce347b2576b671ddafd811",
   "package_tree_sha256": "01285ffcc1ef607ebefe39ff02bbf08f50bb0ac44127cef1cd05dbc324bce10b",
-  "raw_observation_sha256": "d5730485f53cb957c76c6790d868603d01599a185906311df8cbe3a8b855ccd8",
-  "reviewed_head_sha": "f962fce47d97a78ae67522301aa65104d42a8b2d",
-  "run_attempt": 1,
-  "run_id": "40927824424",
-  "runner_sha": "b327184765668e0f070312d0a26e6a17a3ce8ccb",
+  "raw_observation_sha256": "a3c7ba2af93d12ed306fd731bce4bca4bbf2e894762eab36a4ce0084b22dca5f",
+  "reviewed_head_sha": "c465f2b8156c2f17db82910452dbcdf16aa8353b",
+  "run_attempt": 2,
+  "run_id": "40954208717",
+  "runner_sha": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
   "schema": "lockspire-phase178-candidate-v1",
-  "source_acceptance_sha256": "24b524bb7905927b47ea00ca19bc82e47fa9d3a111fe21bda2b8e196b75b1f0a",
+  "source_acceptance_sha256": "f55cb3c8ab26a7c9ac63dea128ee59139a9be7056c78eca5a41de50ecb305ba0",
   "workflow_path": ".github/workflows/ci.yml"
 }

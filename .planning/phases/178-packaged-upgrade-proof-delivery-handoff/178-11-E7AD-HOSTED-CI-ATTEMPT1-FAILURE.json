@@ -1,0 +1,46 @@
+{
+  "PR": 141,
+  "actual_checkout": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+  "candidate_provision_and_installed_proofs_started": false,
+  "canonical_OPEN_THREATS": 4,
+  "failed_step": "Install dependencies",
+  "failed_step_number": 9,
+  "full_rerun_authorization": "pending explicit response; do not rerun before attempt1terminal",
+  "integration_conclusion": "failure",
+  "integration_job_id": 123729936337,
+  "last_other_jobs": {
+    "Adoption Demo Smoke": "success",
+    "Complete Coverage Evidence": "not_terminal",
+    "Dialyzer": "success",
+    "Fast Checks": "in_progress",
+    "Minimum Supported Elixir/OTP": "in_progress",
+    "Release Hygiene Drift": "success"
+  },
+  "log_utf8_sha256": "b7a9eb8fc29b9678557ec4a0611c05c6659679857b45ecb9539cd6325179cba6",
+  "native_candidate_validator": "UNRUN; all7success+bothZIPs preconditions unmet",
+  "observed_at": "2026-10-29T21:06:41.881801+00:00",
+  "phase11_complete": false,
+  "phase12": "not_ready",
+  "raw_log_persisted": false,
+  "reviewed_head": "c465f2b8156c2f17db82910452dbcdf16aa8353b",
+  "run_attempt": 1,
+  "run_id": 40954208717,
+  "run_terminal": false,
+  "safe_failure_projection": {
+    "actual_package_absence_established": false,
+    "category": "Hex_registry_record_fetch_timeout",
+    "first_exit_code": 1,
+    "package": "phoenix_live_dashboard",
+    "raw_exception_or_stderr_persisted": false,
+    "source_defect_established": false,
+    "subsequent_lock_package_lookup": "unknown_package_after_failed_registry_fetch"
+  },
+  "schema": "lockspire-phase178-hosted-dependency-failure-v1",
+  "secondary_step_failure": {
+    "cause": "preceding test suite skipped; no receipt constructed",
+    "not_a_separately_executed_lifetime_test_failure": true,
+    "step": "Validate client lifetime receipt"
+  },
+  "source_compile_and_tests_started": false,
+  "tested_source": "e7ad5e67b7c6d00f97ce347b2576b671ddafd811"
+}

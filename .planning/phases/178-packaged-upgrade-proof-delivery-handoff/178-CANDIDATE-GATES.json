@@ -1,0 +1,132 @@
+{
+  "conclusion": "success",
+  "event": "pull_request",
+  "executed_checkout_sha": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+  "failed_attempts": [
+    {
+      "head": "cc61cffc563fc8df141313c26442186c0b4645a3",
+      "record": "178-11-APPROVED-CORRECTED-UPDATE-OUTCOME.json",
+      "record_sha256": "7462702c38752836859564793f7d9310e5ca80b2f3e912de0031ae116045de4e",
+      "run_attempt": 1,
+      "run_id": "40792440885",
+      "status": "failure"
+    },
+    {
+      "head": "dc6279813a7efa5746c73c24827ce2ba7231c198",
+      "record": "178-11-HEX260-HOSTED-CI-TERMINAL.json",
+      "record_sha256": "428d6c413d0d5352003e502d9fe2576d73744f6e4e1ea2727619c2451955b2bb",
+      "run_attempt": 1,
+      "run_id": "40882212125",
+      "status": "failure"
+    },
+    {
+      "conclusion": "cancelled",
+      "exact_inner_release_rpc_predicate": "UNKNOWN",
+      "jobs": "5success/1cancelled/1skipped",
+      "missing_locked_artifact": true,
+      "reviewed_head_sha": "f962fce47d97a78ae67522301aa65104d42a8b2d",
+      "run_attempt": 1,
+      "run_id": "40927824424",
+      "terminal_evidence": "178-11-EC92-HOSTED-CI-TERMINAL.json",
+      "terminal_evidence_sha256": "3829096243c499785b576a9f0e46286785aaee44350055b57e081032b8d10775"
+    },
+    {
+      "conclusion": "failure",
+      "integration_failure": "Hex registry fetch timeout before tests",
+      "jobs": "4success/2failure/1skipped",
+      "minimum_failure": "2755source tests0failures thenfloorhostlifecycle_failedexit2; innerpredicateUNKNOWN",
+      "reviewed_head_sha": "c465f2b8156c2f17db82910452dbcdf16aa8353b",
+      "run_attempt": 1,
+      "run_id": "40954208717",
+      "terminal_evidence": "178-11-E7AD-HOSTED-CI-ATTEMPT1-TERMINAL.json",
+      "terminal_evidence_sha256": "defa432aebf6ce3fb71f3b4069e058c45aee3be71ac775b49351edcd11a61673"
+    }
+  ],
+  "jobs": [
+    {
+      "checkout_sha": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+      "conclusion": "success",
+      "job_id": 123736063322,
+      "name": "Dialyzer",
+      "run_attempt": 2,
+      "run_id": "40954208717",
+      "status": "completed"
+    },
+    {
+      "checkout_sha": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+      "conclusion": "success",
+      "job_id": 123736063134,
+      "name": "Release Hygiene Drift",
+      "run_attempt": 2,
+      "run_id": "40954208717",
+      "status": "completed"
+    },
+    {
+      "checkout_sha": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+      "conclusion": "success",
+      "job_id": 123736063167,
+      "name": "Fast Checks",
+      "run_attempt": 2,
+      "run_id": "40954208717",
+      "status": "completed"
+    },
+    {
+      "checkout_sha": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+      "conclusion": "success",
+      "job_id": 123736062766,
+      "name": "Minimum Supported Elixir/OTP",
+      "run_attempt": 2,
+      "run_id": "40954208717",
+      "status": "completed"
+    },
+    {
+      "checkout_sha": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+      "conclusion": "success",
+      "job_id": 123736063538,
+      "name": "Integration Checks",
+      "run_attempt": 2,
+      "run_id": "40954208717",
+      "status": "completed"
+    },
+    {
+      "checkout_sha": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+      "conclusion": "success",
+      "job_id": 123750899349,
+      "name": "Complete Coverage Evidence",
+      "run_attempt": 2,
+      "run_id": "40954208717",
+      "status": "completed"
+    },
+    {
+      "checkout_sha": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+      "conclusion": "success",
+      "job_id": 123736063582,
+      "name": "Adoption Demo Smoke",
+      "run_attempt": 2,
+      "run_id": "40954208717",
+      "status": "completed"
+    }
+  ],
+  "package_artifacts": [
+    {
+      "archive_path": ".artifacts/phase178/candidate-downloads/40954208717-2/locked.zip",
+      "artifact_id": 12935811315,
+      "name": "lockspire-verifier-upgrade-3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee-locked",
+      "pair": "locked"
+    },
+    {
+      "archive_path": ".artifacts/phase178/candidate-downloads/40954208717-2/floor.zip",
+      "artifact_id": 12935791386,
+      "name": "lockspire-verifier-upgrade-3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee-floor",
+      "pair": "floor"
+    }
+  ],
+  "package_source_sha": "e7ad5e67b7c6d00f97ce347b2576b671ddafd811",
+  "run_attempt": 2,
+  "run_id": "40954208717",
+  "runner_sha": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+  "schema": "lockspire-phase178-candidate-gates-v1",
+  "source_acceptance_sha256": "f55cb3c8ab26a7c9ac63dea128ee59139a9be7056c78eca5a41de50ecb305ba0",
+  "status": "completed",
+  "workflow_path": ".github/workflows/ci.yml"
+}

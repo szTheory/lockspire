@@ -1,0 +1,36 @@
+{
+  "authorization": "one explicit user-approved full rerun completed; consumed",
+  "canonical_OPEN_THREATS": 4,
+  "full_rerun_request": {
+    "cli_tool_chunk_id": "6540e2",
+    "enable_debug_logging": false,
+    "endpoint": "repos/szTheory/lockspire/actions/runs/40954208717/rerun",
+    "exit_code": 0,
+    "method": "POST",
+    "requests_executed": 1
+  },
+  "head": "c465f2b8156c2f17db82910452dbcdf16aa8353b",
+  "independent_API_readback": {
+    "head_sha": "c465f2b8156c2f17db82910452dbcdf16aa8353b",
+    "run_attempt": 2,
+    "status": "in_progress"
+  },
+  "initial_attempt2_observation": {
+    "Adoption Demo Smoke": "stopping containers",
+    "Dialyzer": "success",
+    "Fast Checks": "running qa gate",
+    "Integration Checks": "running integration suite; dependency install passed",
+    "Minimum Supported Elixir/OTP": "compiling floor pair",
+    "Release Hygiene Drift": "success"
+  },
+  "merge_publication_dispatch_authorized": false,
+  "new_attempt": 2,
+  "observed_at": "2026-10-29T21:15:45.130645+00:00",
+  "phase11_complete": false,
+  "phase12": "not_ready",
+  "previous_attempt": 1,
+  "remaining_authorized_reruns": 0,
+  "run_id": 40954208717,
+  "schema": "lockspire-phase178-exact-rerun-outcome-v1",
+  "source_changes": false
+}
